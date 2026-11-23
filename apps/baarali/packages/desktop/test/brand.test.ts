@@ -109,7 +109,8 @@ describe('apply on this checkout', () => {
     expect(branded).toContain("['email', 'meetings', 'prompts']");
     expect(branded).not.toContain("workspace.mode === 'work'");
     expect(branded).not.toContain('<SpacesSidebarSection');
-    expect(branded).toContain('onClick={onOpenSpaces}');
+    // 23/11/2026: the groups are a section of the one sidebar, not an entry under More.
+    expect(branded).toContain('<BaaraliSpacesSection key="groups"');
     expect(branded).toContain('onClick={onOpenStudio}');
     expect(branded).toContain("'baarali-locked'");
   });

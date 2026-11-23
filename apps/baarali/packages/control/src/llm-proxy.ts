@@ -41,6 +41,9 @@ async function currentState(store: ControlStore, account: Account): Promise<Quot
   return (await store.quotaState(account.id)) ?? initialState(account.createdAt);
 }
 
+/** What a person reads when our provider account has no credit left: the app translates it. */
+export const PROVIDER_CREDITS_MESSAGE = 'Baarali cannot answer right now. Please try again in a few minutes.';
+
 function errorResponse(status: number, error: Record<string, unknown>): Response {
   return new Response(JSON.stringify({ error }), {
     status,
@@ -225,6 +228,15 @@ export async function proxyLlm(deps: ProxyDeps, account: Account, req: Request):
   } catch {
     await settle(502, undefined, false);
     return errorResponse(502, { code: 'upstream_unreachable', message: 'Model provider unreachable' });
+  }
+  // Our provider account out of credit (402, 23/11/2026): the person is not
+  // at fault and must not read the provider's English about max_tokens; a
+  // clear sentence for them, unbilled, and a loud line for us.
+  if (upstream.status === 402) {
+    const detail = await upstream.text().catch(() => '');
+    console.error(`[llm] provider credits exhausted (402): ${detail.slice(0, 300)}`);
+    await settle(402, undefined, false);
+    return errorResponse(503, { code: 'provider_credits', message: PROVIDER_CREDITS_MESSAGE });
   }
   const ok = upstream.ok;
   const isStream = (upstream.headers.get('content-type') ?? '').includes('text/event-stream');

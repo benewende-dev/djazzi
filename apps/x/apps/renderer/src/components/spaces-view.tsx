@@ -133,7 +133,7 @@ const WhiteboardPane = lazy(() => import('@/components/spaces/whiteboard-pane'))
 // Root view: the selected space (the chat list lives in the rail)
 // ---------------------------------------------------------------------------
 
-export function SpacesView({ selection, onSelect, onSwitchSpace, railSelection, onRailSelect, onOpenSession, onOpenMessage, onOpenActivity, onOpenAgents, onOpenThreads, active = true, accountMenu }: {
+export function SpacesView({ selection, onSelect, onSwitchSpace, railSelection, onRailSelect, onOpenSession, onOpenMessage, onOpenActivity, onOpenAgents, onOpenThreads, active = true, accountMenu, withRail = true }: {
     selection: SpaceSelection
     onSelect: (selection: SpaceSelection) => void
     /** Navigate to the destination and its rail together, without using the current space's selection. */
@@ -157,6 +157,8 @@ export function SpacesView({ selection, onSelect, onSwitchSpace, railSelection, 
     active?: boolean
     /** Your account row at the sidebar's foot, from the host (2026-11-09). */
     accountMenu?: ReactNode
+    /** BAARALI(23/11/2026): false when the host's own sidebar lists the groups; no second rail. */
+    withRail?: boolean
 }) {
     const { orgs, loading } = useSpacesOrgs()
     // No Rowboat session → the empty state offers the sign-in first (one
@@ -174,7 +176,7 @@ export function SpacesView({ selection, onSelect, onSwitchSpace, railSelection, 
         setRailPinned(pin)
     }
     const railPeekRef = useRef<SecondaryRailPeek | null>(null)
-    useSidebarShortcut(active, toggleRailPin)
+    useSidebarShortcut(active && withRail, toggleRailPin)
     const [signingIn, setSigningIn] = useState(false)
     const signInRowboat = async () => {
         setSigningIn(true)
@@ -219,7 +221,7 @@ export function SpacesView({ selection, onSelect, onSwitchSpace, railSelection, 
     if (selectedOrg) {
         const empty = selectedOrg.spaces.length === 0 && selectedOrg.directs.length === 0
         return <div className="spaces-surface flex min-h-0 flex-1">
-            <SpaceRail
+            {withRail && <SpaceRail
                 org={selectedOrg}
                 spaceId={selectedSpace?.id ?? ''}
                 onOpenSpace={(orgId, spaceId) => {
@@ -237,7 +239,7 @@ export function SpacesView({ selection, onSelect, onSwitchSpace, railSelection, 
                 account={accountMenu}
                 // In a space the header's "Show sidebar" button is the way back; the server pages keep the edge sliver.
                 edgeless={!!selectedSpace}
-            />
+            />}
             <div className="flex min-w-0 min-h-0 flex-1 flex-col">
             {/* A failed refresh keeps the last listing and says so here; the store retries on its own (2026-11-19). */}
             {selectedOrg.reconnecting && (
@@ -255,7 +257,7 @@ export function SpacesView({ selection, onSelect, onSwitchSpace, railSelection, 
                     onSelect={onRailSelect}
                     onSwitchSpace={onSwitchSpace}
                     onOpenSession={onOpenSession}
-                    railOpen={railPinned}
+                    railOpen={withRail ? railPinned : true}
                     onToggleRail={toggleRailPin}
                     railPeekRef={railPeekRef}
                     active={active && railSelection.kind !== 'settings'}

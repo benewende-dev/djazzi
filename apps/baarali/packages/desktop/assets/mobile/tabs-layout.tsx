@@ -9,6 +9,6 @@ export default function TabsLayout() {
     <Tabs.Screen name="more" options={{ title: 'Work' }} />
     <Tabs.Screen name="email" options={{ title: 'Email' }} />
     <Tabs.Screen name="meetings" options={{ title: 'Meetings', headerShown: true, header: () => <TopNavigation mode="work" /> }} />
-    <Tabs.Screen name="spaces" options={{ title: 'Spaces' }} />
+    <Tabs.Screen name="spaces" options={{ title: 'Groups' }} />
   </Tabs>;
 }

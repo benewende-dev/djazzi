@@ -17,7 +17,7 @@ export const TABS = [
   { name: 'home', label: 'Rowboat', icon: 'sf:bubble.left.and.bubble.right', active: 'sf:bubble.left.and.bubble.right.fill' },
   { name: 'email', label: 'Email', icon: 'sf:envelope', active: 'sf:envelope.fill' },
   { name: 'meetings', label: 'Meetings', icon: 'sf:mic', active: 'sf:mic.fill' },
-  { name: 'spaces', label: 'Spaces', icon: 'sf:square.grid.2x2', active: 'sf:square.grid.2x2.fill' },
+  { name: 'spaces', label: 'Groups', icon: 'sf:square.grid.2x2', active: 'sf:square.grid.2x2.fill' },
   { name: 'more', label: 'More', icon: 'sf:ellipsis.circle', active: 'sf:ellipsis.circle.fill' },
 ] as const;
 

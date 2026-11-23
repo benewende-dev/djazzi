@@ -888,6 +888,9 @@ function TitlebarControls({
   )
 }
 
+/** BAARALI(23/11/2026): Baarali shows no Spaces | Local tabs (one sidebar, its « Groupes » section). */
+const BAARALI_MODE_TABS: boolean = false
+
 /** Spaces | Local, centred in the titlebar (2026-11-06). Spaces is the team
     surface alone, as the web app shows it; Local is everything on this
     machine. The mode is the open view, not state of its own, so a link, a
@@ -5863,7 +5866,8 @@ function App() {
   // Spaces, so switching back and forth keeps both places.
   const appMode: AppMode = SPACES_ENABLED && isSpacesOpen ? 'spaces' : 'local'
   // Spaces owns ⌘B for its own rail (SpacesView); here it is Local's sidebar.
-  useSidebarShortcut(appMode === 'local', toggleLocalSidebar)
+  // BAARALI(23/11/2026): one sidebar in every view, the groups in it; ⌘B is always its.
+  useSidebarShortcut(true, toggleLocalSidebar)
   const lastLocalViewRef = useRef<ViewState>({ type: 'chat', runId: null })
   useEffect(() => {
     if (currentViewState.type !== 'spaces') lastLocalViewRef.current = currentViewState
@@ -7677,14 +7681,14 @@ function App() {
               the one sidebar — the thin Rowboat rail beside it went on
               2026-11-09, its logo and account folded into that sidebar. */}
           <SidebarProvider
-            open={appMode === 'local' && localSidebarOpen && !baarasseurFocus}
+            open={localSidebarOpen && !baarasseurFocus}
             onOpenChange={(open) => {
               // A baarasseur's conversation puts its contacts in the sidebar's
               // place (validated mockup, 08/10/2026); asking for the sidebar
               // back returns to the cards, the person's choice untouched.
               if (baarasseurFocus && open) { setOpenBaarasseur(null); return }
               // BAARALI: the titlebar's toggle (TitlebarControls) folds Local's sidebar.
-              if (appMode === 'local' && open !== localSidebarOpen) toggleLocalSidebar()
+              if (open !== localSidebarOpen) toggleLocalSidebar()
             }}
           >
             {/* Kept mounted in Spaces, closed off-canvas, so its state survives. */}
@@ -8037,6 +8041,7 @@ function App() {
                   <SpacesView
                     active={activeMiddle === 'spaces'}
                     accountMenu={<SpacesAccount onOpenSettings={() => setMenuSettings({ open: true, tab: 'account' })} />}
+                    withRail={false}
                     selection={spaceSelection}
                     onSelect={selectSpace}
                     onSwitchSpace={openSpace}
@@ -8530,7 +8535,7 @@ function App() {
             <div
               aria-hidden="true"
               className="titlebar-drag-region fixed left-0 top-0 z-20 h-10"
-              style={{ width: appMode === 'local' && localSidebarOpen ? 'var(--sidebar-width)' : 0 }}
+              style={{ width: localSidebarOpen ? 'var(--sidebar-width)' : 0 }}
             />
             {/* Rendered last so their no-drag regions paint over the drag regions. */}
             <TitlebarControls
@@ -8541,7 +8546,8 @@ function App() {
               onSearch={() => setIsSearchOpen(true)}
               onWidthChange={setTitlebarControlsWidthPx}
             />
-            {SPACES_ENABLED && <AppModeTabs mode={appMode} onSelect={selectAppMode} />}
+            {/* BAARALI(23/11/2026): no Spaces | Local tabs; the groups live in the one sidebar (founder's call). */}
+            {SPACES_ENABLED && BAARALI_MODE_TABS && <AppModeTabs mode={appMode} onSelect={selectAppMode} />}
           </SidebarProvider>
         </div>
         <CommandPalette

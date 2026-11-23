@@ -74,7 +74,7 @@ export function desktopLayoutEdits() {
     // paint order. Tabs must follow every drag region, like FixedSidebarToggle;
     // z-index alone leaves real mouse clicks captured by the titlebar.
     // 23/11/2026: anchored on the Spaces | Local tabs, the last control the upstream paints there (MenuSidebarToggleBridge is gone).
-    edit('App.tsx', '            {SPACES_ENABLED && <AppModeTabs mode={appMode} onSelect={selectAppMode} />}\n', '            {SPACES_ENABLED && <AppModeTabs mode={appMode} onSelect={selectAppMode} />}\n            <DesktopModeSync activeNav={sidebarNavProps.activeNav} />\n'),
+    edit('App.tsx', '            {SPACES_ENABLED && BAARALI_MODE_TABS && <AppModeTabs mode={appMode} onSelect={selectAppMode} />}\n', '            {SPACES_ENABLED && BAARALI_MODE_TABS && <AppModeTabs mode={appMode} onSelect={selectAppMode} />}\n            <DesktopModeSync activeNav={sidebarNavProps.activeNav} />\n'),
     edit('App.tsx', '            <SidebarInset\n', "            <DesktopWorkGate required={workspaceForNav(sidebarNavProps.activeNav) === 'work' || (isStudioOpen || !!selectedPath?.startsWith('motion/'))} page={sidebarNavProps.activeNav} studio={isStudioOpen || !!selectedPath?.startsWith('motion/')} onChat={openAssistant}>\n            <SidebarInset\n"),
     edit('App.tsx', '            {/* Full-screen call: user tile', '            </DesktopWorkGate>\n            {/* Full-screen call: user tile'),
     edit('App.tsx', "              {activeMiddle === 'suggested-topics' && (", "              {activeMiddle === 'studio' && <DesktopStudioLibrary onOpen={navigateToFile} onCreate={() => prefillChat('Help me prepare a creative project in Studio. ')} />}\n              {activeMiddle === 'suggested-topics' && ("),
@@ -84,7 +84,6 @@ export function desktopLayoutEdits() {
     edit('components/baarali-sidebar-content.tsx', '  onOpenMeetings?: () => void', '  onSearch?: () => void\n  onOpenStudio?: () => void\n  onNewWork?: () => void\n  onOpenMeetings?: () => void'),
     edit('components/baarali-sidebar-content.tsx', "| 'spaces' | 'workspaces' | null", "| 'studio' | 'spaces' | 'workspaces' | null"),
     edit('components/baarali-sidebar-content.tsx', '  onOpenMeetings,\n  onOpenBgTasks,', '  onSearch, onOpenStudio, onNewWork,\n  onOpenMeetings,\n  onOpenBgTasks,'),
-    edit('components/baarali-sidebar-content.tsx', '  onOpenSpace,\n  activeSpace,\n', ''),
     edit('components/baarali-sidebar-content.tsx', '  const { sessions: projectSessions,', '  const workspace = useDesktopWorkspace()\n  const onCode = activeNav === \'code\' || activeNav === \'workspaces\'\n  const { sessions: projectSessions,'),
     // BAARALI(07/11/2026): one sidebar, as in Claude Code (the founder's
     // call): the everyday pages first, the rest folded under « More ». On
@@ -101,13 +100,13 @@ export function desktopLayoutEdits() {
   for (const id of ['coworkers', 'routines', 'code', 'todo', 'library'] as SidebarPage[]) { const node = page(id); if (node) menuRun.push(node) }
   flushMenu()
   const more: React.ReactNode[] = (['email', 'meetings', 'prompts'] as SidebarPage[]).map(page).filter(Boolean)
-  if (SPACES_ENABLED && sidebarRows.some(row => row.id === 'spaces')) more.push(lock('spaces', <SidebarMenuItem key="spaces"><SidebarMenuButton isActive={activeNav === 'spaces'} onClick={onOpenSpaces}><Users className="size-4" /><span>Team spaces</span></SidebarMenuButton></SidebarMenuItem>))
   more.push(lock('studio', <SidebarMenuItem key="studio"><SidebarMenuButton isActive={activeNav === 'studio'} onClick={onOpenStudio}><Clapperboard className="size-4" /><span>Studio</span></SidebarMenuButton></SidebarMenuItem>))
-  const moreActive = ['email', 'meetings', 'prompts', 'spaces', 'studio'].includes(activeNav ?? '')
-  sidebarBlocks.push(<details key="more" className="baarali-more" open={moreActive || undefined}><summary>More</summary><SidebarGroup className="flex flex-col py-0"><SidebarGroupContent><SidebarMenu>{more}</SidebarMenu></SidebarGroupContent></SidebarGroup></details>)`),
+  const moreActive = ['email', 'meetings', 'prompts', 'studio'].includes(activeNav ?? '')
+  sidebarBlocks.push(<details key="more" className="baarali-more" open={moreActive || undefined}><summary>More</summary><SidebarGroup className="flex flex-col py-0"><SidebarGroupContent><SidebarMenu>{more}</SidebarMenu></SidebarGroupContent></SidebarGroup></details>)
+  // 23/11/2026 (founder): the groups in the one sidebar, beside the chats, after ChatGPT's group chats; no Spaces | Local switch.
+  if (SPACES_ENABLED && sidebarRows.some(row => row.id === 'spaces')) sidebarBlocks.push(<BaaraliSpacesSection key="groups" className={locked ? 'baarali-locked' : undefined} active={activeNav === 'spaces'} activeSpace={activeSpace} onOpenSpace={(orgId, spaceId) => onOpenSpace?.(orgId, spaceId)} onOpenSpaces={onOpenSpaces} />)`),
     // Keep the entire profile/usage/status footer unchanged; only the body differs.
     edit('components/baarali-sidebar-content.tsx', '        {/* Chats */}\n        <SidebarGroup', '        {onCode && workspace.access === \'allowed\' && <div ref={workspace.setProjectHost} className="baarali-project-host min-h-0 flex-1" />}\n        {/* Chats */}\n        <SidebarGroup hidden={onCode && workspace.access === \'allowed\'}'),
-    edit('components/baarali-sidebar-content.tsx', 'import { BaaraliSpacesSection } from "@/components/baarali-spaces-section"\n', ''),
     edit('components/dock-sidebar.tsx', 'export function DockSidebar({', "import { useDesktopWorkspace } from './desktop-workspace'\nimport { Clapperboard, Bot } from 'lucide-react'\n\nexport function DockSidebar({"),
     edit('components/dock-sidebar.tsx', '  onOpenMeetings?: () => void', '  onOpenStudio?: () => void\n  onOpenBaarasseurs?: () => void\n  onNewWork?: () => void\n  onOpenMeetings?: () => void'),
     edit('components/dock-sidebar.tsx', '  onOpenMeetings,\n  onOpenBgTasks,', '  onOpenStudio, onOpenBaarasseurs, onNewWork,\n  onOpenMeetings,\n  onOpenBgTasks,'),

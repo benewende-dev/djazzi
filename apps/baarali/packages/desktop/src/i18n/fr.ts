@@ -443,6 +443,15 @@ export const FR: Dictionary = {
     "Done": "Terminé",
     "Back": "Retour",
     "Sign in": "Se connecter",
+    // 23/11/2026: the « Groupes » section of the sidebar (baarali-spaces-section.tsx).
+    "All groups": "Tous les groupes",
+    "Create your first group": "Créer votre premier groupe",
+    "Hide groups": "Masquer les groupes",
+    "Show fewer": "Afficher moins",
+    "Show groups": "Afficher les groupes",
+    "Talk with your people and your team": "Échangez avec vos proches et votre équipe",
+    // 23/11/2026: the control plane's sentence when our AI provider account is out of credit (llm-proxy.ts).
+    "Baarali cannot answer right now. Please try again in a few minutes.": "Baarali ne peut pas répondre pour le moment. Réessayez dans quelques minutes.",
     "Create an account": "Créer un compte",
     "Email & Calendar": "E-mail et agenda",
     "Space name": "Nom de l’espace",

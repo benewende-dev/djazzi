@@ -147,7 +147,7 @@ export default function SettingsScreen() {
         <Row first label="Projects" onPress={() => work('/projects')} />
         <Row label="Email" onPress={() => work('/(tabs)/email')} />
         <Row label="Meetings" onPress={() => work('/(tabs)/meetings')} />
-        <Row label="Spaces" onPress={() => work('/(tabs)/spaces')} />
+        <Row label="Groups" onPress={() => work('/(tabs)/spaces')} />
         <Row label="Studio" onPress={() => work('/studio')} />
       </View>
 

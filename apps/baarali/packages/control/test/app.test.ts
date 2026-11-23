@@ -261,6 +261,16 @@ describe('/v1/llm on a plan with a model policy (Découverte)', () => {
     expect(store.usage[0]).toMatchObject({ status: 503, credits: 0 });
   });
 
+  it('answers a clear sentence, unbilled, when our provider account is out of credit', async () => {
+    const { call, store } = setup(() => json({ error: { code: 402, message: 'This request requires more credits, or fewer max_tokens.' } }, 402));
+    const res = await call('/v1/llm/chat/completions', chat({ model: 'anthropic/claude-opus-4.7' }));
+    expect(res.status).toBe(503);
+    const body = (await res.json()) as { error: { code: string; message: string } };
+    expect(body.error.code).toBe('provider_credits');
+    expect(body.error.message).not.toMatch(/max_tokens|credits/);
+    expect(store.usage[0]).toMatchObject({ status: 402, credits: 0 });
+  });
+
   it('does not retry a call refused for another reason', async () => {
     const { call, seen } = setup(() => json({ error: { code: 500, message: 'boom' } }, 500));
     await call('/v1/llm/chat/completions', chat({ model: 'anthropic/claude-opus-4.7' }));

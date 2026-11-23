@@ -25,7 +25,7 @@ export default function SpacesLayout() {
       <Stack.Screen
         name="(tabs)"
         options={() => ({
-          title: 'Spaces',
+          title: 'Groups', // BAARALI(23/11/2026): « Groupes » for everyone, not team spaces.
           // BAARALI(23/11/2026): no drawer in Baarali; Spaces is a section of
           // its own with its own tabs (the Baarali bar hides here, tab-bar.tsx),
           // so the left button leads back to the home.
