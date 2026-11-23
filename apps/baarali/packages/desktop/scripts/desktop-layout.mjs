@@ -80,7 +80,7 @@ export function desktopLayoutEdits() {
     edit('App.tsx', "              {activeMiddle === 'suggested-topics' && (", "              {activeMiddle === 'studio' && <DesktopStudioLibrary onOpen={navigateToFile} onCreate={() => prefillChat('Help me prepare a creative project in Studio. ')} />}\n              {activeMiddle === 'suggested-topics' && ("),
     edit('App.tsx', "      return { ...style, width: codeRailWidth, flex: '0 0 auto' }", "      return { ...style, width: desktopWorkspace.mode === 'work' && localSidebarOpen ? 0 : codeRailWidth, flex: '0 0 auto' }"),
     edit('App.tsx', '[ chatPaneSize, codeChatMain, codeRailWidth,', '[ desktopWorkspace.mode, localSidebarOpen, chatPaneSize, codeChatMain, codeRailWidth,'),
-    edit('components/baarali-sidebar-content.tsx', 'import { SidebarChatContextMenu }', "import { useDesktopWorkspace } from './desktop-workspace'\nimport { Search, Clapperboard, Users } from 'lucide-react'\nimport { SidebarChatContextMenu }"),
+    edit('components/baarali-sidebar-content.tsx', 'import { SidebarChatContextMenu }', "import { useDesktopWorkspace } from './desktop-workspace'\nimport { Search, Clapperboard } from 'lucide-react'\nimport { SidebarChatContextMenu }"),
     edit('components/baarali-sidebar-content.tsx', '  onOpenMeetings?: () => void', '  onSearch?: () => void\n  onOpenStudio?: () => void\n  onNewWork?: () => void\n  onOpenMeetings?: () => void'),
     edit('components/baarali-sidebar-content.tsx', "| 'spaces' | 'workspaces' | null", "| 'studio' | 'spaces' | 'workspaces' | null"),
     edit('components/baarali-sidebar-content.tsx', '  onOpenMeetings,\n  onOpenBgTasks,', '  onSearch, onOpenStudio, onNewWork,\n  onOpenMeetings,\n  onOpenBgTasks,'),
