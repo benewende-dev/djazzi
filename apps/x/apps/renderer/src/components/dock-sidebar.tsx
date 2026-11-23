@@ -40,7 +40,7 @@ import { Bell,
 } from "lucide-react"
 // Spaces and Chats use Phosphor's chat bubbles (2026-10-22: picked over
 // Lucide's squares after trying Phosphor across the whole sidebar).
-import { ChatCircle, ChatsCircle, type IconProps } from "@phosphor-icons/react"
+import { type IconProps } from "@phosphor-icons/react"
 import {
   AlertDialog,
   AlertDialogAction,

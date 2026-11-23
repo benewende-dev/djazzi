@@ -43,7 +43,8 @@ import {
 import { useDebounce } from './hooks/use-debounce';
 import { DockSidebar, LAST_SPACE_STORAGE_KEY } from '@/components/dock-sidebar';
 import { SpacesAccount } from '@/components/spaces-account';
-import { SidebarContentPanel } from '@/components/sidebar-content';
+// BAARALI(23/11/2026): Baarali's sidebar, its own file; sidebar-content.tsx stays the upstream's.
+import { SidebarContentPanel } from '@/components/baarali-sidebar-content';
 import { SuggestedTopicsView } from '@/components/suggested-topics-view';
 import { LiveNotesView } from '@/components/live-notes-view';
 import { BgTasksView } from '@/components/bg-tasks-view';
@@ -826,6 +827,8 @@ function TitlebarControls({
   onWidthChange?: (px: number) => void
 }) {
   const rootRef = useRef<HTMLDivElement | null>(null)
+  // BAARALI: the toggle folds Local's sidebar (SidebarProvider's onOpenChange).
+  const { state, toggleSidebar } = useSidebar()
   useEffect(() => {
     const el = rootRef.current
     if (!el || !onWidthChange) return
