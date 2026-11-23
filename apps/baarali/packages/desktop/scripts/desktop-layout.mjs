@@ -30,7 +30,7 @@ export function desktopLayoutEdits() {
     edit('components/chat-input-with-mentions.tsx', '                  if (!inCall && canToggleConversation()) {', '                  if (!inCall && canToggleConversation() && !callRequiresSession) {'),
     edit('main.tsx', "import App from './App.tsx'", "import App from './App.tsx'\nimport { DesktopWorkspaceProvider } from '@/components/desktop-workspace'"),
     edit('main.tsx', '          <App />', '          <DesktopWorkspaceProvider><App /></DesktopWorkspaceProvider>'),
-    edit('App.tsx', "import { SidebarContentPanel } from '@/components/sidebar-content';", "import { SidebarContentPanel } from '@/components/sidebar-content';\nimport { DesktopModeSync, DesktopWorkGate, useDesktopWorkspace, workspaceForNav } from '@/components/desktop-workspace';\nimport { DesktopStudioLibrary } from '@/components/desktop-studio-library';"),
+    edit('App.tsx', "import { SidebarContentPanel } from '@/components/baarali-sidebar-content';", "import { SidebarContentPanel } from '@/components/baarali-sidebar-content';\nimport { DesktopModeSync, DesktopWorkGate, useDesktopWorkspace, workspaceForNav } from '@/components/desktop-workspace';\nimport { DesktopStudioLibrary } from '@/components/desktop-studio-library';"),
     edit('App.tsx', "currentViewState.type !== 'prompts' && currentViewState.type !== 'baarasseurs'", "currentViewState.type !== 'studio' && currentViewState.type !== 'prompts' && currentViewState.type !== 'baarasseurs'"),
     edit('App.tsx', 'function App() {', 'function App() {\n  const desktopWorkspace = useDesktopWorkspace();'),
     edit('App.tsx', "  | { type: 'apps' }", "  | { type: 'apps' }\n  | { type: 'studio' }"),
