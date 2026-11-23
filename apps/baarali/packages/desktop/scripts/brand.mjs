@@ -690,6 +690,10 @@ export function mobilePlan() {
       // BAARALI(12/10/2026): Expo config uses a global status bar, so its
       // declarative component follows appearance changes across all routes.
       // 23/11/2026: the upstream imports StatusBar itself now.
+      // BAARALI(23/11/2026): the upstream's #1343 reads the tapped notification synchronously, a call the browser
+      // (chat.baarali.com) does not have: it threw and the web app stayed white. The browser has no notification to come back from.
+      edit(`${mobile}/src/app/_layout.tsx`, "    const last = Notifications.getLastNotificationResponse();\n", "    const last = Platform.OS === 'web' ? null : Notifications.getLastNotificationResponse();\n"),
+      edit(`${mobile}/src/app/_layout.tsx`, "import { useColorScheme } from 'react-native';", "import { Platform, useColorScheme } from 'react-native';"),
       edit(`${mobile}/src/app/_layout.tsx`, "import * as SplashScreen from 'expo-splash-screen';", "import * as SplashScreen from 'expo-splash-screen';\nimport { AppThemeProvider } from '@/lib/app-theme';"),
       edit(`${mobile}/src/app/_layout.tsx`, "    <GestureHandlerRootView style={{ flex: 1 }}>", "    <GestureHandlerRootView style={{ flex: 1 }}>\n      <AppThemeProvider>\n      <StatusBar style=\"auto\" />"),
       // BAARALI(13/10/2026): Work checks paid plan entitlement at its own
@@ -991,6 +995,10 @@ export function mobilePlan() {
       ['assets/mobile/tabs-layout.tsx', `${mobile}/src/app/(tabs)/_layout.tsx`],
       ['assets/mobile/work-home.tsx', `${mobile}/src/app/(tabs)/more.tsx`],
       ['assets/mobile/top-navigation.tsx', `${mobile}/src/components/top-navigation.tsx`],
+      // BAARALI(23/11/2026): the bar at the foot as a pill, the menu on the left, Tasks as a tab (the founder's call, after the new Claude app).
+      ['assets/mobile/pill-tab-bar.tsx', `${mobile}/src/components/baarali-pill-tab-bar.tsx`],
+      ['assets/mobile/side-menu.tsx', `${mobile}/src/components/baarali-side-menu.tsx`],
+      ['assets/mobile/tab-todo.tsx', `${mobile}/src/app/(tabs)/todo.tsx`],
       ['assets/mobile/work-access.ts', `${mobile}/src/lib/work-access.ts`],
       ['assets/mobile/work-access-provider.tsx', `${mobile}/src/lib/work-access-provider.tsx`],
       ['assets/mobile/work-gate.tsx', `${mobile}/src/components/work-gate.tsx`],

@@ -26,6 +26,8 @@ import { LivingShape, SHAPE_FILL, saveLook } from '@/components/agent-shape';
 export const ONBOARDED_KEY = 'rowboat.onboarded.v1';
 /** The first name given here, put in the first chat's composer (chat.tsx). */
 export const NAME_KEY = 'baarali.name.v1';
+/** The same first name, kept: the home greets the person with it (home.tsx). */
+export const FIRST_NAME_KEY = 'baarali.firstName.v1';
 
 const INK = '#0A0A0A';
 const CARD = '#1C1C1E';
@@ -212,7 +214,7 @@ function Ready({ shape, color, name, wide }: { shape: shared.AgentShapeId; color
     <Rise><Text accessibilityRole="header" style={{ fontFamily: 'Source Serif 4', fontSize: wide ? 42 : 32, fontWeight: '500', color: '#FFFFFF', textAlign: 'center' }}>
       {name.trim() ? translate('Nice to meet you, $1.', [name.trim()]) : translate('Nice to meet you.')}
     </Text></Rise>
-    <Rise delay={200}><Text style={{ fontSize: 16, lineHeight: 23, textAlign: 'center', color: MUTED }}>{translate('Your Baarali is ready. Let’s keep your account, then tell it what to do.')}</Text></Rise>
+    <Rise delay={200}><Text style={{ fontSize: 16, lineHeight: 23, textAlign: 'center', color: MUTED }}>{translate('Your Baarali is ready. Sign in or create your account, then tell it what to do.')}</Text></Rise>
     <View style={{ flexDirection: 'row', gap: 12, marginTop: 6 }}>
       {PARADE.map((p, i) => <Pop key={p.shape} delay={300 + i * 120}><LivingShape shape={p.shape} color={p.color} size={34} bob offset={i * 260} /></Pop>)}
     </View>
@@ -237,7 +239,7 @@ export default function Welcome() {
     setLeaving(true);
     if (process.env.EXPO_OS === 'ios') void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     await saveLook({ shape, color });
-    if (name.trim()) await AsyncStorage.setItem(NAME_KEY, name.trim()).catch(() => {});
+    if (name.trim()) await AsyncStorage.multiSet([[NAME_KEY, name.trim()], [FIRST_NAME_KEY, name.trim()]]).catch(() => {});
     await AsyncStorage.setItem(ONBOARDED_KEY, '1').catch(() => {});
     router.replace('/sign-in');
   };

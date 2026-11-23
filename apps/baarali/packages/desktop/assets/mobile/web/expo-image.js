@@ -29,6 +29,8 @@ const SF = {
   'person.3': 'UsersRound', 'bell': 'Bell', 'square.and.pencil': 'SquarePen', 'paperclip': 'Paperclip',
   'iphone': 'Smartphone', 'laptopcomputer': 'Laptop',
   'clock': 'Clock', 'checklist': 'ListTodo', 'books.vertical': 'LibraryBig', 'calendar': 'Calendar', 'film': 'Clapperboard',
+  // 23/11/2026: the bar at the foot and the menu on the left (pill-tab-bar.tsx, side-menu.tsx).
+  'line.3.horizontal': 'Menu', 'bubble.left.fill': 'MessageSquare', 'person.2.fill': 'Users', 'checkmark.square': 'SquareCheck', 'checkmark.square.fill': 'SquareCheck', 'play.rectangle.fill': 'SquarePlay',
 };
 
 function flat(style) {

@@ -196,6 +196,7 @@ export function extractMobile(root = MOBILE) {
       parserOpts: { plugins: ['jsx', 'typescript'] },
       plugins: [[plugin, { collect }]],
     });
+    for (const raw of explicitCalls(file, code)) collect.add(raw);
     for (const raw of collect) {
       const s = brandText(raw);
       if (!found.has(s)) found.set(s, { files: new Set(), kinds: new Set(['mobile']) });
@@ -203,6 +204,39 @@ export function extractMobile(root = MOBILE) {
     }
   }
   return found;
+}
+
+/** Where the mobile's own lookups come from: the runtime, and `say` (lib/say.ts) that re-exports it. */
+const MOBILE_LOOKUPS = /(^|\/)baarali-i18n\/mobile\/runtime$|^@\/lib\/say$/;
+
+/**
+ * BAARALI(23/11/2026): the words a screen hands to the lookup itself
+ * (`translate('Open the menu')`, `say('Close')`). The plugin leaves those
+ * calls alone, so the check missed them and a word left out of fr.ts showed
+ * in English. Only a written string counts: a value chosen at run time is
+ * checked where it is written (a row's `label`, a list of words).
+ */
+function explicitCalls(file, code) {
+  if (!code.includes('baarali-i18n/mobile/runtime') && !code.includes('@/lib/say')) return [];
+  const src = ts.createSourceFile(file, code, ts.ScriptTarget.Latest, true, file.endsWith('x') ? ts.ScriptKind.TSX : ts.ScriptKind.TS);
+  const names = new Set();
+  for (const st of src.statements) {
+    if (!ts.isImportDeclaration(st) || !MOBILE_LOOKUPS.test(st.moduleSpecifier.text)) continue;
+    const bindings = st.importClause?.namedBindings;
+    if (bindings && ts.isNamedImports(bindings)) for (const el of bindings.elements) {
+      if (['__baaraliT', 'interfaceText', 'say'].includes((el.propertyName ?? el.name).text)) names.add(el.name.text);
+    }
+  }
+  const out = [];
+  const visit = (n) => {
+    if (ts.isCallExpression(n) && ts.isIdentifier(n.expression) && names.has(n.expression.text) && n.arguments[0]) {
+      const a = n.arguments[0];
+      if (ts.isStringLiteral(a) || ts.isNoSubstitutionTemplateLiteral(a)) out.push(a.text);
+    }
+    ts.forEachChild(n, visit);
+  };
+  if (names.size) visit(src);
+  return out;
 }
 
 /** The strings the French dictionary lacks: a template for text with values, an exact entry otherwise. */
