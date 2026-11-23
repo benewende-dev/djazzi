@@ -7694,6 +7694,10 @@ function App() {
             {/* Kept mounted in Spaces, closed off-canvas, so its state survives. */}
             <SidebarContentPanel
               {...sidebarNavProps}
+              // BAARALI(23/11/2026): the « Groupes » section opens a group in place.
+              onOpenSpace={openSpace}
+              onOpenSpaces={() => { void openSpaces() }}
+              activeSpace={spaceSelection}
               onSelectFile={toggleExpand}
               onOpenAgent={(slug) => { setBgTaskInitialSlug(slug); setBgTaskSlugVersion((v) => v + 1); openBgTasksView() }}
               onVoiceNoteCreated={handleVoiceNoteCreated}
