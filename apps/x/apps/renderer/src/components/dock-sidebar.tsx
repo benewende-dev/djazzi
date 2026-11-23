@@ -849,7 +849,8 @@ export function DockSidebar({
   const bgAgentsFailed = bgTaskSummaries.some((t) => t.active && t.lastRunError)
   useEffect(() => {
     const update = () => {
-      const failed = bgTaskSummaries.filter((t) => t.lastRunError).length
+      // BAARALI(23/11/2026): the same rule as the badge above.
+      const failed = bgTaskSummaries.filter((t) => t.active && t.lastRunError).length
       if (failed > 0) {
         setBgAgentsLabel(`${failed} failed · Needs review`)
         return

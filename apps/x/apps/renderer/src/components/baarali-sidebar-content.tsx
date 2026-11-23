@@ -1031,7 +1031,8 @@ export function SidebarContentPanel({
           {bgAgentsLabel && (
             <span className={cn(
               'truncate text-[11px]',
-              bgTaskSummaries.some((t) => t.lastRunError) ? 'text-destructive' : 'text-muted-foreground',
+              // BAARALI(23/11/2026): red only for a routine still running on its schedule, as the label says.
+              bgTaskSummaries.some((t) => t.active && t.lastRunError) ? 'text-destructive' : 'text-muted-foreground',
             )}>
               {bgAgentsLabel}
             </span>

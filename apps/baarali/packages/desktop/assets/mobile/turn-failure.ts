@@ -5,7 +5,8 @@ import { __baaraliT as translate } from '@/baarali-i18n/mobile/runtime';
 // page): the person reads why in one line, never a provider's link.
 export function turnFailure(error: unknown): string {
   const raw = String(error ?? '');
-  if (/requires more credits|can only afford|status 402|insufficient (credits|balance)/i.test(raw)) {
+  // 23/11/2026: the control plane now says it itself (llm-proxy.ts, code provider_credits, status 503).
+  if (/requires more credits|can only afford|status 402|insufficient (credits|balance)|provider_credits|Baarali cannot answer right now/i.test(raw)) {
     return translate("Baarali can't answer right now: the AI service refused the request. Please try again in a moment.");
   }
   if (/rate.?limit|status 429|too many requests/i.test(raw)) {
