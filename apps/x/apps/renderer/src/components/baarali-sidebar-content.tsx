@@ -710,7 +710,8 @@ export function SidebarContentPanel({
   const [bgAgentsLabel, setBgAgentsLabel] = useState<string | null>(null)
   useEffect(() => {
     const update = () => {
-      const failed = bgTaskSummaries.filter((t) => t.lastRunError).length
+      // BAARALI(23/11/2026): a paused routine is not failing; its last error stays on its card only.
+      const failed = bgTaskSummaries.filter((t) => t.active && t.lastRunError).length
       if (failed > 0) {
         setBgAgentsLabel(`${failed} failed · Needs review`)
         return

@@ -89,7 +89,7 @@ function Typed({ text }: { text: string }) {
 const button = 'h-12 rounded-xl bg-white px-6 text-[15px] font-semibold text-[#0A0A0A] transition-opacity hover:opacity-90 disabled:opacity-50'
 const ghost = 'h-12 rounded-xl border border-[#3A3A3C] px-5 text-[15px] font-medium text-white hover:bg-white/5'
 
-export function BaaraliIntro({ onDone }: { onDone: (result: { name: string }) => void }) {
+export function BaaraliIntro({ onDone }: { onDone: (result: { name: string; returning: boolean }) => void }) {
   const [step, setStep] = useState<Step>('hello')
   const [shape, setShape] = useState<ShapeId>('b')
   const [color, setColor] = useState('white')
@@ -98,12 +98,14 @@ export function BaaraliIntro({ onDone }: { onDone: (result: { name: string }) =>
   const index = STEPS.indexOf(step)
   const go = (n: number) => setStep(STEPS[Math.max(0, Math.min(STEPS.length - 1, n))])
 
-  const finish = () => {
+  // 23/11/2026 (founder): the intro ends on the plain choice, sign in or
+  // create an account; « Create my account » alone misled those who had one.
+  const finish = (returning: boolean) => {
     try {
       localStorage.setItem(LOOK_KEY, JSON.stringify({ shape, color }))
       localStorage.setItem(INTRO_KEY, '1')
     } catch { /* a private window: the intro plays again */ }
-    onDone({ name: name.trim() })
+    onDone({ name: name.trim(), returning })
   }
 
   const nav = (label: string, next: () => void) => (
@@ -188,8 +190,12 @@ export function BaaraliIntro({ onDone }: { onDone: (result: { name: string }) =>
           {step === 'ready' && (
             <div key="ready" className="flex flex-1 flex-col justify-center gap-4">
               <h2 className="bi-rise m-0 font-serif text-[40px] font-medium" data-no-translate>{name.trim() ? say('Nice to meet you, $1.').replace('$1', name.trim()) : say('Nice to meet you.')}</h2>
-              <p className="bi-rise m-0 max-w-[420px] text-base leading-6 text-[#B5B5B5]" style={{ animationDelay: '150ms' }}>Your Baarali is ready. Let’s keep your account, then tell it what to do.</p>
-              <div className="bi-rise" style={{ animationDelay: '300ms' }}>{nav('Create my account', finish)}</div>
+              <p className="bi-rise m-0 max-w-[420px] text-base leading-6 text-[#B5B5B5]" style={{ animationDelay: '150ms' }}>Your Baarali is ready. Sign in or create your account, then tell it what to do.</p>
+              <div className="bi-rise mt-2 flex flex-wrap gap-2.5" style={{ animationDelay: '300ms' }}>
+                <button type="button" className={ghost} onClick={() => go(index - 1)}>Back</button>
+                <button type="button" className={ghost} onClick={() => finish(true)}>Sign in</button>
+                <button type="button" className={button} onClick={() => finish(false)}>Create an account</button>
+              </div>
             </div>
           )}
         </div>

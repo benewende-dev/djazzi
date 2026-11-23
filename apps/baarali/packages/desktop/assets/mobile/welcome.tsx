@@ -243,7 +243,14 @@ export default function Welcome() {
   };
 
   const action = step === 'hello' ? <Button label="Get started" onPress={() => go(1)} />
-    : step === 'ready' ? <Button label="Create my account" onPress={() => void finish()} disabled={leaving} />
+    // 23/11/2026 (founder): sign in or create an account, plainly; both open the same screen, which does either.
+    : step === 'ready' ? <View style={{ gap: 10 }}>
+      <Button label="Sign in" onPress={() => void finish()} disabled={leaving} />
+      <Pressable accessibilityRole="button" disabled={leaving} onPress={() => void finish()}
+        style={({ pressed }) => ({ height: 58, borderRadius: 29, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#3A3A3A', opacity: pressed || leaving ? 0.8 : 1 })}>
+        <Text style={{ fontSize: 18, fontWeight: '600', color: '#FFFFFF' }}>{translate('Create an account')}</Text>
+      </Pressable>
+    </View>
       : <Button label="Continue" onPress={() => go(index + 1)} />;
 
   const progress = step !== 'hello' ? <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>

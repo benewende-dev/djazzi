@@ -469,9 +469,11 @@ export function BaaraliOnboarding({ open, onComplete }: BaaraliOnboardingProps) 
 
   const step = saved.step
   if (open && intro) {
-    return <BaaraliIntro onDone={({ name }) => {
+    return <BaaraliIntro onDone={({ name, returning }) => {
       if (name) update({ profile: { ...saved.profile, name } })
       setIntro(false)
+      // The intro's last choice opens the sign-in at once; the welcome step stays behind it, should it be closed.
+      if (!signedIn) void signIn(returning)
     }} />
   }
   return (

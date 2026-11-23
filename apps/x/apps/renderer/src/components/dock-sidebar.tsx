@@ -845,7 +845,8 @@ export function DockSidebar({
 
   // ----- data: background agents label -----
   const [bgAgentsLabel, setBgAgentsLabel] = useState<string | null>(null)
-  const bgAgentsFailed = bgTaskSummaries.some((t) => t.lastRunError)
+  // BAARALI(23/11/2026): a paused routine is not failing.
+  const bgAgentsFailed = bgTaskSummaries.some((t) => t.active && t.lastRunError)
   useEffect(() => {
     const update = () => {
       const failed = bgTaskSummaries.filter((t) => t.lastRunError).length

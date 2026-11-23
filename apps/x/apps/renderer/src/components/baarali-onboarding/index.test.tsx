@@ -106,7 +106,9 @@ describe('the animated intro (12/11/2026)', () => {
     fireEvent.change(screen.getByLabelText('Your first name'), { target: { value: 'Awa' } })
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }))
     expect(screen.getByRole('heading', { name: 'Nice to meet you, Awa.' })).toBeTruthy()
-    fireEvent.click(screen.getByRole('button', { name: 'Create my account' }))
+    // 23/11/2026: the intro ends on the choice, sign in or create an account.
+    expect(screen.getByRole('button', { name: 'Sign in' })).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'Create an account' }))
     expect(store.get(INTRO_KEY)).toBe('1')
     expect(JSON.parse(store.get(LOOK_KEY) ?? '{}')).toEqual({ shape: 'cloud', color: 'violet' })
     await waitFor(() => expect(JSON.parse(store.get(STORAGE_KEY) ?? '{}').profile?.name).toBe('Awa'))
