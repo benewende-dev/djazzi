@@ -2,6 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useLayoutEffect, use
 import { createPortal } from 'react-dom'
 import { LockKeyhole, RefreshCw } from 'lucide-react'
 import { canUseWork } from '@/lib/work-access'
+import { ANY_PAID_PAGE, FREE_KEEPS, PAID_FROM, PAID_PAGES } from '@/lib/paid-pages'
 import { openPlans } from '@/lib/plans-window'
 import { BaaraliMark } from '@/components/baarali-mark'
 
@@ -61,26 +62,16 @@ export function DesktopModeSync({ activeNav }: { activeNav?: string | null }) {
 }
 
 /** What each paid page is, said on its padlock screen. */
-const PAID_PAGES: Record<string, { title: string; text: string }> = {
-  baarasseurs: { title: 'Your agents', text: 'Agents with a name, a role and a face, who work on their own and wait for your approval before anything leaves.' },
-  agents: { title: 'Routines', text: 'Your agents act at set times: the morning brief, a weekly follow-up, a report every month.' },
-  code: { title: 'Code and projects', text: 'Open a folder, let an agent read, write and run code, and review each change.' },
-  workspaces: { title: 'Code and projects', text: 'Open a folder, let an agent read, write and run code, and review each change.' },
-  email: { title: 'Email', text: 'Your inbox sorted, answers drafted in your tone, nothing sent without you.' },
-  meetings: { title: 'Meetings', text: 'Notes taken for you, a summary and the next steps at the end of each meeting.' },
-  apps: { title: 'Apps', text: 'Connect the tools you use every day so your agents can work with them.' },
-  spaces: { title: 'Team spaces', text: 'Share agents, documents and conversations with your team.' },
-  studio: { title: 'Studio', text: 'Videos, motion and 3D made with your agents, with media credits.' },
-}
+// BAARALI(23/11/2026): the pages and their words, shared with the phone (paid-pages.ts).
 
 export function DesktopWorkGate({ children, required = false, page, studio = false, onChat }: { children: ReactNode; required?: boolean; page?: string | null; studio?: boolean; onChat: () => void }) {
   const workspace = useDesktopWorkspace()
   if (!required || workspace.access === 'allowed') return children
-  const about = PAID_PAGES[studio ? 'studio' : page ?? ''] ?? { title: 'This page', text: 'Agents, routines, code, email, meetings, apps, team spaces and Studio.' }
+  const about = PAID_PAGES[studio ? 'studio' : page ?? ''] ?? ANY_PAID_PAGE
   return <div className="baarali-work-gate" role="region" aria-label="Plan access">
     {workspace.access === 'checking' ? <><BaaraliMark size={44} motion="loading" /><p role="status">Checking your plan…</p></> : <>
       <span className="baarali-gate-symbol"><LockKeyhole size={25} /></span>
-      {workspace.access === 'denied' && <span className="baarali-gate-pill">From the Semaine plan</span>}
+      {workspace.access === 'denied' && <span className="baarali-gate-pill">{PAID_FROM}</span>}
       <h1>{workspace.access === 'denied' ? about.title : 'Your plan could not be verified'}</h1>
       <p>{workspace.access === 'denied' ? about.text : 'Check your connection and try again.'}</p>
       <div className="flex flex-wrap justify-center gap-2">
@@ -89,7 +80,7 @@ export function DesktopWorkGate({ children, required = false, page, studio = fal
         </button>
         <button type="button" onClick={onChat}>Back to the conversation</button>
       </div>
-      {workspace.access === 'denied' && <small>On Découverte you keep conversations with Baarali, web search, your files, voice, personal tasks and the library.</small>}
+      {workspace.access === 'denied' && <small>{FREE_KEEPS}</small>}
     </>}
   </div>
 }

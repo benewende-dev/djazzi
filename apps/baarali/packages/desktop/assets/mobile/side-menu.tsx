@@ -9,7 +9,6 @@ import { baarasseurs as team, billing, sessions as sessionsShared } from '@x/sha
 import { useBaarasseurs } from '@/lib/baarasseurs';
 import { useConnection } from '@/lib/connection';
 import { searchKey } from '@/lib/team-directory';
-import { useWorkAccess } from '@/lib/work-access-provider';
 import { useWebWide } from '@/components/baarali-web-frame';
 import { useColors } from '@/theme/colors';
 import { __baaraliT as translate } from '@/baarali-i18n/mobile/runtime';
@@ -61,7 +60,6 @@ function SideMenu({ open, onClose }: { open: boolean; onClose: () => void }) {
   const slide = useRef(new Animated.Value(0)).current;
   const [shown, setShown] = useState(open);
   const { sessions, rpc } = useConnection();
-  const { access } = useWorkAccess();
   const { team: agents } = useBaarasseurs();
   const [entries, setEntries] = useState<Entry[]>([]);
   const [info, setInfo] = useState<billing.BillingInfo | null>(null);
@@ -98,7 +96,8 @@ function SideMenu({ open, onClose }: { open: boolean; onClose: () => void }) {
   const plan = info ? billing.getBillingPlanData(info.catalog, info.subscriptionPlanId) : null;
 
   const go = (path: Path) => { tap(); onClose(); router.push(path); };
-  const work = (path: Path) => go(access === 'paid' ? path : '/(tabs)/more');
+  // Each paid page has its own padlock, which names it (work-gate.tsx).
+  const work = (path: Path) => go(path);
   const openChat = (entry: Entry) => {
     const b = byId.get(team.baarasseurIdOf(entry.lastAgentId) ?? '');
     go({ pathname: '/chat', params: { id: entry.sessionId, ...(b ? { agent: team.baarasseurAgentId(b.id) } : {}) } });

@@ -7,7 +7,6 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useConnection } from '@/lib/connection';
 import { useSpacesAccount } from '@/lib/spaces/account';
-import { useWorkAccess } from '@/lib/work-access-provider';
 import { useWebWide } from '@/components/baarali-web-frame';
 import { useColors } from '@/theme/colors';
 import { __baaraliT as translate } from '@/baarali-i18n/mobile/runtime';
@@ -35,7 +34,6 @@ export function PillTabBar({ state, navigation }: BottomTabBarProps) {
   const insets = useSafeAreaInsets();
   const { pairing } = useConnection();
   const account = useSpacesAccount();
-  const { access } = useWorkAccess();
   const webWide = useWebWide();
 
   const focused = state.routes[state.index];
@@ -55,8 +53,8 @@ export function PillTabBar({ state, navigation }: BottomTabBarProps) {
         const tint = selected ? colors.label : colors.secondaryLabel;
         const onPress = () => {
           if (process.env.EXPO_OS === 'ios') void Haptics.selectionAsync();
-          // Studio is Work's: the free plan sees its gate, as from the settings.
-          if (place.opens) { router.push(access === 'paid' ? place.opens : '/(tabs)/more'); return; }
+          // Studio is a paid page: the free plan sees its padlock (work-gate.tsx).
+          if (place.opens) { router.push(place.opens); return; }
           if (!route) return;
           const event = navigation.emit({ type: 'tabPress', target: route.key, canPreventDefault: true });
           if (event.defaultPrevented) return;

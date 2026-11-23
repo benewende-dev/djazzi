@@ -13,7 +13,6 @@ import { useModels } from '@/lib/use-models';
 import { useReadAloud } from '@/lib/voice';
 import { useAppTheme } from '@/lib/app-theme';
 import { usageMetrics } from '@/lib/usage-metrics';
-import { useWorkAccess } from '@/lib/work-access-provider';
 import { UsagePanel } from '@/components/usage-panel';
 import { ModelPill } from '@/components/model-picker';
 import { BaaraliMark } from '@/components/baarali-mark';
@@ -35,7 +34,6 @@ export default function SettingsScreen() {
   const look = useLook();
   const dark = useColorScheme() === 'dark';
   const { rpc, pairing, unpair, status } = useConnection();
-  const { access } = useWorkAccess();
   const [info, setInfo] = useState<billing.BillingInfo | null>(null);
   const [media, setMedia] = useState<billing.MediaCredits | null>(null);
   const [partner, setPartner] = useState<PartnerState | null>(null);
@@ -81,7 +79,8 @@ export default function SettingsScreen() {
   const running = partner?.running;
   const go = (path: Path) => router.push(path);
   // Work's places: behind the plan, the gate explains it (work-home.tsx).
-  const work = (path: Path) => router.push(access === 'paid' ? path : '/(tabs)/more');
+  // Each paid page has its own padlock, which names it (work-gate.tsx).
+  const work = (path: Path) => router.push(path);
   const pickTheme = () => Alert.alert(say('Appearance'), undefined, [
     ...THEMES.map(item => ({ text: `${say(item.title)}${theme === item.id ? '  ✓' : ''}`, onPress: () => { void choose(item.id).catch(() => Alert.alert(say('Theme'), say('The appearance could not be saved. Please try again.'))); } })),
     { text: say('Cancel'), style: 'cancel' as const },
@@ -142,7 +141,7 @@ export default function SettingsScreen() {
         <Row label="Apps and prompts" onPress={() => work('/apps')} />
       </View>
 
-      <Text style={heading}>Work</Text>
+      <Text style={heading}>With a paid plan</Text>
       <View style={card}>
         <Row first label="Projects" onPress={() => work('/projects')} />
         <Row label="Email" onPress={() => work('/(tabs)/email')} />

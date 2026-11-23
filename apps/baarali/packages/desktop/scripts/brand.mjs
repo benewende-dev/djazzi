@@ -574,6 +574,7 @@ export function desktopPlan() {
       edit(`${renderer}/components/reasoning-row.tsx`, '      startedAt.current = Date.now()\n      setOpen(true)\n', '      startedAt.current = Date.now()\n'),
     ],
     copies: [
+      ['assets/mobile/paid-pages.ts', `${renderer}/lib/paid-pages.ts`],
       ['assets/desktop/workspace.tsx', `${renderer}/components/desktop-workspace.tsx`],
       ['assets/desktop/workspace.fixture.tsx', `${renderer}/components/desktop-workspace.test.tsx`],
       ['assets/desktop/code-home.fixture.tsx', `${renderer}/components/desktop-code-home.test.tsx`],
@@ -1000,6 +1001,7 @@ export function mobilePlan() {
       ['assets/mobile/side-menu.tsx', `${mobile}/src/components/baarali-side-menu.tsx`],
       ['assets/mobile/tab-todo.tsx', `${mobile}/src/app/(tabs)/todo.tsx`],
       ['assets/mobile/work-access.ts', `${mobile}/src/lib/work-access.ts`],
+      ['assets/mobile/paid-pages.ts', `${mobile}/src/lib/paid-pages.ts`],
       ['assets/mobile/work-access-provider.tsx', `${mobile}/src/lib/work-access-provider.tsx`],
       ['assets/mobile/work-gate.tsx', `${mobile}/src/components/work-gate.tsx`],
       ['assets/mobile/recruit.tsx', `${mobile}/src/app/baarasseurs/recruit.tsx`],
