@@ -50,6 +50,13 @@ jobs:
           echo "sha=$(git rev-parse --short upstream/main)" >> "$GITHUB_OUTPUT"
           echo "branch=sync/upstream-$(date -u +%Y-%m-%d)" >> "$GITHUB_OUTPUT"
 
+      # La veille (23/11/2026) : ce que l'upstream change dans les zones
+      # sensibles, lisible dans le résumé du run même quand la fusion échoue.
+      - name: Veille des zones sensibles
+        if: steps.fetch.outputs.behind != '0'
+        run: |
+          scripts/baarali-upstream-watch.sh upstream/main | tee watch.md >> "$GITHUB_STEP_SUMMARY"
+
       - name: Fusionner sur une branche de synchro
         id: merge
         if: steps.fetch.outputs.behind != '0'
@@ -79,7 +86,9 @@ jobs:
           if ! gh pr view "$branch" >/dev/null 2>&1; then
             gh pr create --base main --head "$branch" \
               --title "sync: upstream ${{ steps.fetch.outputs.sha }} (${{ steps.fetch.outputs.behind }} commits)" \
-              --body "Synchro automatique avec rowboatlabs/rowboat — ${{ steps.fetch.outputs.behind }} commit(s).
+              --body "$(cat watch.md 2>/dev/null)
+
+          Synchro automatique avec rowboatlabs/rowboat — ${{ steps.fetch.outputs.behind }} commit(s).
 
           Avant de fusionner (docs/baarali/UPSTREAM.md §4) :
           - [ ] CI verte
@@ -101,6 +110,7 @@ jobs:
           # jamais interpolés dans le script.
           CONFLICT_FILES: ${{ steps.merge.outputs.files }}
         run: |
+          watch="$(cat watch.md 2>/dev/null || true)"
           if [ "${{ steps.merge.outputs.conflicts }}" = "true" ]; then
             title="sync upstream : conflits à résoudre (${{ steps.fetch.outputs.sha }})"
             body="La fusion de upstream/main (${{ steps.fetch.outputs.behind }} commits) produit des conflits sur :
@@ -109,7 +119,9 @@ jobs:
           ${CONFLICT_FILES}
           \`\`\`
 
-          En local : \`scripts/baarali-sync-upstream.sh\`, puis suivre docs/baarali/UPSTREAM.md §5."
+          En local : \`scripts/baarali-sync-upstream.sh\`, puis suivre docs/baarali/UPSTREAM.md §5.
+
+          ${watch}"
           else
             title="sync upstream : l'upstream a modifié des workflows (${{ steps.fetch.outputs.sha }})"
             body="La fusion est propre mais touche .github/workflows ; GITHUB_TOKEN ne peut pas la pousser.
@@ -117,7 +129,9 @@ jobs:
           fi
           existing=$(gh issue list --state open --search "in:title \"sync upstream\"" --json number --jq '.[0].number')
           # Les issues sont désactivées par défaut sur un fork : si elles le sont,
-          # le run rouge (et son email) reste le signal.
+          # le run rouge et son résumé restent le seul signal. Du 05/10 au
+          # 23/11/2026, huit runs rouges sont passés inaperçus : la veille
+          # locale (UPSTREAM.md §4 bis) prévient le fondateur en plus.
           if [ -n "$existing" ]; then
             gh issue comment "$existing" --body "$body" || true
           else

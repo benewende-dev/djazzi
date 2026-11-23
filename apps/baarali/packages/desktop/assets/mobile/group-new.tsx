@@ -56,9 +56,10 @@ export default function NewGroupScreen() {
     setRoster(null);
     setPicked(new Set());
     let active = true;
+    // 23/11/2026: one server, no org roster: the people you share a space with, and your agents (harbor spec §4).
     client
-      .listOrgMembers()
-      .then(items => { if (active) setRoster(items); })
+      .listContacts()
+      .then(({ members }) => { if (active) setRoster(members); })
       .catch((err) => {
         if (!active) return;
         setRoster([]);
@@ -113,7 +114,7 @@ export default function NewGroupScreen() {
       created.current = space;
       if (ids.length > 0) await client.addMembers(space.id, ids);
       if (invite) {
-        const { link } = await client.createInvite(space.id);
+        const { link } = await client.createInvite({ spaceId: space.id });
         await Share.share({ message: link }).catch(() => {});
       }
       if (process.env.EXPO_OS === 'ios') void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -154,7 +155,7 @@ export default function NewGroupScreen() {
           <Section title="Team members" />
           {roster === null ? <View style={{ alignItems: 'center', padding: 20 }}><BaaraliMark motion="loading" size={32} /></View>
             : people.filter(shown).map(member => <PickRow key={member.id} face={<Face name={member.displayName} />} name={member.displayName} state={picked.has(member.id) ? 'on' : 'off'} onPress={() => toggle(member.id)} />)}
-          {roster !== null && people.filter(shown).length === 0 && <Text style={{ padding: 20, color: colors.secondaryLabel, fontSize: 14 }}>{q ? 'No matching results' : 'Nobody else in this org yet.'}</Text>}
+          {roster !== null && people.filter(shown).length === 0 && <Text style={{ padding: 20, color: colors.secondaryLabel, fontSize: 14 }}>{q ? 'No matching results' : 'Nobody to add yet: share the link to invite people.'}</Text>}
           <PickRow face={<View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: colors.secondaryBackground, alignItems: 'center', justifyContent: 'center' }}><Image source="sf:link" style={{ width: 18, height: 18 }} tintColor={colors.accent} /></View>} name={translate("Invite with a link")} detail={translate("Prepare a link after creating the group")} state={invite ? 'on' : 'off'} onPress={() => { tap(); setInvite(value => !value); }} />
         </> : <>
           <View style={{ margin: 20, padding: 16, borderRadius: 20, backgroundColor: colors.secondaryBackground, flexDirection: 'row', alignItems: 'center', gap: 14 }}>

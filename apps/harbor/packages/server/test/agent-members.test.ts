@@ -16,7 +16,7 @@ let agent: Member;
 
 beforeAll(async () => {
   harbor = await startTestHarbor({
-    orgName: 'Rowboat Labs',
+    name: 'Rowboat Labs',
     seedMembers: [{ id: 'ramnique', displayName: 'Ramnique' }],
   });
   const ramnique = restClient(harbor, 'dev-ramnique');
@@ -24,7 +24,7 @@ beforeAll(async () => {
   agent = await harbor.service.createAgent({ displayName: '  Replicas ' });
   // Ordinary membership: the same invite acceptance, and the same `joined`
   // event, a person's join leaves.
-  const invite = await harbor.service.createInvite({ memberId: 'ramnique' }, spaceId);
+  const invite = await harbor.service.createInvite({ memberId: 'ramnique' }, { spaceId: spaceId });
   await harbor.service.acceptInvite({ memberId: agent.id }, invite.token);
   ramAgent = await agentClient(harbor, 'dev-ramnique', { agentName: 'Rowboat' });
 });
@@ -35,8 +35,9 @@ afterAll(async () => {
 });
 
 describe('createAgent', () => {
-  it('mints an id and stores an agent that is never admin', async () => {
-    expect(agent).toEqual({ id: expect.any(String), displayName: 'Replicas', role: 'member', kind: 'agent' });
+  it('mints an id and stores an agent', async () => {
+    // A kind and connection on every agent: custom/contract unless given (2026-09-30).
+    expect(agent).toEqual({ id: expect.any(String), displayName: 'Replicas', kind: 'agent', agentKind: 'custom', agentConnection: 'contract' });
     expect(await harbor.store.getMember(agent.id)).toEqual(agent);
   });
 
@@ -44,17 +45,24 @@ describe('createAgent', () => {
     await expect(harbor.service.createAgent({ displayName: '   ' })).rejects.toMatchObject({ code: 'invalid_request' });
   });
 
-  it('keeps kind fixed: an upsert never turns an agent into a person, or back', async () => {
-    await harbor.store.putMember({ ...agent, kind: 'human' });
-    expect((await harbor.store.getMember(agent.id))?.kind).toBe('agent');
+  it('keeps kind, and an agent\'s kind and connection, fixed: an upsert never changes them', async () => {
+    const { agentKind: _kind, agentConnection: _connection, ...asPerson } = agent;
+    await harbor.store.putMember({ ...asPerson, kind: 'human' });
+    await harbor.store.putMember({ ...agent, agentKind: 'hermes', agentConnection: 'plugin' });
+    expect(await harbor.store.getMember(agent.id)).toMatchObject({ kind: 'agent', agentKind: 'custom', agentConnection: 'contract' });
     const ram = (await harbor.store.getMember('ramnique'))!;
-    await harbor.store.putMember({ ...ram, kind: 'agent' });
-    expect((await harbor.store.getMember('ramnique'))?.kind).toBe('human');
+    await harbor.store.putMember({ ...ram, kind: 'agent', agentKind: 'custom', agentConnection: 'contract' });
+    const after = await harbor.store.getMember('ramnique');
+    expect(after?.kind).toBe('human');
+    expect(after?.agentKind).toBeUndefined();
   });
 
-  it('cannot be made admin, even by a direct write', async () => {
-    await expect(harbor.store.putMember({ ...agent, role: 'admin' })).rejects.toThrow(/members_agent_not_admin_check/);
-    expect((await harbor.store.getMember(agent.id))?.role).toBe('member');
+  it('refuses a half-described agent, or a person with an agent\'s fields, in the database', async () => {
+    const { agentConnection: _connection, ...halfAgent } = agent;
+    await expect(harbor.store.putMember({ ...halfAgent, id: 'half-agent' })).rejects.toThrow(/members_agent_connection_check/);
+    await expect(
+      harbor.store.putMember({ id: 'person-with-kind', displayName: 'P', kind: 'human', agentKind: 'custom', agentConnection: 'contract' }),
+    ).rejects.toThrow(/members_agent_connection_check/);
   });
 });
 
@@ -70,8 +78,8 @@ describe('on the wire', () => {
     const space = await ramnique.get(`/v1/spaces/${spaceId}/members`);
     expect(space.body.members.find((m: Member) => m.id === agent.id)?.kind).toBe('agent');
     expect(space.body.members.find((m: Member) => m.id === 'ramnique')?.kind).toBe('human');
-    const org = await ramnique.get('/v1/members');
-    expect(org.body.members.find((m: Member) => m.id === agent.id)?.kind).toBe('agent');
+    const contacts = await ramnique.get('/v1/contacts');
+    expect(contacts.body.members.find((m: Member) => m.id === agent.id)?.kind).toBe('agent');
     const tool = await ramAgent.callTool({ name: 'list_members', arguments: { spaceId } });
     const members = (tool.structuredContent as { members: Member[] }).members;
     expect(members.find((m) => m.id === agent.id)?.kind).toBe('agent');

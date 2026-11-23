@@ -1,17 +1,18 @@
 import { Redirect, router, useLocalSearchParams } from 'expo-router';
-import { Image } from 'expo-image';
+import { Image } from '@/components/sf-image';
 import * as Haptics from 'expo-haptics';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
-  KeyboardAvoidingView,
+  Keyboard,
   Pressable,
   ScrollView,
   Text,
   TextInput,
   View,
 } from 'react-native';
+import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { sessions as sessionsShared } from '@x/shared';
 
@@ -208,6 +209,7 @@ export function ChatView({ id, agent, onCreated, embedded = false, initialDraft,
   const send = useCallback(async (spoken?: string): Promise<boolean> => {
     const content = (spoken ?? draft).trim();
     if (!content || !sessions) return false;
+    if (spoken === undefined) Keyboard.dismiss();
     setSending(true);
     if (spoken === undefined) setDraft('');
     try {
@@ -407,6 +409,9 @@ export function ChatView({ id, agent, onCreated, embedded = false, initialDraft,
         {id ? (
           <ScrollView
             ref={scrollRef}
+            keyboardDismissMode="interactive"
+            keyboardShouldPersistTaps="handled"
+            alwaysBounceVertical
             // The header is transparent (floating hamburger) — pad the content
             // below it by hand: safe area + standard header height.
             contentContainerStyle={{ paddingTop: top, paddingHorizontal: 16, paddingBottom: 16, gap: 4 }}

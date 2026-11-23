@@ -18,6 +18,7 @@ vi.mock('@/lib/spaces-feed', () => ({
 const readState = vi.hoisted(() => ({ head: 0 }))
 vi.mock('@/lib/spaces-read-state', () => ({
     loadUnread: async () => {},
+    dropSpaceReadState: vi.fn(),
     getSpaceReadState: () => (readState.head ? { head: readState.head } : undefined),
 }))
 
@@ -38,6 +39,7 @@ beforeEach(() => {
     invoke.mockReset()
     invoke.mockImplementation(async (channel: string) => {
         if (channel === 'spaces:listOrgs') return { orgs }
+        if (channel === 'spaces:listContacts') return { members: [] }
         if (channel === 'spaces:listSpaces') return { spaces: [{ id: 's1', name: 'Main', kind: 'shared', createdAt: '2026-01-01T00:00:00.000Z' }] }
         if (channel === 'spaces:subscribeSpace' || channel === 'spaces:unsubscribeSpace') return null
         throw new Error(`unexpected ${channel}`)
@@ -75,6 +77,7 @@ describe('listing resync', () => {
         emit({ orgId: 'org', frame: { kind: 'subscribed', spaceId: 's1', fromOffset: 7 } }) // the burst
         await vi.advanceTimersByTimeAsync(400)
         expect(listing()).toBe(2)
+        expect(invoke).toHaveBeenCalledWith('spaces:listContacts', { orgId: 'org' })
     })
 
     it('the window regaining focus refetches when the listing is stale, not when fresh', async () => {
@@ -153,6 +156,97 @@ describe('listing resync', () => {
         ipcOn.get('server:resync')!({})
         await vi.advanceTimersByTimeAsync(400)
         expect(subscribes()).toBe(2)
+        expect(listing()).toBe(2)
+    })
+})
+
+
+it('removal drops membership immediately and unsubscribes; nothing resubscribes (open spaces retired, 2026-11-09)', async () => {
+    const mod = await boot()
+    const release = mod.acquireSpaceLive('org', 's1')
+    invoke.mockImplementation(async (channel: string) => {
+        if (channel === 'spaces:listOrgs') return { orgs }
+        if (channel === 'spaces:listSpaces') return { spaces: [] }
+        return null
+    })
+    invoke.mockClear()
+    emit({ orgId: 'org', frame: { kind: 'space_removed', spaceId: 's1', by: 'me', at: '2026-09-28T00:00:00Z' } })
+    expect(mod.getSpacesOrgs()[0].spaces).toEqual([])
+    await vi.advanceTimersByTimeAsync(0)
+    const channels = invoke.mock.calls.map(([channel]) => channel)
+    expect(channels).toContain('spaces:unsubscribeSpace')
+    expect(channels).not.toContain('spaces:subscribeSpace')
+    release()
+})
+
+it('applies live profile updates and refreshes DM labels from the org listing', async () => {
+    await boot()
+    const members = await import('./use-space-members')
+    const update = vi.spyOn(members, 'applyProfileUpdate')
+    const member = { id: 'me', displayName: 'New name', role: 'member', kind: 'human' }
+    emit({ orgId: 'org', frame: { kind: 'profile_updated', member, at: '2026-10-22T00:00:00Z' } })
+    await vi.advanceTimersByTimeAsync(0)
+    expect(update).toHaveBeenCalledWith('org', member)
+    expect(listing()).toBe(2)
+    update.mockRestore()
+})
+
+it.each(['deactivatedAt', 'removedAt'])('resolves historical DM kinds with %s and preserves them on fetch failure', async (status) => {
+    const original = invoke.getMockImplementation()!
+    let failRoster = false
+    invoke.mockImplementation(async (channel: string) => {
+        if (channel === 'spaces:listSpaces') return { spaces: [
+            { id: 'dm', name: 'Old agent', kind: 'direct', participants: ['me', 'bot'], createdAt: '2026-11-12' },
+        ] }
+        if (channel === 'spaces:listMembers') {
+            if (failRoster) throw new Error('offline')
+            return { members: [{ id: 'bot', displayName: 'Old agent', kind: 'agent', [status]: '2026-11-12' }] }
+        }
+        return original(channel)
+    })
+    const mod = await boot()
+    expect(mod.getSpacesOrgs()[0].directKinds).toEqual({ dm: 'agent' })
+    failRoster = true
+    await mod.refreshSpacesOrgs()
+    expect(mod.getSpacesOrgs()[0].directKinds).toEqual({ dm: 'agent' })
+})
+
+// A failed refresh after a long background (2026-11-19): keep the last
+// listing, flag it reconnecting, and retry on our own until it answers.
+describe('a failed refresh', () => {
+    it('keeps the last listing, flags it reconnecting, and retries until it recovers', async () => {
+        const original = invoke.getMockImplementation()!
+        let down = false
+        invoke.mockImplementation(async (channel: string) => {
+            if (channel === 'spaces:listSpaces' && down) throw new Error('Rowboat org at http://x is unreachable (ECONNRESET)')
+            return original(channel)
+        })
+        const mod = await boot()
+        down = true
+        await mod.refreshSpacesOrgs()
+        const org = mod.getSpacesOrgs()[0]
+        expect(org.error).toBeUndefined()
+        expect(org.reconnecting).toMatch(/unreachable/)
+        expect(org.spaces.map((s) => s.id)).toEqual(['s1'])
+        await vi.advanceTimersByTimeAsync(2_000) // first retry, still down
+        expect(listing()).toBe(3)
+        down = false
+        await vi.advanceTimersByTimeAsync(4_000) // backoff doubled
+        expect(listing()).toBe(4)
+        expect(mod.getSpacesOrgs()[0].reconnecting).toBeUndefined()
+        await vi.advanceTimersByTimeAsync(60_000) // healthy: no more retries
+        expect(listing()).toBe(4)
+    })
+
+    it('with nothing loaded yet is unreachable, and still retries', async () => {
+        invoke.mockImplementation(async (channel: string) => {
+            if (channel === 'spaces:listOrgs') return { orgs }
+            if (channel === 'spaces:listSpaces') throw new Error('offline')
+            return null
+        })
+        const mod = await boot()
+        expect(mod.getSpacesOrgs()[0].error).toBe('offline')
+        await vi.advanceTimersByTimeAsync(2_000)
         expect(listing()).toBe(2)
     })
 })

@@ -34,7 +34,11 @@ export function TabBar({ state, navigation }: BottomTabBarProps) {
   const nested = (focused.state?.index ?? 0) > 0;
   // Nobody signed in yet (onboarding, the sign-in screen): nothing to switch to.
   const someone = Boolean(pairing) || account.status === 'signedIn';
-  if (!TAB_NAMES.has(focused.name) || nested || !someone) return null;
+  // Spaces has its own bar since the upstream's 2026-10-05 redesign (Home,
+  // DMs, Activity, More, Search: spaces/(tabs)/_layout.tsx); its header
+  // leads back home (23/11/2026). Two bars would stack.
+  const ownBar = focused.name === 'spaces' && account.status === 'signedIn';
+  if (!TAB_NAMES.has(focused.name) || nested || !someone || ownBar) return null;
 
   return (
     <View

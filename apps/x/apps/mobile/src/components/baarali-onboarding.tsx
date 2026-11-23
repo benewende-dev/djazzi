@@ -64,7 +64,7 @@ export default function BaaraliOnboarding() {
     setFinishing(true);
     await AsyncStorage.multiSet([[ONBOARDED_KEY, '1'], [AVATAR_PREFERENCE_KEY, avatar]]).catch(() => {});
     await AsyncStorage.removeItem(PROGRESS_KEY).catch(() => {});
-    router.replace('/spaces');
+    router.replace('/sign-in');
   }
 
   const slide = SLIDES[step];

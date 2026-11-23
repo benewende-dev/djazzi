@@ -9,13 +9,13 @@ interface PdfFileViewerProps {
 type State = 'loading' | 'ready' | 'error'
 
 export function PdfFileViewer({ path }: PdfFileViewerProps) {
+  // 2026-10-08, CI #1198: reset on navigation without an effect overwriting a fast iframe load.
+  return <PdfPreview key={path} path={path} />
+}
+
+function PdfPreview({ path }: PdfFileViewerProps) {
   const source = useFileViewerSource()
-  // The state belongs to the file it was reached for: another path starts
-  // loading at once. Not reset by an effect, which could run after the
-  // frame's own load event and leave "Loading PDF…" over a loaded PDF.
-  const [shown, setShown] = useState<{ path: string; state: State }>({ path, state: 'loading' })
-  const state: State = shown.path === path ? shown.state : 'loading'
-  const setState = (next: State) => setShown({ path, state: next })
+  const [state, setState] = useState<State>('loading')
 
   const src = source.url(path)
 
@@ -41,7 +41,6 @@ export function PdfFileViewer({ path }: PdfFileViewerProps) {
   return (
     <div className="relative h-full w-full">
       <iframe
-        key={path}
         src={src}
         className="h-full w-full border-0 bg-white"
         title="PDF preview"

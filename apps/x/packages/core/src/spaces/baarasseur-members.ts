@@ -3,8 +3,7 @@ import path from 'node:path';
 import type { ServerFrame } from '@rowboat/spaces-protocol';
 import { WorkDir } from '../config/config.js';
 import { findBaarasseur } from '../baarasseurs/repo.js';
-import { SpacesClient } from './client.js';
-import { SpacesLive } from './live.js';
+import { SpacesClient, SpacesLive } from '@x/spaces-client';
 import { getClient, getOrg, listOrgs, type DerivedMcpServer } from './orgs.js';
 
 // BAARALI(07/10/2026): a baarasseur in a work group, as a member in its own
@@ -98,7 +97,7 @@ async function enroll(orgId: string, baarasseurId: string): Promise<{ memberId: 
   const b = await findBaarasseur(baarasseurId);
   if (!b) throw new Error(`no baarasseur ${baarasseurId}`);
   if (!getOrg(orgId)) throw new Error(`unknown org ${orgId}`);
-  const { agent, key } = await getClient(orgId).addAgent(b.name);
+  const { agent, key } = await getClient(orgId).addAgent({ displayName: b.name });
   const entry: EnrolledBaarasseur = { orgId, baarasseurId, memberId: agent.id, name: b.name, keyId: key.id, secret: key.secret };
   load().agents.push(entry);
   save();
@@ -156,7 +155,8 @@ async function isAgent(entry: EnrolledBaarasseur, client: SpacesClient, memberId
   if (load().agents.some((a) => a.memberId === memberId)) return true;
   let known = agentMembers.get(entry.orgId);
   if (!known?.has(memberId)) {
-    const roster = await client.listOrgMembers().catch(() => []);
+    // One server since 2026-11-09: no roster, the contacts (people and agents one shares a space with).
+    const roster = await client.listContacts().then((r) => r.members).catch(() => []);
     known = new Set(roster.filter((m) => m.kind === 'agent').map((m) => m.id));
     agentMembers.set(entry.orgId, known);
   }

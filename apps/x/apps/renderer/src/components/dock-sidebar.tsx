@@ -1,6 +1,10 @@
+import { AvailabilitySettings } from '@/components/spaces/availability-menu'
 import { SidebarChatContextMenu } from "./sidebar-chat-context-menu"
 "use client"
 
+import { Keys } from '@/components/keys'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
+import { SHORTCUTS, type ShortcutKeys } from '@/lib/shortcuts'
 import { readLastSpace, resolveSpacesLocation } from '@/lib/spaces-navigation'
 
 import * as React from "react"
@@ -34,6 +38,9 @@ import { Bell,
   Video,
   type LucideIcon, Code2
 } from "lucide-react"
+// Spaces and Chats use Phosphor's chat bubbles (2026-10-22: picked over
+// Lucide's squares after trying Phosphor across the whole sidebar).
+import { ChatCircle, ChatsCircle, type IconProps } from "@phosphor-icons/react"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -55,7 +62,6 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import {
@@ -69,10 +75,10 @@ import { toast } from "@/lib/toast"
 import * as analytics from '@/lib/analytics'
 import { getPinnedApps, onPinnedAppsChanged, unpinApp } from "@/lib/pinned-apps"
 import { isOutOfCredits, CREDIT_EXHAUSTED_EVENT, CREDIT_REPLENISHED_EVENT } from "@/lib/credit-status"
+import { ProfileSettings } from "@/components/spaces/profile-settings"
 import { SettingsDialog } from "@/components/settings-dialog"
-import { SidebarCreditRewards } from "@/components/sidebar-credit-rewards"
 import { SPACES_ENABLED } from "@/lib/feature-flags"
-import { OrgMonogram, type SpaceSelection } from "@/components/spaces-view"
+import { type SpaceSelection } from "@/components/spaces-view"
 import { openServerDialog } from "@/lib/server-dialog"
 import { openSelfDirect, useSpacesOrgs, type OrgWithSpaces } from "@/hooks/use-spaces"
 import { prefetchStream, spaceLastActivityAt, useSpacesUnreadCounts, type SpaceBadge } from "@/hooks/use-space-chat"
@@ -81,7 +87,7 @@ import { UnreadBadge } from "@/components/spaces/unread-badge"
 import { MemberAvatar } from "@/components/spaces/atoms"
 import { NewDirectDialog } from "@/components/spaces/new-direct-dialog"
 import { directAvatarId, isSelfDirect, isSelfDirectUnsupported, markSelfDirectUnsupported, selfDirectFailureMessage, selfDirectRefused, spaceDisplayName } from "@/lib/spaces-direct"
-import { useSelfDisplayName } from "@/hooks/use-space-members"
+import { useOrgRoster, useOrgRosters, useSelfDisplayName } from "@/hooks/use-space-members"
 import { MascotFaceIcon } from "@/components/talking-head"
 import { extractConferenceLink } from "@/lib/calendar-event"
 import { useBilling } from "@/hooks/useBilling"
@@ -101,8 +107,26 @@ import { openPlans } from '@/lib/plans-window'
 // Geometry
 // ---------------------------------------------------------------------------
 
-/** Rail width = horizontal space the content panes leave for it. */
-export const DOCK_GUTTER_PX = 48
+/** The rail floats like the open panel (2026-10-22): 48px wide, 8px in from
+ *  the window's left edge, with an 8px gap before the content. */
+const RAIL_LEFT_PX = 8
+const RAIL_WIDTH_PX = 48
+/** Horizontal space the content panes leave for the rail (inset + rail + gap). */
+export const DOCK_GUTTER_PX = RAIL_LEFT_PX + RAIL_WIDTH_PX + 8
+
+/** Each tile's chord, shown in its tooltip (2026-10-21). */
+const DOCK_SHORTCUTS: Record<string, ShortcutKeys | undefined> = {
+  assistant: SHORTCUTS.assistant,
+  email: SHORTCUTS.email,
+  meetings: SHORTCUTS.meetings,
+  home: SHORTCUTS.todo,
+  brain: SHORTCUTS.brain,
+  workspaces: SHORTCUTS.projects,
+  agents: SHORTCUTS.agents,
+  apps: SHORTCUTS.apps,
+  spaces: SHORTCUTS.spaces,
+  settings: SHORTCUTS.settings,
+}
 const RAIL_BUTTON_PX = 32
 const RAIL_ICON_PX = 18
 
@@ -111,7 +135,7 @@ const RAIL_ICON_PX = 18
 export { LAST_SPACE_STORAGE_KEY } from '@/lib/spaces-navigation'
 
 /** Where flyout panels (Chats / Spaces) sit, just right of the rail. */
-const DOCK_FLYOUT_LEFT_PX = DOCK_GUTTER_PX + 8
+const DOCK_FLYOUT_LEFT_PX = DOCK_GUTTER_PX
 
 // ---------------------------------------------------------------------------
 // Shared shapes (mirrors what App.tsx already passes around)
@@ -519,7 +543,7 @@ function SyncActivityLog({ onErrors }: { onErrors: (errors: Map<string, string>)
 type DockItemDef = {
   key: string
   label: string
-  icon: LucideIcon
+  icon: LucideIcon | React.ComponentType<IconProps>
   /** Shorter name for the ⌥Tab switcher cell, when the full label truncates. */
   switcherLabel?: string
   tourId?: string
@@ -582,6 +606,8 @@ export function DockSidebar({
   const [spacesOpen, setSpacesOpen] = useState(false)
   const [switcherOpen, setSwitcherOpen] = useState(false)
   const [switcherIndex, setSwitcherIndex] = useState(0)
+  const [profileSettingsOpen, setProfileSettingsOpen] = useState(false)
+  const [availabilityOpen, setAvailabilityOpen] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [connectionsSettingsOpen, setConnectionsSettingsOpen] = useState(false)
   const [syncLogOpen, setSyncLogOpen] = useState(false)
@@ -598,6 +624,20 @@ export function DockSidebar({
     if (switcherOnly) closeFlyouts()
   }, [switcherOnly, closeFlyouts])
 
+  // 2026-10-21: when the panel comes back, the rail fades out over 120ms
+  // instead of vanishing in the frame the panel starts sliding in.
+  const [railLeaving, setRailLeaving] = useState(false)
+  const [lastSwitcherOnly, setLastSwitcherOnly] = useState(switcherOnly)
+  if (lastSwitcherOnly !== switcherOnly) {
+    setLastSwitcherOnly(switcherOnly)
+    setRailLeaving(switcherOnly)
+  }
+  useEffect(() => {
+    if (!railLeaving) return
+    const timer = setTimeout(() => setRailLeaving(false), 130)
+    return () => clearTimeout(timer)
+  }, [railLeaving])
+
   // ----- data: account / billing -----
   const [hasOauthError, setHasOauthError] = useState(false)
   const [isRowboatConnected, setIsRowboatConnected] = useState(false)
@@ -607,6 +647,22 @@ export function DockSidebar({
   const appUrl = useRowboatConfig()?.appUrl ?? null
   const { billing, refresh: refreshBilling } = useBilling(isRowboatConnected)
   const currentBillingPlan = billing ? getBillingPlanData(billing.catalog, billing.subscriptionPlanId) : null
+
+  // The avatar at the rail's foot: your first name from the Gmail account,
+  // else from the email address — the same as the panel's footer.
+  const [gmailName, setGmailName] = useState('')
+  useEffect(() => {
+    let cancelled = false
+    window.ipc.invoke('gmail:getAccountName', {})
+      .then((res) => { if (!cancelled && res?.name) setGmailName(res.name) })
+      .catch(() => { /* fall back to the email address */ })
+    return () => { cancelled = true }
+  }, [])
+  const emailName = (billing?.userEmail?.split('@')[0] ?? '').split(/[._+-]/)[0] ?? ''
+  const accountName = gmailName.trim().split(/\s+/)[0]
+    || (emailName ? emailName.charAt(0).toUpperCase() + emailName.slice(1) : '')
+    || (isRowboatConnected ? 'Rowboat' : 'Not signed in')
+  const accountInitial = accountName === 'Not signed in' ? '?' : accountName.charAt(0).toUpperCase()
 
   useEffect(() => {
     let mounted = true
@@ -849,10 +905,10 @@ export function DockSidebar({
   }, [recentRuns, pinnedChatIds])
 
   const [deleteChatTarget, setDeleteChatTarget] = useState<{ id: string; title: string } | null>(null)
-  const [removeOrgTarget, setRemoveOrgTarget] = useState<{ id: string; name: string } | null>(null)
 
   // ----- data: spaces (safe when the flag is off — the store stays empty) -----
   const { orgs, loading: spacesLoading, refresh: refreshSpaces } = useSpacesOrgs()
+  const profileRosters = useOrgRosters(orgs.map(org => ({ id: org.id, spaceIds: org.spaces.map(s => s.id) })))
   const spacesUnread = useSpacesUnreadCounts()
   const spacesNotification = useMemo(() => {
     let unread = 0
@@ -1219,7 +1275,8 @@ export function DockSidebar({
         if (totalSpaces === 0) return null
         return (
           <>
-            {orgs.flatMap((org) => org.spaces.map((space) => (
+            {/* Archived spaces stay out of the quick picker; the Spaces nav files them under Archived. */}
+            {orgs.flatMap((org) => org.spaces.filter((space) => !space.archived).map((space) => (
               <ContextMenuItem key={`${org.id}/${space.id}`} onClick={() => onOpenSpace?.(org.id, space.id)}>
                 <MessagesSquare className="mr-2 size-3.5 text-muted-foreground" />
                 <span className="truncate">{space.name}</span>
@@ -1228,7 +1285,7 @@ export function DockSidebar({
             )))}
             {orgs.flatMap((org) => org.directs.map((dm) => (
               <ContextMenuItem key={`${org.id}/${dm.id}`} onClick={() => onOpenSpace?.(org.id, dm.id)}>
-                <MemberAvatar id={directAvatarId(dm, org.memberId)} name={spaceDisplayName(org, dm)} size="sm" className="mr-2 size-3.5 rounded-[3px] text-[7px]" />
+                <MemberAvatar orgId={org.id} avatarUrl={profileRosters.get(org.id)?.find(m => m.id === directAvatarId(dm, org.memberId))?.avatarUrl} id={directAvatarId(dm, org.memberId)} name={spaceDisplayName(org, dm)} size="sm" className="mr-2 size-3.5 rounded-[3px] text-[7px]" />
                 <span className="truncate">{spaceDisplayName(org, dm)}</span>
                 {orgs.length > 1 && <span className="ml-2 truncate text-xs text-muted-foreground">{org.name}</span>}
               </ContextMenuItem>
@@ -1294,16 +1351,33 @@ export function DockSidebar({
   // ----- render -----
   return (
     <>
-      {!switcherOnly && (
-      <div data-dock-root="" className="rowboat-dock titlebar-no-drag" style={{ width: DOCK_GUTTER_PX }}>
+      {(!switcherOnly || railLeaving) && (
+      <div data-dock-root="" data-leaving={railLeaving || undefined} className="rowboat-dock titlebar-no-drag" style={{ left: RAIL_LEFT_PX, width: RAIL_WIDTH_PX }}>
         <div
-          className="flex min-h-0 flex-1 flex-col items-center gap-1 overflow-y-auto px-2 pb-2 pt-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          className="flex min-h-0 flex-1 flex-col items-center gap-0.5 overflow-y-auto px-2 pb-2 pt-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
           onMouseLeave={() => setHoverTip(null)}
         >
+        {/* New chat on top, framed like the panel's New chat button (2026-10-22). */}
+        {onNewChat && (
+          <Tooltip delayDuration={300}>
+            <TooltipTrigger asChild>
+              <button type="button" aria-label="New chat" className="sb-square mb-2" onClick={() => { closeFlyouts(); onNewChat() }}>
+                <SquarePen />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="right" sideOffset={12} className="flex items-center gap-2">
+              New chat <Keys keys={SHORTCUTS.newChat} tone="dark" />
+            </TooltipContent>
+          </Tooltip>
+        )}
         {rows.map((row, i) => {
+          // A gap, not a rule, before Chats — as the panel spaces its sections.
           if (row.sep) {
-            return <div key={`sep-${i}`} className="my-1 h-px w-5 shrink-0 bg-border" />
+            return <div key={`sep-${i}`} className="h-2.5 shrink-0" aria-hidden="true" />
           }
+          // Settings lives in the account menu at the rail's foot; the row
+          // stays in `rows` so the ⌥Tab switcher still offers it.
+          if (row.item.key === 'settings') return null
           const item = row.item
           const Icon = item.icon
           const tile = (
@@ -1312,10 +1386,10 @@ export function DockSidebar({
               type="button"
               aria-label={item.label}
               data-tour-id={item.tourId}
+              data-active={item.running || undefined}
               className={cn(
-                'relative flex shrink-0 items-center justify-center rounded-md text-sidebar-foreground/70 transition-colors',
-                'hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
-                item.running && 'bg-sidebar-accent text-sidebar-accent-foreground',
+                'rowboat-dock-tile relative flex shrink-0 items-center justify-center rounded-lg text-sidebar-foreground/65',
+                'hover:bg-sidebar-accent hover:text-sidebar-foreground',
               )}
               style={{ width: RAIL_BUTTON_PX, height: RAIL_BUTTON_PX }}
               onMouseEnter={(e) => {
@@ -1345,25 +1419,87 @@ export function DockSidebar({
               <ContextMenuContent>{menu}</ContextMenuContent>
             </ContextMenu>
           ) : tile
-          // The Settings tile doubles as the anchor for the sync-activity popover.
-          if (item.key === 'settings') {
-            return (
-              <Popover key="settings-popover" open={syncLogOpen} onOpenChange={setSyncLogOpen}>
-                <PopoverAnchor asChild>{wrapped}</PopoverAnchor>
-                <PopoverContent side="right" align="end" sideOffset={16} className="w-96 p-0">
-                  <div className="border-b p-3">
-                    <h4 className="text-sm font-semibold">Sync Activity</h4>
-                    <p className="mt-0.5 text-xs text-muted-foreground">
-                      {isSyncing || hasServiceErrors ? syncStatusLabel : 'All services up to date'}
-                    </p>
-                  </div>
-                  <SyncActivityLog onErrors={setServiceErrors} />
-                </PopoverContent>
-              </Popover>
-            )
-          }
           return wrapped
         })}
+        </div>
+        {/* The account at the foot (2026-10-22), as in the panel: your avatar
+            opens plan, accounts, sync, tour and Settings. It carries the old
+            Settings tile's "!" as a dot, and anchors the sync log. */}
+        <div className="flex shrink-0 justify-center pb-2 pt-1">
+          <Popover open={syncLogOpen} onOpenChange={setSyncLogOpen}>
+            <PopoverAnchor asChild>
+              <span className="inline-flex">
+                <DropdownMenu>
+                  <Tooltip delayDuration={300}>
+                    <TooltipTrigger asChild>
+                      <DropdownMenuTrigger asChild>
+                        <button type="button" aria-label={`${accountName}: account and settings`} className={cn('sb-avatar-button', isSyncing && 'is-syncing')}>
+                          <span className="sb-avatar" aria-hidden="true">
+                            {accountInitial}
+                            {(outOfCredits || hasOauthError) && <span className={cn('sb-avatar-flag', outOfCredits && 'is-alert')} />}
+                          </span>
+                        </button>
+                      </DropdownMenuTrigger>
+                    </TooltipTrigger>
+                    <TooltipContent side="right" sideOffset={12}>{accountName} · {settingsStatus}</TooltipContent>
+                  </Tooltip>
+                  <DropdownMenuContent side="right" align="end" sideOffset={12} className="sb-menu w-[248px] rounded-xl p-1.5">
+                    <div className="flex items-center gap-2.5 px-2 pb-2 pt-1.5">
+                      <span className="sb-avatar size-8! text-[13px]!" aria-hidden="true">{accountInitial}</span>
+                      <div className="min-w-0 flex-1">
+                        <div className="truncate text-[13px] font-semibold">{accountName}</div>
+                        <div className="truncate text-[11.5px] text-muted-foreground">{billing?.userEmail ?? 'Not signed in'}</div>
+                      </div>
+                    </div>
+                    {isRowboatConnected ? (
+                      appUrl && (
+                        <DropdownMenuItem onSelect={() => window.open(`${appUrl}?intent=upgrade`)}>
+                          <ArrowUpRight />
+                          {outOfCredits
+                            ? 'Out of credits · Upgrade'
+                            : !billing?.subscriptionPlanId || currentBillingPlan?.category === 'free' || currentBillingPlan?.category === 'starter'
+                              ? `${currentBillingPlan?.displayName ?? 'Free'} plan · Upgrade`
+                              : `${currentBillingPlan?.displayName ?? 'Plan'} · Manage`}
+                        </DropdownMenuItem>
+                      )
+                    ) : (
+                      <DropdownMenuItem disabled={loggingIn} onSelect={() => void handleRowboatLogin()}>
+                        <LogIn />
+                        {loggingIn ? 'Signing in…' : 'Sign in to Rowboat'}
+                      </DropdownMenuItem>
+                    )}
+                    <DropdownMenuItem onSelect={() => setAvailabilityOpen(true)}>Status &amp; availability</DropdownMenuItem>
+                  <DropdownMenuItem onSelect={() => setProfileSettingsOpen(true)}><Pencil /> Edit Spaces profile</DropdownMenuItem>
+                    <DropdownMenuItem onSelect={() => setConnectionsSettingsOpen(true)}>
+                      <Plug /> Connect accounts
+                      {hasOauthError && <span className="ml-auto size-1.5 rounded-full bg-amber-500" />}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onSelect={() => setSyncLogOpen(true)}>
+                      <History /> Sync activity
+                    </DropdownMenuItem>
+                    {onStartTour && (
+                      <DropdownMenuItem onSelect={onStartTour}>
+                        <MascotFaceIcon className="size-4" /> Take a tour
+                      </DropdownMenuItem>
+                    )}
+                    <DropdownMenuItem onSelect={() => setSettingsOpen(true)}>
+                      <Settings /> Settings
+                      <Keys keys={SHORTCUTS.settings} className="ml-auto" />
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </span>
+            </PopoverAnchor>
+            <PopoverContent side="right" align="end" sideOffset={16} className="w-96 p-0">
+              <div className="border-b p-3">
+                <h4 className="text-sm font-semibold">Sync Activity</h4>
+                <p className="mt-0.5 text-xs text-muted-foreground">
+                  {isSyncing || hasServiceErrors ? syncStatusLabel : 'All services up to date'}
+                </p>
+              </div>
+              <SyncActivityLog onErrors={setServiceErrors} />
+            </PopoverContent>
+          </Popover>
         </div>
         {(() => {
           // The status tooltip, rendered as a fixed sibling so the scroll
@@ -1374,12 +1510,16 @@ export function DockSidebar({
           if (!row || row.sep) return null
           const item = row.item
           if ((item.key === 'chats' && chatsOpen) || (item.key === 'spaces' && spacesOpen)) return null
+          const tipKeys = DOCK_SHORTCUTS[item.key]
           return (
             <span
               className="rowboat-dock-tip"
-              style={{ left: DOCK_GUTTER_PX + 8, top: hoverTip.centerY, padding: item.status ? '6px 12px' : '4px 10px' }}
+              style={{ left: DOCK_GUTTER_PX, top: hoverTip.centerY, padding: item.status ? '6px 12px' : '4px 10px' }}
             >
-              <span>{item.label}</span>
+              <span className="flex items-center gap-2">
+                {item.label}
+                {tipKeys && <Keys keys={tipKeys} tone="dark" />}
+              </span>
               {item.status && (
                 <span className={cn('rowboat-dock-tip-status', item.statusAlert && 'rowboat-dock-tip-status-alert')}>
                   {item.status}
@@ -1414,9 +1554,8 @@ export function DockSidebar({
           activeSpace={activeSpace}
           onOpenSpace={(orgId, spaceId) => { closeFlyouts(); onOpenSpace?.(orgId, spaceId) }}
           onOpenActivity={onOpenActivity ? (orgId) => { closeFlyouts(); onOpenActivity(orgId) } : undefined}
-          onAddOrg={() => openServerDialog({ kind: 'create' })}
+          onJoin={() => openServerDialog({ kind: 'join' })}
           onChanged={() => void refreshSpaces()}
-          onRequestRemoveOrg={(id, name) => setRemoveOrgTarget({ id, name })}
         />
       )}
 
@@ -1458,20 +1597,6 @@ export function DockSidebar({
         </div>
       )}
 
-      {/* First-time-action credit rewards (feature-flagged, signed-in only).
-          The expanded panel carries its own copy, so dock mode only. */}
-      {!switcherOnly && (
-      <div className="titlebar-no-drag fixed bottom-2 z-30 w-60" style={{ left: DOCK_GUTTER_PX + 8 }}>
-        <SidebarCreditRewards
-          onOpenEmail={onOpenEmail}
-          onOpenMeetings={onOpenMeetings}
-          onOpenAgents={onOpenBgTasks}
-          onOpenApps={onOpenApps}
-          onConnectAccounts={() => setConnectionsSettingsOpen(true)}
-        />
-      </div>
-      )}
-
       {/* Chat pending delete confirmation */}
       <AlertDialog open={!!deleteChatTarget} onOpenChange={(open) => { if (!open) setDeleteChatTarget(null) }}>
         <AlertDialogContent>
@@ -1496,33 +1621,9 @@ export function DockSidebar({
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Remove-server confirm — hoisted to the root like delete-chat: the
-          flyout it's triggered from can close underneath it. */}
-      <AlertDialog open={!!removeOrgTarget} onOpenChange={(open) => { if (!open) setRemoveOrgTarget(null) }}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Remove {removeOrgTarget?.name}?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This only removes the server from this device — you can rejoin with an invite link.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              className="bg-destructive text-white hover:bg-destructive/90"
-              onClick={() => {
-                const target = removeOrgTarget
-                setRemoveOrgTarget(null)
-                if (target) void window.ipc.invoke('spaces:removeOrg', { orgId: target.id }).then(() => void refreshSpaces())
-              }}
-            >
-              Remove
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
       {/* Settings dialogs (main + a connections-tab shortcut) */}
+      {availabilityOpen && <AvailabilitySettings onClose={() => setAvailabilityOpen(false)} />}
+      {profileSettingsOpen && <ProfileSettings onClose={() => setProfileSettingsOpen(false)} />}
       <SettingsDialog open={settingsOpen} onOpenChange={setSettingsOpen} />
       <SettingsDialog
         defaultTab="connections"
@@ -1698,9 +1799,8 @@ function SpacesFlyout({
   activeSpace,
   onOpenSpace,
   onOpenActivity,
-  onAddOrg,
+  onJoin,
   onChanged,
-  onRequestRemoveOrg,
 }: {
   orgs: OrgWithSpaces[]
   loading: boolean
@@ -1708,31 +1808,24 @@ function SpacesFlyout({
   activeSpace: SpaceSelection
   onOpenSpace: (orgId: string, spaceId: string) => void
   onOpenActivity?: (orgId: string) => void
-  onAddOrg: () => void
+  /** Not signed in to Spaces yet: the join-by-link door (2026-11-09; there is no server to create). */
+  onJoin: () => void
   onChanged: () => void
-  onRequestRemoveOrg: (orgId: string, name: string) => void
 }) {
   return (
     <div data-dock-flyout="" data-slot="dock-overlay" data-state="open" className="rowboat-dock-flyout titlebar-no-drag" style={{ left: DOCK_FLYOUT_LEFT_PX }}>
       <div className="flex items-center justify-between px-2 pb-2.5 pt-1">
         <span className="text-[13px] font-bold text-foreground/70">Spaces</span>
-        <button
-          type="button"
-          onClick={onAddOrg}
-          className="flex items-center gap-1 text-xs font-semibold text-teal-700 hover:text-teal-800 dark:text-teal-400 dark:hover:text-teal-300"
-        >
-          <Plus className="size-3" /> Add server
-        </button>
       </div>
       {loading ? (
         <div className="px-2.5 pb-2 text-[11.5px] text-muted-foreground">Loading…</div>
       ) : orgs.length === 0 ? (
         <button
           type="button"
-          onClick={onAddOrg}
+          onClick={onJoin}
           className="px-2.5 pb-2 text-left text-[11.5px] italic text-muted-foreground hover:text-foreground"
         >
-          Add a server to see its spaces here.
+          Sign in to Spaces, or join a group with an invite link.
         </button>
       ) : (
         orgs.map((org) => (
@@ -1744,7 +1837,6 @@ function SpacesFlyout({
             onOpenSpace={onOpenSpace}
             onOpenActivity={onOpenActivity}
             onChanged={onChanged}
-            onRequestRemoveOrg={onRequestRemoveOrg}
           />
         ))
       )}
@@ -1752,14 +1844,13 @@ function SpacesFlyout({
   )
 }
 
-function FlyoutOrgRows({ org, activeSpace, unread, onOpenSpace, onOpenActivity, onChanged, onRequestRemoveOrg }: {
+function FlyoutOrgRows({ org, activeSpace, unread, onOpenSpace, onOpenActivity, onChanged }: {
   org: OrgWithSpaces
   activeSpace: SpaceSelection
   unread: Map<string, SpaceBadge>
   onOpenSpace: (orgId: string, spaceId: string) => void
   onOpenActivity?: (orgId: string) => void
   onChanged: () => void
-  onRequestRemoveOrg: (orgId: string, name: string) => void
 }) {
   const [creating, setCreating] = useState(false)
   const [newName, setNewName] = useState('')
@@ -1775,7 +1866,7 @@ function FlyoutOrgRows({ org, activeSpace, unread, onOpenSpace, onOpenActivity, 
     setSigningIn(true)
     try {
       await window.ipc.invoke('spaces:signInOrg', { orgId: org.id })
-      toast(`Signed back into ${org.name}`, 'success')
+      toast('Signed back in', 'success')
       onChanged()
     } catch (err) {
       toast(err instanceof Error ? err.message : 'Sign-in failed', 'error')
@@ -1819,12 +1910,14 @@ function FlyoutOrgRows({ org, activeSpace, unread, onOpenSpace, onOpenActivity, 
   // Your notes-to-self DM sits in the list like anyone else's ("<name>  you",
   // Slack's posture) and shows before it exists (the org creates it on first click).
   const selfDm = org.directs.find((dm) => isSelfDirect(dm, org.memberId))
+  const directsOn = !org.error
   const directs = [...org.directs].sort((a, b) =>
     (spaceLastActivityAt(org.id, b.id) ?? b.createdAt).localeCompare(spaceLastActivityAt(org.id, a.id) ?? a.createdAt))
   const selfRosterIds = useMemo(
     () => (selfDm ? [selfDm.id] : org.spaces.slice(0, 1).map((s) => s.id)),
     [selfDm, org.spaces],
   )
+  const profileRoster = useOrgRoster(org.id, selfRosterIds)
   const selfName = useSelfDisplayName(org.id, org.memberId, selfRosterIds)
     ?? (selfDm ? spaceDisplayName(org, selfDm).replace(/ \(you\)$/, '') : org.memberId)
   const [selfUnsupported, setSelfUnsupported] = useState(() => isSelfDirectUnsupported(org.id))
@@ -1837,15 +1930,14 @@ function FlyoutOrgRows({ org, activeSpace, unread, onOpenSpace, onOpenActivity, 
         markSelfDirectUnsupported(org.id)
         setSelfUnsupported(true)
       }
-      toast(selfDirectFailureMessage(org.name, err), 'error')
+      toast(selfDirectFailureMessage(err), 'error')
     }
   }
 
   return (
     <>
       <div className="group/org flex h-8 items-center gap-1.5 rounded-[9px] px-2 text-[11.5px] text-muted-foreground" title={`You are ${org.memberId}`}>
-        <OrgMonogram org={org} size="sm" />
-        <span className="flex-1 truncate">{org.name}</span>
+        <span className="flex-1 truncate">Chats</span>
         {needsSignIn ? (
           <button
             type="button"
@@ -1880,16 +1972,9 @@ function FlyoutOrgRows({ org, activeSpace, unread, onOpenSpace, onOpenActivity, 
             <DropdownMenuItem onClick={() => setCreating(true)}>
               <Plus className="mr-2 size-3.5" /> New space
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => setNewDirectOpen(true)}>
+            {directsOn && <DropdownMenuItem onClick={() => setNewDirectOpen(true)}>
               <MessagesSquare className="mr-2 size-3.5" /> New message
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem
-              className="text-destructive focus:text-destructive"
-              onClick={() => onRequestRemoveOrg(org.id, org.name)}
-            >
-              <Trash2 className="mr-2 size-3.5" /> Remove server
-            </DropdownMenuItem>
+            </DropdownMenuItem>}
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
@@ -1913,7 +1998,7 @@ function FlyoutOrgRows({ org, activeSpace, unread, onOpenSpace, onOpenActivity, 
           </button>
         )
       })()}
-      {org.spaces.map((space) => {
+      {org.spaces.filter((space) => !space.archived).map((space) => {
         const active = activeSpace?.orgId === org.id && activeSpace.spaceId === space.id
         const badge = unread.get(`${org.id}/${space.id}`) ?? NO_BADGE
         if (renamingId === space.id) {
@@ -1971,20 +2056,20 @@ function FlyoutOrgRows({ org, activeSpace, unread, onOpenSpace, onOpenActivity, 
           className="flex w-full items-center gap-2 rounded-[9px] py-2 pl-5 pr-2.5 text-left text-xs text-muted-foreground hover:bg-accent"
         >
           <Plus className="size-3.5 shrink-0" />
-          <span className="flex-1 truncate">Create the first space</span>
+          <span className="flex-1 truncate">Create the first group</span>
         </button>
       )}
       {/* Direct messages — a DM is a space with a two-person roster; the row is the person. */}
-      {!org.error && (
+      {directsOn && (
         <div className="flex h-6 items-end pl-5 pr-2.5 text-[10.5px] font-medium uppercase tracking-wide text-muted-foreground/70">
           <span className="truncate">Direct messages</span>
         </div>
       )}
-      {!org.error && directs.map((dm) => {
+      {directsOn && directs.map((dm) => {
         const active = activeSpace?.orgId === org.id && activeSpace.spaceId === dm.id
         const badge = unread.get(`${org.id}/${dm.id}`) ?? NO_BADGE
         const self = isSelfDirect(dm, org.memberId)
-        const label = self ? selfName : spaceDisplayName(org, dm)
+        const label = self ? selfName : profileRoster.find(m => m.id === directAvatarId(dm, org.memberId))?.displayName ?? spaceDisplayName(org, dm)
         return (
           <button
             key={dm.id}
@@ -1996,7 +2081,7 @@ function FlyoutOrgRows({ org, activeSpace, unread, onOpenSpace, onOpenActivity, 
               active && 'bg-[var(--sidebar-accent)]',
             )}
           >
-            <MemberAvatar id={directAvatarId(dm, org.memberId)} name={label} size="sm" className="size-4 rounded-[3px] text-[8px]" />
+            <MemberAvatar orgId={org.id} avatarUrl={profileRoster.find(m => m.id === directAvatarId(dm, org.memberId))?.avatarUrl} id={directAvatarId(dm, org.memberId)} name={label} size="sm" className="size-4 rounded-[3px] text-[8px]" />
             <span className={cn('min-w-0 flex-1 truncate', badge.unread > 0 && !active && 'font-medium text-foreground')}>
               {label}
               {self && <span className="ml-1.5 font-normal text-muted-foreground">you</span>}
@@ -2005,23 +2090,23 @@ function FlyoutOrgRows({ org, activeSpace, unread, onOpenSpace, onOpenActivity, 
           </button>
         )
       })}
-      {!org.error && !selfDm && (
+      {directsOn && !selfDm && (
         <button
           type="button"
           onClick={() => void openSelf()}
           title={selfUnsupported
-            ? `Notes to self need a newer server — ${org.name} hasn't been updated yet`
-            : 'Notes to self — only you (and your agent) can see this'}
+            ? 'Notes to self need a newer server'
+            : 'Notes to self — only you (and your agents) can see this'}
           className={cn(
             'flex w-full items-center gap-2.5 rounded-[9px] py-2 pl-5 pr-2.5 text-left text-[13.5px] text-foreground/90 hover:bg-accent',
             selfUnsupported && 'opacity-50',
           )}
         >
-          <MemberAvatar id={org.memberId} name={selfName} size="sm" className="size-4 rounded-[3px] text-[8px]" />
+          <MemberAvatar orgId={org.id} avatarUrl={profileRoster.find(m => m.id === org.memberId)?.avatarUrl} id={org.memberId} name={selfName} size="sm" className="size-4 rounded-[3px] text-[8px]" />
           <span className="min-w-0 flex-1 truncate">{selfName}<span className="ml-1.5 font-normal text-muted-foreground">you</span></span>
         </button>
       )}
-      {!org.error && (
+      {directsOn && (
         <button
           type="button"
           onClick={() => setNewDirectOpen(true)}

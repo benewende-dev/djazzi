@@ -52,63 +52,43 @@ const escapeHtml = (s: string) =>
 const TEXT = {
   fr: {
     open: 'Ouvrir dans Baarali',
-    opensIn: 'Ce lien s’ouvre dans Baarali.',
+    openApp: 'Ouvrir dans l’app Baarali',
+    opensIn: 'Ce lien s’ouvre dans Baarali',
     expired: 'Cette invitation a expiré.',
     revoked: 'Cette invitation a été retirée.',
     expiredTitle: 'Invitation expirée',
     revokedTitle: 'Invitation retirée',
     askAgain: 'Demandez un nouveau lien à la personne qui vous l’a envoyé.',
-    joinTitle: (space: string, org: string) => `Rejoindre ${space} sur ${org}`,
+    joinTitle: (space: string) => `Rejoindre ${space}`,
+    messageTitle: (person: string) => `Écrire à ${person}`,
     invited: (space: string) => `Invitation à rejoindre ${space}`,
-    on: (org: string) => `sur ${org}`,
+    invitedByPerson: (person: string) => `${person} vous invite à lui écrire`,
+    invitedTo: (server: string) => `Invitation sur ${server}`,
     by: (who: string) => `De la part de ${who}`,
     noApp: (link: string) => `Pas encore Baarali ? ${link}, puis rouvrez ce lien.`,
     download: 'Téléchargez l’app',
-    welcome: (org: string) => `# Bienvenue chez ${org}
-
-Voici le coin partagé de votre équipe. **general** est son premier espace : la discussion et les fichiers au même endroit, pour vous, vos collègues et les agents de chacun.
-
-## Ce qui se passe ici
-
-- **On échange dans Messages.** Le fil ouvert est l’endroit où l’équipe réfléchit à voix haute. Un message qui reçoit des réponses devient un sujet à part.
-- **Les fichiers font foi.** Ce que l’équipe décide — plans, notes, décisions — vit ici, dans des fichiers que tout le monde (et l’agent de chacun) peut lire et proposer de modifier. Ce README en est un : modifiez-le, remplacez-le, faites-le vôtre.
-- **Demandez à @baarali.** Mentionnez @baarali dans un message et *votre* agent s’en charge : résumer une discussion, rédiger un document, reporter une décision dans un fichier.
-- **Invitez votre équipe.** Partagez un lien d’invitation depuis le menu de l’espace. Chacun se connecte avec son propre compte, et l’agent de chacun agit en son nom — jamais comme un robot aux pouvoirs à part.
-
-## Quand créer d’autres espaces
-
-Commencez ici, dans general. Quand un projet ou un pan de l’équipe a son propre flot de discussions et de fichiers, donnez-lui son espace : les espaces ne coûtent rien, l’attention si.
-`,
+    browser: (link: string) => `Vous pouvez aussi ${link}.`,
+    inBrowser: 'ouvrir ce lien dans votre navigateur',
   },
   en: {
     open: 'Open in Baarali',
-    opensIn: 'This link opens in Baarali.',
+    openApp: 'Open in the Baarali app',
+    opensIn: 'This link opens in Baarali',
     expired: 'This invite has expired.',
     revoked: 'This invite was revoked.',
     expiredTitle: 'Invite expired',
     revokedTitle: 'Invite revoked',
     askAgain: 'Ask whoever sent it for a new link.',
-    joinTitle: (space: string, org: string) => `Join ${space} on ${org}`,
+    joinTitle: (space: string) => `Join ${space}`,
+    messageTitle: (person: string) => `Message ${person}`,
     invited: (space: string) => `You’re invited to ${space}`,
-    on: (org: string) => `on ${org}`,
+    invitedByPerson: (person: string) => `${person} invited you to message them`,
+    invitedTo: (server: string) => `You’re invited to ${server}`,
     by: (who: string) => `Invited by ${who}`,
     noApp: (link: string) => `Don’t have Baarali? ${link}, then open this link again.`,
     download: 'Download it',
-    welcome: (org: string) => `# Welcome to ${org}
-
-This is your team's shared corner. **general** is its first space — talk and files in one place, for you, your teammates, and everyone's agents.
-
-## What happens here
-
-- **Talk in Messages.** The open stream is where the team thinks out loud. A message that gets replies becomes its own topic.
-- **Files are the record.** Anything the team agrees on — plans, notes, decisions — lives here as files everyone (and everyone's agent) can read and propose changes to. This README is one: edit it, replace it, make it yours.
-- **Ask @baarali.** Mention @baarali in any message and *your* agent picks it up — summarize a thread, draft a doc, fold a decision into a file.
-- **Invite your team.** Share an invite link from the space menu. Each person signs in with their own account, and each person's agent acts as them — never as a bot with special powers.
-
-## When to make more spaces
-
-Start here in general. When one project or team-area grows its own steady stream of talk and files, give it a space of its own — spaces are cheap, attention isn't.
-`,
+    browser: (link: string) => `You can also ${link}.`,
+    inBrowser: 'open this link in your browser',
   },
 } as const;
 
@@ -121,36 +101,49 @@ const STYLE =
 
 const head = (title: string) =>
   `<!doctype html><html lang="${language()}"><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>${escapeHtml(title)}</title>${STYLE}`;
-const launch = (deep: string) => `<script>location.replace(${JSON.stringify(deep)})</script>`;
 
-/** An org link opened in a browser: handed to the app (http.ts « link landings »). */
-export function landingPage(deep: string): string {
+/**
+ * The app's deep link, and the web app's address for the same link when the
+ * server names one (http.ts Openers, 2026-11-09); `phone` when the browser
+ * is a phone's, which launches nothing by itself.
+ */
+export interface Openers {
+  deep: string;
+  web?: string;
+  phone?: boolean;
+}
+
+/** Launch the app at once and offer the download; on a phone, offer the app and launch nothing. */
+function openerLinks(o: Openers): string {
   const t = TEXT[language()];
-  return `${head(t.open)}<main><p>${t.opensIn}</p><a class="b" href="${deep}">${t.open}</a></main>${launch(deep)}`;
+  const download = `<a href="${DOWNLOAD_URL}">${t.download}</a>`;
+  const web = o.web ? `<p class="s">${t.browser(`<a href="${escapeHtml(o.web)}">${t.inBrowser}</a>`)}</p>` : '';
+  if (o.phone) return `<a class="b" href="${escapeHtml(o.deep)}">${t.openApp}</a><p class="s">${t.noApp(download)}</p>${web}`;
+  return (
+    `<a class="b" href="${escapeHtml(o.deep)}">${t.open}</a><p class="s">${t.noApp(download)}</p>${web}` +
+    `<script>location.replace(${JSON.stringify(o.deep)})</script>`
+  );
+}
+
+/** A link opened in a browser: handed to the app (http.ts « link landings »). */
+export function landingPage(o: Openers): string {
+  const t = TEXT[language()];
+  return `${head(t.open)}<main><h1>${t.opensIn}</h1>${openerLinks(o)}</main>`;
 }
 
 export type InvitePage =
   | { state: 'expired' | 'revoked' }
-  | { state: 'ok'; space: string; org: string; invitedBy?: string | null; deep: string };
+  | ({ state: 'ok'; space?: string; person?: string; server: string; invitedBy?: string | null } & Openers);
 
-/** /join/<token> opened in a browser (http.ts invitePage). */
+/** /join/<token> opened in a browser (http.ts invitePage): an invite to one space, or someone's link. */
 export function invitePage(page: InvitePage): string {
   const t = TEXT[language()];
   if (page.state !== 'ok') {
     const expired = page.state === 'expired';
     return `${head(expired ? t.expiredTitle : t.revokedTitle)}<main><h1>${expired ? t.expired : t.revoked}</h1><p class="m">${t.askAgain}</p></main>`;
   }
-  const by = page.invitedBy ? `<p class="m">${escapeHtml(t.by(page.invitedBy))}</p>` : '';
-  const download = `<a href="${DOWNLOAD_URL}">${t.download}</a>`;
-  return (
-    `${head(t.joinTitle(page.space, page.org))}<main>` +
-    `<h1>${escapeHtml(t.invited(page.space))}</h1><p class="m">${escapeHtml(t.on(page.org))}</p>${by}` +
-    `<a class="b" href="${page.deep}">${t.open}</a>` +
-    `<p class="s">${t.noApp(download)}</p></main>${launch(page.deep)}`
-  );
-}
-
-/** A new team's first file (apex.ts welcomeReadme), in its founder's language. */
-export function welcomeReadme(orgName: string): string {
-  return TEXT[language()].welcome(orgName);
+  const headline = page.space ? t.invited(page.space) : page.person ? t.invitedByPerson(page.person) : t.invitedTo(page.server);
+  const title = page.space ? t.joinTitle(page.space) : page.person ? t.messageTitle(page.person) : t.invitedTo(page.server);
+  const by = page.space && page.invitedBy ? `<p class="m">${escapeHtml(t.by(page.invitedBy))}</p>` : '';
+  return `${head(title)}<main><h1>${escapeHtml(headline)}</h1>${by}${openerLinks(page)}</main>`;
 }

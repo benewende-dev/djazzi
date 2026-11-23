@@ -1,61 +1,58 @@
-import { mkdtempSync } from "node:fs";
-import { tmpdir } from "node:os";
-import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-// Composio through the account's api only when that api serves it (Baarali,
-// 2026-10-02): Baarali's says `composio: false`, and then a signed-in app
-// with no key of its own is simply not configured — never a call that 404s.
+const mocks = vi.hoisted(() => ({ signedIn: vi.fn(), token: vi.fn(), fetch: vi.fn() }));
+vi.mock("../config/config.js", () => ({ WorkDir: "/private/tmp/rowboat-composio-client-test-unused" }));
+vi.mock("../config/env.js", () => ({ API_URL: "https://rowboat.example" }));
+vi.mock("../account/account.js", () => ({ isSignedIn: mocks.signedIn }));
+vi.mock("../auth/tokens.js", () => ({ getAccessToken: mocks.token }));
+// BAARALI(23/11/2026): the upstream's api serves Composio; ours says so in its config (client.ts viaAccount).
+vi.mock("../config/remote-config.js", () => ({ getRemoteConfig: async () => ({ composio: true }) }));
+import { executeAction, getConnectedAccount, linkConnectedAccount, searchTools } from "./client.js";
 
-process.env.ROWBOAT_WORKDIR = mkdtempSync(path.join(tmpdir(), "composio-test-"));
-
-const state = { signedIn: true, composio: false };
-vi.mock("../account/account.js", () => ({ isSignedIn: async () => state.signedIn }));
-vi.mock("../auth/tokens.js", () => ({ getAccessToken: async () => "account-token" }));
-vi.mock("../config/remote-config.js", () => ({ getRemoteConfig: async () => ({ composio: state.composio }) }));
-
-beforeEach(() => {
-    delete process.env.COMPOSIO_API_KEY;
-});
-afterEach(() => vi.unstubAllGlobals());
-
-function capture() {
-    const calls: Array<{ url: string; headers: Record<string, string> }> = [];
-    vi.stubGlobal("fetch", vi.fn(async (url: URL, init: RequestInit) => {
-        calls.push({ url: String(url), headers: init.headers as Record<string, string> });
-        return new Response(JSON.stringify({ items: [], next_cursor: null, total_pages: 1, current_page: 1, total_items: 0 }), {
-            status: 200,
-            headers: { "content-type": "application/json" },
-        });
-    }));
-    return calls;
+const link = { link_token: "lt_secret", redirect_url: "https://connect.composio.dev/link", connected_account_id: "ca_1", expires_at: "2026-11-11T12:10:00Z" };
+function outbound() {
+    const [url, options] = mocks.fetch.mock.calls[0] as [URL, RequestInit];
+    return { url, options, body: options.body ? JSON.parse(String(options.body)) : undefined };
 }
+beforeEach(() => {
+    vi.resetAllMocks();
+    vi.stubGlobal("fetch", mocks.fetch);
+    vi.stubEnv("COMPOSIO_API_KEY", "personal-key");
+    mocks.signedIn.mockResolvedValue(false);
+    mocks.token.mockResolvedValue("user-jwt");
+});
+afterEach(() => { vi.unstubAllGlobals(); vi.unstubAllEnvs(); });
 
-describe("where Composio is reached", () => {
-    it("is not configured when the api does not serve it and the user has no key", async () => {
-        const { isConfigured } = await import("./client.js");
-        state.composio = false;
-        expect(await isConfigured()).toBe(false);
+describe("Composio HTTP client", () => {
+    it.each([false, true])("uses the /link contract when signedIn=%s", async signedIn => {
+        mocks.signedIn.mockResolvedValue(signedIn);
+        mocks.fetch.mockResolvedValueOnce(Response.json(link));
+        const body = { auth_config_id: "ac_1", user_id: "rowboat-user", callback_url: "http://localhost:8081/oauth/callback" };
+        expect(await linkConnectedAccount(body)).toEqual(link);
+        expect(outbound().url.href).toBe(signedIn ? "https://rowboat.example/v1/composio/connected_accounts/link" : "https://backend.composio.dev/api/v3.1/connected_accounts/link");
+        expect(outbound().body).toEqual(body);
+        expect(outbound().options.headers).toEqual(signedIn ? { Authorization: "Bearer user-jwt", "Content-Type": "application/json" } : { "x-api-key": "personal-key", "Content-Type": "application/json" });
     });
-
-    it("goes straight to Composio with the user's own key when the api does not serve it", async () => {
-        const { isConfigured, listToolkits } = await import("./client.js");
-        state.composio = false;
-        process.env.COMPOSIO_API_KEY = "own-key";
-        expect(await isConfigured()).toBe(true);
-        const calls = capture();
-        await listToolkits().catch(() => undefined);
-        expect(calls[0]!.url).toMatch(/^https:\/\/backend\.composio\.dev\/api\/v3\/toolkits/);
-        expect(calls[0]!.headers["x-api-key"]).toBe("own-key");
+    it("discovers latest schemas across multiple toolkits with an omitted terminal cursor", async () => {
+        mocks.fetch.mockResolvedValueOnce(Response.json({ items: [{ slug: "GMAIL_SEND_EMAIL", name: "Send", description: "Send mail", toolkit: { slug: "gmail", name: "Gmail", logo: "logo" }, input_parameters: { type: "object", properties: { subject: { type: "string" } }, required: ["subject"] } }], current_page: 1, total_pages: 1, total_items: 1 }));
+        const result = await searchTools("send", ["gmail", "slack"]);
+        expect(outbound().url.searchParams.get("toolkit_versions")).toBe("latest");
+        expect(outbound().url.searchParams.get("toolkit_slug")).toBe("gmail,slack");
+        expect(result.items[0].inputParameters.required).toEqual(["subject"]);
     });
-
-    it("goes through the account's api when it serves Composio", async () => {
-        const { isConfigured, listToolkits } = await import("./client.js");
-        state.composio = true;
-        expect(await isConfigured()).toBe(true);
-        const calls = capture();
-        await listToolkits().catch(() => undefined);
-        expect(calls[0]!.url).toContain("/v1/composio/toolkits");
-        expect(calls[0]!.headers.Authorization).toBe("Bearer account-token");
+    it.each([true, false])("preserves tool-level successful=%s results and explicit versions", async successful => {
+        const result = { successful, data: {}, error: successful ? null : "Missing permission" };
+        mocks.fetch.mockResolvedValueOnce(Response.json(result));
+        expect(await executeAction("GMAIL_SEND_EMAIL", { connected_account_id: "ca_1", version: "20261101_00", arguments: {} })).toEqual(result);
+        expect(outbound().body.version).toBe("20261101_00");
+        expect(outbound().url.pathname).toBe("/api/v3.1/tools/execute/GMAIL_SEND_EMAIL");
+    });
+    it("accepts REVOKED connections", async () => {
+        mocks.fetch.mockResolvedValueOnce(Response.json({ id: "ca_1", status: "REVOKED", toolkit: { slug: "gmail" }, auth_config: { id: "ac_1", is_composio_managed: true, is_disabled: false } }));
+        expect((await getConnectedAccount("ca_1")).status).toBe("REVOKED");
+    });
+    it.each([200, 429])("surfaces structured errors with HTTP status %s without requiring legacy error_code", async status => {
+        mocks.fetch.mockResolvedValueOnce(Response.json({ error: { code: 1001, slug: "RateLimit", status: 429, message: "Slow down" } }, { status }));
+        await expect(searchTools("send")).rejects.toThrow("Slow down");
     });
 });

@@ -17,8 +17,8 @@
       flushMenu()
       if (SPACES_ENABLED) {
         sidebarBlocks.push(
-          <SpacesSidebarSection key="spaces" label={row.label} active={activeNav === 'spaces'} activeSpace={activeSpace}
-            onOpenSpace={(orgId, spaceId) => onOpenSpace?.(orgId, spaceId)} />,
+          <BaaraliSpacesSection key="spaces" label={row.label} active={activeNav === 'spaces'} activeSpace={activeSpace}
+            onOpenSpace={(orgId, spaceId) => onOpenSpace?.(orgId, spaceId)} onOpenSpaces={onOpenSpaces} />,
         )
       }
     } else {

@@ -1,15 +1,17 @@
 # Harbor, our Spaces server, on Fly, Paris (decided 02/10/2026: we host
-# Spaces ourselves). Every team gets <slug>.spaces.baarali.com; the apex
-# creates teams and lists a person's. Sign-in is the control plane's
-# (https://app.baarali.com/auth/v1): Harbor only checks its tokens.
+# Spaces ourselves). One server at spaces.baarali.com since the upstream
+# dissolved orgs (harbor SPEC §4, 2026-11-09; synced 23/11/2026): a person
+# sees the spaces they were invited to, nothing above them. Sign-in is the
+# control plane's (https://app.baarali.com/auth/v1): Harbor only checks its
+# tokens. Before the first deploy of that build, the files' bytes move off
+# their per-team prefixes once: scripts/flatten-blobs.ts (harbor server).
 # Secrets (fly secrets): DATABASE_URL (Neon, its own database), and
 # AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY from `fly storage create`.
 app = "baarali-spaces"
 primary_region = "cdg"
 
 [env]
-  HARBOR_MODE = "deployment"
-  APEX_DOMAIN = "spaces.baarali.com"
+  HARBOR_ADDRESS = "spaces.baarali.com"
   AUTH_ISSUER = "https://app.baarali.com/auth/v1"
   BLOBS_S3_BUCKET = "baarali-spaces-files"
   BLOBS_S3_ENDPOINT = "https://fly.storage.tigris.dev"

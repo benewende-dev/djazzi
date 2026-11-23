@@ -23,6 +23,14 @@ Chaque ligne modifiée dans un fichier upstream est un conflit potentiel, **pour
    - une capacité serveur Harbor = la « tranche » décrite dans `apps/harbor/AGENTS.md`.
 3. **Modifier un fichier upstream en dernier recours**, avec le diff le plus petit possible : une ligne d'import ou d'enregistrement plutôt qu'un bloc réécrit. Chaque modification porte un commentaire `// BAARALI(<date>): <pourquoi>` et une ligne dans `DIVERGENCES.md`.
 
+### Ce qui ne vit jamais dans les fichiers de l'upstream
+
+Une fonction dont Baarali a besoin pour vendre ne s'appuie jamais sur un morceau de l'upstream que celui-ci peut retirer. Le 09/11/2026, l'upstream a supprimé les équipes de Harbor (le mode « plusieurs organisations sur un serveur ») : nos ajouts écrits dans ces fichiers sont partis avec eux, et la synchro du 23/11 a dû les abandonner. D'où :
+
+- **Le cœur commercial de Baarali vit dans notre code** : comptes, forfaits, paiements, instances, hébergement (`apps/baarali/`). Dans les fichiers de l'upstream, seulement la marque, le français et des points d'accroche d'une ligne.
+- **Un écran que Baarali redessine en entier devient un fichier à nous**, monté par une ligne. Exemple : la barre latérale du bureau (`components/baarali-sidebar-content.tsx`, 23/11/2026), quand l'upstream a refait la sienne. Le fichier de l'upstream reste le sien, sans conflit ; en échange, ses améliorations n'arrivent plus seules dans notre barre.
+- **Quand l'upstream couvre ce qu'on avait ajouté, on retire notre version.** Le 23/11/2026, les écrans d'Espaces mobiles de l'upstream (fichiers, membres, pièces jointes, mentions, messages directs, activité) ont remplacé nos surcouches de `brand.mjs` ; seul notre « Nouveau groupe », qui ajoute des Baarasseurs, est resté.
+
 ### Ce qu'on ne renomme jamais
 
 Les identifiants internes restent ceux de Rowboat : packages `@x/*` et `@rowboat/*`, variables `ROWBOAT_*`, dossier `~/.rowboat` (configurable par `ROWBOAT_WORKDIR`), noms de workflows. Les renommer toucherait des milliers de lignes et rendrait chaque synchro conflictuelle. **La marque Baarali ne vit qu'à la surface visible par l'utilisateur**, par deux couches appliquées à la fabrication, jamais dans le dépôt :
@@ -78,6 +86,15 @@ Avant de fusionner une PR de synchro :
 2. chaque fichier de `DIVERGENCES.md` qui a bougé a été relu ;
 3. l'upstream n'a ajouté aucun appel vers un service hébergé par Rowboat Labs (§6).
 
+### 4 bis. La veille (23/11/2026)
+
+Du 05/10 au 23/11/2026, le workflow du lundi a échoué huit fois de suite sur des conflits, et personne ne l'a vu : les Issues sont désactivées sur le dépôt, et l'alerte n'avait nulle part où aller. Le retard est monté à 339 commits, dont la suppression des équipes de Harbor. Désormais :
+
+- **`scripts/baarali-upstream-watch.sh`** dit, avant toute fusion, ce que l'upstream change dans les zones sensibles (Harbor : spécification, migrations, stockage, connexion ; le client des Espaces ; la connexion du cœur), les commits qui suppriment, renomment ou changent de direction, et les fichiers de `DIVERGENCES.md` qu'il a touchés. Il ne modifie rien.
+- **Le workflow du lundi** écrit ce rapport dans le résumé de son run, dans la PR de synchro, et dans l'issue de conflit quand les Issues sont actives.
+- **Une tâche planifiée sur l'ordinateur du fondateur** (app Claude, le lundi) lance la veille et lit le dernier run du workflow, et le prévient en français : combien de commits attendent, ce qui touche une zone sensible, et si le run est rouge.
+- **On ne laisse pas passer deux semaines rouges.** Un run rouge veut dire : synchro en local cette semaine (`scripts/baarali-sync-upstream.sh`, §5).
+
 ### Réglages GitHub à faire une fois (🧑)
 
 - Actions activées sur le fork. GitHub les désactive par défaut sur un fork.
@@ -85,7 +102,7 @@ Avant de fusionner une PR de synchro :
 - Recommandé : un secret `BAARALI_SYNC_TOKEN`. C'est un jeton fine-grained limité à ce dépôt, avec les droits contents, pull-requests, issues et workflows en écriture. Sans lui, deux limites :
   - une synchro qui touche `.github/workflows` ne peut pas être poussée ;
   - les tests doivent être relancés par `workflow_dispatch`.
-- Facultatif : activer les Issues du fork, pour recevoir les alertes de conflit sous forme d'issue et pas seulement d'un run rouge.
+- **Recommandé depuis le 23/11/2026** : activer les Issues du fork (*Settings › General › Features › Issues*). Sans elles, une synchro en conflit n'est qu'un run rouge que personne ne voit (§4 bis).
 
 ## 5. Résoudre un conflit
 

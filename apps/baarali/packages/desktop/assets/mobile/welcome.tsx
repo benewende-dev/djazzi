@@ -12,7 +12,6 @@ import { BaaraliMark } from '@/components/baarali-mark';
 import { useReducedMotion } from '@/components/agent-avatar';
 import { __baaraliT as translate } from '@/baarali-i18n/mobile/runtime';
 import { LivingShape, SHAPE_FILL, saveLook } from '@/components/agent-shape';
-import { APEX_URL } from '@/lib/spaces/account';
 
 // BAARALI(07/11/2026): the first launch as Grok Bot opens (the founder's
 // call): a black screen where the Baarali shapes look around, « Get
@@ -240,7 +239,7 @@ export default function Welcome() {
     await saveLook({ shape, color });
     if (name.trim()) await AsyncStorage.setItem(NAME_KEY, name.trim()).catch(() => {});
     await AsyncStorage.setItem(ONBOARDED_KEY, '1').catch(() => {});
-    router.replace(APEX_URL ? '/spaces' : '/pairing');
+    router.replace('/sign-in');
   };
 
   const action = step === 'hello' ? <Button label="Get started" onPress={() => go(1)} />

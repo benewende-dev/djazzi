@@ -1,4 +1,4 @@
-import type { SpacesClient } from "@x/core/dist/spaces/client.js";
+import type { SpacesClient } from "@x/spaces-client";
 import * as orgs from "@x/core/dist/spaces/orgs.js";
 import { forwardRpc } from "../rpc-forwarder.js";
 import { serverHostMode } from "../server-host.js";
@@ -12,9 +12,9 @@ import { serverHostMode } from "../server-host.js";
 type ReadAssetResult = Awaited<ReturnType<SpacesClient["readAsset"]>>;
 type AssetEntry = Awaited<ReturnType<SpacesClient["listAssets"]>>[number];
 
-export async function readSpaceAsset(orgId: string, spaceId: string, assetId: string): Promise<ReadAssetResult> {
-  if (serverHostMode() !== "remote") return orgs.getClient(orgId).readAsset(spaceId, assetId);
-  return (await forwardRpc("spaces:readAsset", { orgId, spaceId, assetId })) as ReadAssetResult;
+export async function readSpaceAsset(orgId: string, spaceId: string, assetId: string, version?: number): Promise<ReadAssetResult> {
+  if (serverHostMode() !== "remote") return orgs.getClient(orgId).readAsset(spaceId, assetId, version);
+  return (await forwardRpc("spaces:readAsset", { orgId, spaceId, assetId, ...(version !== undefined ? { version } : {}) })) as ReadAssetResult;
 }
 
 export async function listSpaceAssets(orgId: string, spaceId: string): Promise<AssetEntry[]> {

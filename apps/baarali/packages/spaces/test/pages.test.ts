@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { invitePage, landingPage, pickLanguage, welcomeReadme, withLanguage } from '../src/pages.js';
+import { invitePage, landingPage, pickLanguage, withLanguage } from '../src/pages.js';
 
 // Harbor's pages, as a person sees them (src/pages.ts, decided 02/10/2026).
 
@@ -19,19 +19,33 @@ describe('the visitor’s language', () => {
 });
 
 describe('the pages', () => {
-  const deep = 'rowboat://open?type=spaces&org=equipe.spaces.baarali.com&invite=t1';
+  const deep = 'rowboat://open?type=spaces&server=spaces.baarali.com&invite=t1';
 
   it('hands an invite to the app, in French, under our name only', async () => {
-    const page = await withLanguage('fr', async () => invitePage({ state: 'ok', space: 'Ventes', org: 'Équipe', invitedBy: 'Awa', deep }));
+    const page = await withLanguage('fr', async () => invitePage({ state: 'ok', space: 'Ventes', server: 'Baarali', invitedBy: 'Awa', deep }));
     expect(page).toContain('Invitation à rejoindre Ventes');
     expect(page).toContain('De la part de Awa');
     expect(page).toContain('Ouvrir dans Baarali');
     expect(page).toContain('https://baarali.com/#telecharger');
+    expect(page).toContain(`location.replace(${JSON.stringify(deep)})`);
     expect(page).not.toMatch(/Rowboat|rowboatlabs/);
   });
 
+  it('names the person whose link it is', async () => {
+    const page = await withLanguage('fr', async () => invitePage({ state: 'ok', person: 'Fatou', server: 'Baarali', deep }));
+    expect(page).toContain('Fatou vous invite à lui écrire');
+  });
+
+  it('launches nothing on a phone, and offers the browser when there is a web app', async () => {
+    const web = 'https://app.baarali.com/open?type=spaces';
+    const page = await withLanguage('fr', async () => invitePage({ state: 'ok', space: 'Ventes', server: 'Baarali', deep, web, phone: true }));
+    expect(page).toContain('Ouvrir dans l’app Baarali');
+    expect(page).toContain(web);
+    expect(page).not.toContain('location.replace');
+  });
+
   it('never lets a name write into the page', async () => {
-    const page = await withLanguage('en', async () => invitePage({ state: 'ok', space: '<img src=x onerror=alert(1)>', org: 'O', deep }));
+    const page = await withLanguage('en', async () => invitePage({ state: 'ok', space: '<img src=x onerror=alert(1)>', server: 'O', deep }));
     expect(page).not.toContain('<img');
     expect(page).toContain('You’re invited to &lt;img');
   });
@@ -41,18 +55,9 @@ describe('the pages', () => {
     expect(await withLanguage('en', async () => invitePage({ state: 'revoked' }))).toContain('This invite was revoked.');
   });
 
-  it('opens an org link in the app', async () => {
-    const page = await withLanguage('en', async () => landingPage(deep));
+  it('opens a link in the app', async () => {
+    const page = await withLanguage('en', async () => landingPage({ deep }));
     expect(page).toContain('Open in Baarali');
     expect(page).toContain(`location.replace(${JSON.stringify(deep)})`);
-  });
-
-  it('welcomes a new team with @baarali, in its founder’s language', async () => {
-    const fr = await withLanguage(undefined, async () => welcomeReadme('Équipe'));
-    expect(fr.startsWith('# Bienvenue chez Équipe')).toBe(true);
-    expect(fr).toContain('@baarali');
-    const en = await withLanguage('en-GB', async () => welcomeReadme('Team'));
-    expect(en.startsWith('# Welcome to Team')).toBe(true);
-    expect(en + fr).not.toMatch(/@rowboat|Rowboat/);
   });
 });

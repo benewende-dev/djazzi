@@ -7,7 +7,7 @@ import { ONBOARDED_KEY } from './onboarding';
 
 // First launch walks through onboarding once; after that the app opens on
 // the home tab once linked to an instance (Baarali, 07/10/2026), else on
-// Spaces, where signing in happens.
+// the sign-in screen (sign-in.tsx, 23/11/2026; it was on Spaces until then).
 export default function Home() {
   const [onboarded, setOnboarded] = useState<boolean | null>(null);
   const { pairing } = useConnection();
@@ -20,5 +20,5 @@ export default function Home() {
 
   if (onboarded === null || pairing === undefined) return null;
   if (onboarded && pairing) return <Redirect href="/home" />;
-  return <Redirect href={onboarded ? '/spaces' : '/onboarding'} />;
+  return <Redirect href={onboarded ? '/sign-in' : '/onboarding'} />;
 }

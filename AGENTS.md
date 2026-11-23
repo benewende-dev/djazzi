@@ -4,7 +4,7 @@ Three pnpm workspaces, plus product docs and a marketing kit. Each area keeps it
 
 | Path | What | Guide |
 |---|---|---|
-| `apps/x/` | The Rowboat desktop app (Electron + React) and its packages, including the mobile app | none yet — read `apps/x/package.json` scripts and the package READMEs |
+| `apps/x/` | The Rowboat desktop app (Electron + React) and its packages, including the mobile app and the Spaces web app | none yet — read `apps/x/package.json` scripts and the package READMEs; the web app is [`apps/x/apps/renderer/WEB.md`](apps/x/apps/renderer/WEB.md) |
 | `apps/harbor/` | Harbor, the Spaces server, and the spaces protocol package | [`apps/harbor/AGENTS.md`](apps/harbor/AGENTS.md) |
 | `apps/baarali/` | Baarali control plane, instances, render service, desktop branding and Spaces deployment | [`apps/baarali/AGENTS.md`](apps/baarali/AGENTS.md) |
 | `docs/` | Product docs that belong to no one app (the Spaces design language, notes) | — |
@@ -26,4 +26,5 @@ cd ../x && pnpm install && npm test
 - Comments explain **why**, with the date and the decision or PR they implement. The code says what.
 - Documents own one kind of fact each and link to each other rather than restate. There are no status documents: status is the PR description and `git log`.
 - A PR that changes a documented behavior changes the document in the same PR. For harbor the three questions are in its guide.
+- A PR that changes Spaces in the renderer (`components/spaces/`, `web/`, `lib/spaces-*`) says what happens on the phone with one `Mobile:` line in its description: `done`, `follow-up` (an issue opens on merge), `follow-up #123`, or `not needed — <why>`. CI checks it; the rules are in `.github/scripts/mobile-parity.cjs`.
 - Nothing speculative: no seat reserved for a rule or a feature that has no route yet.

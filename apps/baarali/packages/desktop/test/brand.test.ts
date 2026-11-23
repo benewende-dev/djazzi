@@ -98,7 +98,7 @@ describe('neutral interface icons', () => {
 
 describe('apply on this checkout', () => {
   it('keeps the full profile, consumption and synchronization footer with one sidebar', () => {
-    const file = 'apps/x/apps/renderer/src/components/sidebar-content.tsx';
+    const file = 'apps/x/apps/renderer/src/components/baarali-sidebar-content.tsx';
     const original = fs.readFileSync(path.join(ROOT, file), 'utf8');
     let branded = original;
     for (const edit of desktopPlan().edits.filter(edit => edit.file === file)) branded = branded.replace(edit.from, () => edit.to);
@@ -177,7 +177,6 @@ describe('the mobile app', () => {
     expect(changes).toEqual([
       'write apps/harbor/packages/server/src/baarali-pages.ts',
       'edit apps/harbor/packages/server/src/http.ts',
-      'edit apps/harbor/packages/server/src/apex.ts',
       'edit apps/harbor/packages/server/src/auth-oidc.ts',
     ]);
   });
@@ -189,13 +188,14 @@ describe('the mobile app', () => {
     expect(e.to).toBe("process.env.EXPO_PUBLIC_SPACES_APEX ?? 'https://spaces.baarali.com';");
   });
 
-  it('keeps mobile sign-in public before pairing while guarding nested team routes', () => {
+  // 23/11/2026: the sign-in has its own screen (app/sign-in.tsx); every Spaces page requires Work.
+  it('guards every Spaces page with Work, and keeps the sign-in out of Spaces', () => {
     const edits = mobilePlan().edits;
     const file = 'apps/x/apps/mobile/src/app/(tabs)/spaces/_layout.tsx';
     let source = fs.readFileSync(path.join(ROOT, file), 'utf8');
     for (const edit of edits.filter(edit => edit.file === file)) source = source.replace(edit.from, () => edit.to);
-    expect(source).toContain("enabled={Boolean(pairing) || pathname !== '/spaces'}");
-    expect(source).toContain('<SpacesLayoutContent />');
+    expect(source).toContain('return <WorkGate><SpacesLayoutContent /></WorkGate>;');
+    expect(fs.existsSync(path.join(ROOT, 'apps/x/apps/mobile/src/app/sign-in.tsx'))).toBe(true);
     expect(edits.some(edit => edit.file.endsWith('/tasks.tsx') && edit.to.includes('<WorkGate'))).toBe(false);
     expect(edits.some(edit => edit.file.endsWith('/notes/_layout.tsx') && edit.to.includes('<WorkGate'))).toBe(false);
   });

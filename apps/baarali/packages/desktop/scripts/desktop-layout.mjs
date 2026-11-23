@@ -73,22 +73,23 @@ export function desktopLayoutEdits() {
     // BAARALI(16/10/2026): Electron computes native draggable regions in
     // paint order. Tabs must follow every drag region, like FixedSidebarToggle;
     // z-index alone leaves real mouse clicks captured by the titlebar.
-    edit('App.tsx', '            <MenuSidebarToggleBridge />', '            <MenuSidebarToggleBridge />\n            <DesktopModeSync activeNav={sidebarNavProps.activeNav} />'),
+    // 23/11/2026: anchored on the Spaces | Local tabs, the last control the upstream paints there (MenuSidebarToggleBridge is gone).
+    edit('App.tsx', '            {SPACES_ENABLED && <AppModeTabs mode={appMode} onSelect={selectAppMode} />}\n', '            {SPACES_ENABLED && <AppModeTabs mode={appMode} onSelect={selectAppMode} />}\n            <DesktopModeSync activeNav={sidebarNavProps.activeNav} />\n'),
     edit('App.tsx', '            <SidebarInset\n', "            <DesktopWorkGate required={workspaceForNav(sidebarNavProps.activeNav) === 'work' || (isStudioOpen || !!selectedPath?.startsWith('motion/'))} page={sidebarNavProps.activeNav} studio={isStudioOpen || !!selectedPath?.startsWith('motion/')} onChat={openAssistant}>\n            <SidebarInset\n"),
     edit('App.tsx', '            {/* Full-screen call: user tile', '            </DesktopWorkGate>\n            {/* Full-screen call: user tile'),
     edit('App.tsx', "              {activeMiddle === 'suggested-topics' && (", "              {activeMiddle === 'studio' && <DesktopStudioLibrary onOpen={navigateToFile} onCreate={() => prefillChat('Help me prepare a creative project in Studio. ')} />}\n              {activeMiddle === 'suggested-topics' && ("),
-    edit('App.tsx', "      return { ...style, width: codeRailWidth, flex: '0 0 auto' }", "      return { ...style, width: desktopWorkspace.mode === 'work' && sidebarOpen ? 0 : codeRailWidth, flex: '0 0 auto' }"),
-    edit('App.tsx', '[ chatPaneSize, codeChatMain, codeRailWidth,', '[ desktopWorkspace.mode, sidebarOpen, chatPaneSize, codeChatMain, codeRailWidth,'),
-    edit('components/sidebar-content.tsx', 'import { SidebarChatContextMenu }', "import { useDesktopWorkspace } from './desktop-workspace'\nimport { Search, Clapperboard, Users } from 'lucide-react'\nimport { SidebarChatContextMenu }"),
-    edit('components/sidebar-content.tsx', '  onOpenMeetings?: () => void', '  onSearch?: () => void\n  onOpenStudio?: () => void\n  onNewWork?: () => void\n  onOpenMeetings?: () => void'),
-    edit('components/sidebar-content.tsx', "| 'spaces' | 'workspaces' | null", "| 'studio' | 'spaces' | 'workspaces' | null"),
-    edit('components/sidebar-content.tsx', '  onOpenMeetings,\n  onOpenBgTasks,', '  onSearch, onOpenStudio, onOpenSpaces, onNewWork,\n  onOpenMeetings,\n  onOpenBgTasks,'),
-    edit('components/sidebar-content.tsx', '  onOpenSpace,\n  activeSpace,\n', ''),
-    edit('components/sidebar-content.tsx', '  const { sessions: projectSessions,', '  const workspace = useDesktopWorkspace()\n  const onCode = activeNav === \'code\' || activeNav === \'workspaces\'\n  const { sessions: projectSessions,'),
+    edit('App.tsx', "      return { ...style, width: codeRailWidth, flex: '0 0 auto' }", "      return { ...style, width: desktopWorkspace.mode === 'work' && localSidebarOpen ? 0 : codeRailWidth, flex: '0 0 auto' }"),
+    edit('App.tsx', '[ chatPaneSize, codeChatMain, codeRailWidth,', '[ desktopWorkspace.mode, localSidebarOpen, chatPaneSize, codeChatMain, codeRailWidth,'),
+    edit('components/baarali-sidebar-content.tsx', 'import { SidebarChatContextMenu }', "import { useDesktopWorkspace } from './desktop-workspace'\nimport { Search, Clapperboard, Users } from 'lucide-react'\nimport { SidebarChatContextMenu }"),
+    edit('components/baarali-sidebar-content.tsx', '  onOpenMeetings?: () => void', '  onSearch?: () => void\n  onOpenStudio?: () => void\n  onNewWork?: () => void\n  onOpenMeetings?: () => void'),
+    edit('components/baarali-sidebar-content.tsx', "| 'spaces' | 'workspaces' | null", "| 'studio' | 'spaces' | 'workspaces' | null"),
+    edit('components/baarali-sidebar-content.tsx', '  onOpenMeetings,\n  onOpenBgTasks,', '  onSearch, onOpenStudio, onNewWork,\n  onOpenMeetings,\n  onOpenBgTasks,'),
+    edit('components/baarali-sidebar-content.tsx', '  onOpenSpace,\n  activeSpace,\n', ''),
+    edit('components/baarali-sidebar-content.tsx', '  const { sessions: projectSessions,', '  const workspace = useDesktopWorkspace()\n  const onCode = activeNav === \'code\' || activeNav === \'workspaces\'\n  const { sessions: projectSessions,'),
     // BAARALI(07/11/2026): one sidebar, as in Claude Code (the founder's
     // call): the everyday pages first, the rest folded under « More ». On
     // Découverte a paid page wears a padlock and opens its explanation.
-    edit('components/sidebar-content.tsx', sidebarNavigation, `  const locked = workspace.access === 'denied'
+    edit('components/baarali-sidebar-content.tsx', sidebarNavigation, `  const locked = workspace.access === 'denied'
   const PAID: string[] = ['coworkers', 'routines', 'code', 'email', 'meetings', 'apps', 'spaces', 'studio']
   const lock = (id: string, node: React.ReactNode) => locked && PAID.includes(id) && React.isValidElement(node) ? React.cloneElement(node as React.ReactElement<{ className?: string }>, { className: 'baarali-locked' }) : node
   const page = (id: SidebarPage) => {
@@ -105,8 +106,8 @@ export function desktopLayoutEdits() {
   const moreActive = ['email', 'meetings', 'prompts', 'spaces', 'studio'].includes(activeNav ?? '')
   sidebarBlocks.push(<details key="more" className="baarali-more" open={moreActive || undefined}><summary>More</summary><SidebarGroup className="flex flex-col py-0"><SidebarGroupContent><SidebarMenu>{more}</SidebarMenu></SidebarGroupContent></SidebarGroup></details>)`),
     // Keep the entire profile/usage/status footer unchanged; only the body differs.
-    edit('components/sidebar-content.tsx', '        {/* Chats */}\n        <SidebarGroup', '        {onCode && workspace.access === \'allowed\' && <div ref={workspace.setProjectHost} className="baarali-project-host min-h-0 flex-1" />}\n        {/* Chats */}\n        <SidebarGroup hidden={onCode && workspace.access === \'allowed\'}'),
-    edit('components/sidebar-content.tsx', 'import { SpacesSidebarSection } from "@/components/spaces-sidebar-section"\n', ''),
+    edit('components/baarali-sidebar-content.tsx', '        {/* Chats */}\n        <SidebarGroup', '        {onCode && workspace.access === \'allowed\' && <div ref={workspace.setProjectHost} className="baarali-project-host min-h-0 flex-1" />}\n        {/* Chats */}\n        <SidebarGroup hidden={onCode && workspace.access === \'allowed\'}'),
+    edit('components/baarali-sidebar-content.tsx', 'import { BaaraliSpacesSection } from "@/components/baarali-spaces-section"\n', ''),
     edit('components/dock-sidebar.tsx', 'export function DockSidebar({', "import { useDesktopWorkspace } from './desktop-workspace'\nimport { Clapperboard, Bot } from 'lucide-react'\n\nexport function DockSidebar({"),
     edit('components/dock-sidebar.tsx', '  onOpenMeetings?: () => void', '  onOpenStudio?: () => void\n  onOpenBaarasseurs?: () => void\n  onNewWork?: () => void\n  onOpenMeetings?: () => void'),
     edit('components/dock-sidebar.tsx', '  onOpenMeetings,\n  onOpenBgTasks,', '  onOpenStudio, onOpenBaarasseurs, onNewWork,\n  onOpenMeetings,\n  onOpenBgTasks,'),
@@ -186,13 +187,13 @@ const invoke = vi.fn(async (channel: string) => {`),
     edit("components/knowledge-view.tsx", "across {folders.length}{' '}\n            {folders.length === 1 ? 'folder' : 'folders'}", "across {libraryFolders}{' '}\n            {libraryFolders === 1 ? 'folder' : 'folders'}"),
     edit("components/knowledge-view.tsx", "  const openFolder = useCallback(", "  const libraryFolders = tree.filter((n) => n.kind === 'dir' && n.path !== 'knowledge/Meetings').length\n\n  const openFolder = useCallback("),
     edit("components/dock-sidebar.tsx", "        if (n.path === 'knowledge/Meetings' || n.path === 'knowledge/Workspace' || n.path === 'knowledge/Agent Notes') continue\n", "        if (n.path === 'knowledge/Meetings') continue\n"),
-    edit("components/sidebar-content.tsx", "        if (n.path === 'knowledge/Meetings' || n.path === 'knowledge/Workspace' || n.path === 'knowledge/Agent Notes') continue\n", "        if (n.path === 'knowledge/Meetings') continue\n"),
+    edit("components/baarali-sidebar-content.tsx", "        if (n.path === 'knowledge/Meetings' || n.path === 'knowledge/Workspace' || n.path === 'knowledge/Agent Notes') continue\n", "        if (n.path === 'knowledge/Meetings') continue\n"),
     // BAARALI(08/11/2026): the project's name survives a narrow rail, its parent folder gives way
     // (right-to-left cut « Work » to « …rk » beside « /data/Projects »).
     edit('components/code/session-rail.tsx', "<span className=\"min-w-0 flex-1 truncate text-[13px] font-medium\" dir=\"rtl\">", "<span className=\"min-w-0 flex-1 truncate text-[13px] font-medium\">"),
     // BAARALI(08/11/2026): « Code » opens the Code home (projects, sessions to resume, a new task),
     // not the last session it happened to show.
-    edit('components/sidebar-content.tsx', "onClick={() => knowledgeActions.openWorkspaceAt()}", "onClick={() => (onNewWork ? onNewWork() : knowledgeActions.openWorkspaceAt())}"),
+    edit('components/baarali-sidebar-content.tsx', "onClick={() => knowledgeActions.openWorkspaceAt()}", "onClick={() => (onNewWork ? onNewWork() : knowledgeActions.openWorkspaceAt())}"),
     // BAARALI(08/11/2026): in a Code session the folder chip reads as a folder, not a lock; its copy
     // button shows on hover; the field says what to ask there.
     edit('components/chat-input-with-mentions.tsx', "                    ? <Lock className=\"h-3 w-3 shrink-0\" />\n", "                    ? <FolderCog className=\"h-3.5 w-3.5 shrink-0\" />\n"),

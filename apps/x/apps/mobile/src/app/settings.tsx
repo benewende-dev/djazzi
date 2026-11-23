@@ -97,7 +97,7 @@ export default function SettingsScreen() {
         <SRow label="Language" value={phoneLang() === 'fr' ? 'Français' : 'English'} />
         <SRow label="Theme" value="System" />
         <SRow label="Linked computer" value={pairing ? `${pairing.name ?? '—'}${status === 'connected' ? '' : ' · …'}` : '—'} />
-        {pairing ? <SRow label="Unpair" danger onPress={() => { analytics.mobileUnpaired('user'); void unpair().then(() => router.replace('/spaces')); }} /> : null}
+        {pairing ? <SRow label="Unpair" danger onPress={() => { analytics.mobileUnpaired('user'); void unpair().then(() => router.replace('/sign-in')); }} /> : null}
       </View>
       <Text style={{ marginHorizontal: 20, marginTop: 8, fontSize: 13, lineHeight: 18, color: colors.tertiaryLabel }}>
         The language and the theme follow your phone. Connections (Gmail, WhatsApp…) are set up in Baarali on your computer.
