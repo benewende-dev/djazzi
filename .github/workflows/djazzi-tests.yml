@@ -12,6 +12,8 @@ on:
       - 'apps/x/packages/core/**'
       - 'apps/x/apps/main/**'
       - 'apps/x/apps/renderer/**'
+      # The instance image installs from it: a lockfile alone can break the build (24/11/2026).
+      - 'apps/x/pnpm-lock.yaml'
       - '.github/workflows/djazzi-tests.yml'
   push:
     branches: [main]
@@ -21,6 +23,8 @@ on:
       - 'apps/x/packages/core/**'
       - 'apps/x/apps/main/**'
       - 'apps/x/apps/renderer/**'
+      # The instance image installs from it: a lockfile alone can break the build (24/11/2026).
+      - 'apps/x/pnpm-lock.yaml'
       - '.github/workflows/djazzi-tests.yml'
   workflow_dispatch:
 
