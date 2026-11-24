@@ -1,14 +1,14 @@
 import * as React from 'react'
 import { ChevronRight, ShieldAlert } from 'lucide-react'
-import { BaaraliMark } from '@/components/baarali-mark'
+import { DjazziMark } from '@/components/djazzi-mark'
 import { cn } from '@/lib/utils'
 import { getToolRowSummary, isToolCall, type ConversationItem } from '@/lib/chat-conversation'
 import type { WorkStep } from '@/lib/work-steps'
 
-// BAARALI(09/10/2026): the agent's work, folded (mockup validated by the
+// DJAZZI(09/10/2026): the agent's work, folded (mockup validated by the
 // founder).
-// BAARALI(08/11/2026): redrawn as Claude Code shows its work (the founder's
-// call): while Baarali works, what it says and each action it takes appear
+// DJAZZI(08/11/2026): redrawn as Claude Code shows its work (the founder's
+// call): while Djazzi works, what it says and each action it takes appear
 // one under the other as they happen, the action under way last; under them
 // one status line, the B at work, what it is doing, the time. Done, the work
 // folds into one quiet line « Worked 10 s · 16 actions » that opens on the
@@ -55,7 +55,7 @@ export function workEntries(steps: WorkStep[]): WorkEntry[] {
   return out
 }
 
-/** What Baarali is doing now, for the status line. */
+/** What Djazzi is doing now, for the status line. */
 function CurrentAction({ entry }: { entry: WorkEntry | undefined }) {
   if (!entry) return <span>Getting ready</span>
   if (entry.kind === 'said') return <span data-no-translate>{entry.text.split('\n')[0]}</span>
@@ -81,7 +81,7 @@ function Timeline({ entries, renderItems, tail }: {
   const hidden = !all && tail !== undefined ? Math.max(0, entries.length - tail) : 0
   const shown = hidden ? entries.slice(hidden) : entries
   return (
-    <div className="baarali-timeline ml-[9px] flex flex-col gap-1 border-l border-border pl-4">
+    <div className="djazzi-timeline ml-[9px] flex flex-col gap-1 border-l border-border pl-4">
       {hidden > 0 && (
         <button type="button" onClick={() => setAll(true)} className="w-fit rounded-md py-0.5 text-left text-xs text-muted-foreground hover:text-foreground">
           {`${hidden} earlier actions`}
@@ -93,7 +93,7 @@ function Timeline({ entries, renderItems, tail }: {
             {entry.text}
           </p>
         ) : (
-          <div key={entry.id} className="baarali-timeline-item min-w-0 [&>*]:!my-0">{renderItems([entry.item])}</div>
+          <div key={entry.id} className="djazzi-timeline-item min-w-0 [&>*]:!my-0">{renderItems([entry.item])}</div>
         ),
       )}
     </div>
@@ -121,14 +121,14 @@ export function WorkBlock({ steps, active, startedAt, endedAt, renderItems, forc
 
   if (active) {
     return (
-      <div className={cn('baarali-work is-active flex flex-col gap-3', waiting && 'is-waiting')} data-work-block>
+      <div className={cn('djazzi-work is-active flex flex-col gap-3', waiting && 'is-waiting')} data-work-block>
         {entries.length > 0 && <Timeline entries={entries} renderItems={renderItems} tail={waiting ? undefined : LIVE_TAIL} />}
         <div role="status" className="flex min-w-0 items-center gap-2.5 text-sm">
           <span className="relative flex size-6 shrink-0 items-center justify-center">
-            <BaaraliMark motion={MOTION[waiting ? 1 : 0]} size={22} className="text-foreground" />
-            {waiting && <span className="baarali-work-badge absolute -bottom-1 -right-1 flex size-3.5 items-center justify-center rounded-full"><ShieldAlert className="size-2" /></span>}
+            <DjazziMark motion={MOTION[waiting ? 1 : 0]} size={22} className="text-foreground" />
+            {waiting && <span className="djazzi-work-badge absolute -bottom-1 -right-1 flex size-3.5 items-center justify-center rounded-full"><ShieldAlert className="size-2" /></span>}
           </span>
-          <span className={cn('shrink-0 font-medium text-foreground', !waiting && 'baarali-shimmer')}>
+          <span className={cn('shrink-0 font-medium text-foreground', !waiting && 'djazzi-shimmer')}>
             {waiting ? 'Waiting for your approval' : 'Working...'}
           </span>
           {!waiting && (
@@ -143,14 +143,14 @@ export function WorkBlock({ steps, active, startedAt, endedAt, renderItems, forc
   }
 
   return (
-    <div className="baarali-work flex flex-col" data-work-block>
+    <div className="djazzi-work flex flex-col" data-work-block>
       <button
         type="button"
         aria-expanded={open}
         onClick={() => setOpen((v) => !v)}
         className="flex w-fit flex-wrap items-center gap-1.5 whitespace-nowrap rounded-lg px-1 py-1 text-left text-sm text-muted-foreground hover:text-foreground"
       >
-        <BaaraliMark size={16} className="shrink-0" />
+        <DjazziMark size={16} className="shrink-0" />
         <span>Worked</span>
         <span className="tabular-nums" data-no-translate>{total}</span>
         {actions > 0 && (

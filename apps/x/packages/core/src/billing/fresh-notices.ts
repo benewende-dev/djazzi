@@ -4,7 +4,7 @@ import type { Notice } from '@x/shared/dist/billing.js';
 const MAX_AT_ONCE = 3;
 
 /**
- * The console's messages to show on the Mac's screen (Baarali, 07/10/2026):
+ * The console's messages to show on the Mac's screen (Djazzi, 07/10/2026):
  * unread, sent after `since`, oldest first, the newest three at most.
  */
 export function freshNotices(list: Notice[], since: number): Notice[] {

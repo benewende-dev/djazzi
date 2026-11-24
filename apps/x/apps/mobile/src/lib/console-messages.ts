@@ -6,7 +6,7 @@ import type { Announcement, AnnouncementEventKind, Notice, NoticeEventKind } fro
 
 import { useConnection } from '@/lib/connection';
 
-// What the admin console writes to people (Baarali, 07/10/2026): the banner
+// What the admin console writes to people (Djazzi, 07/10/2026): the banner
 // at the top of the home tab and the inbox behind the bell. Read through the
 // person's instance, like the Mac (server channels.ts billing:*); one shared
 // state for every screen, read again when a screen shows and when the app

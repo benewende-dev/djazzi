@@ -408,7 +408,7 @@ export function FilePathCard({ filePath }: { filePath: string }) {
     return <KnowledgeFileCard filePath={trimmed} />
   }
 
-  // BAARALI(2026-10-09): a motion project opens the Studio Motion (motion-file-card.tsx).
+  // DJAZZI(2026-10-09): a motion project opens the Studio Motion (motion-file-card.tsx).
   if (motionProjectName(trimmed)) {
     return <MotionFileCard filePath={trimmed} />
   }

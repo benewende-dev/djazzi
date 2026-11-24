@@ -10,7 +10,7 @@ import { useConnection } from '@/lib/connection';
 import { cleanCode, dayWords, giftProgress, initials, type PartnerCheck, type PartnerState } from '@/lib/partner-code';
 import { useColors } from '@/theme/colors';
 
-// BAARALI(08/10/2026): typing a creator's partner code (mockup v2). Checked
+// DJAZZI(08/10/2026): typing a creator's partner code (mockup v2). Checked
 // as it is typed: whose it is shows before it is applied, with what it
 // brings; then the offered plan's first day.
 
@@ -86,7 +86,7 @@ export default function PartnerCodeScreen() {
     return <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.secondaryBackground }}><ActivityIndicator /></View>;
   }
 
-  // Applied (here or by the site's link): who recommended Baarali, and the offered days.
+  // Applied (here or by the site's link): who recommended Djazzi, and the offered days.
   if (state.partner) {
     const running = state.running;
     const progress = running ? giftProgress(running) : null;
@@ -188,7 +188,7 @@ export default function PartnerCodeScreen() {
           </Text>
         </>
       ) : (
-        <Text style={foot}>{`Did a creator recommend Baarali? Enter their code before ${dayWords(state.until)}.`}</Text>
+        <Text style={foot}>{`Did a creator recommend Djazzi? Enter their code before ${dayWords(state.until)}.`}</Text>
       )}
     </ScrollView>
   );

@@ -4,12 +4,12 @@ import { ActivityIndicator, FlatList, RefreshControl, Text, View } from 'react-n
 import type { z } from 'zod';
 import type { workspace } from '@x/shared';
 
-import { Empty, Row, Separator, when } from '@/components/baarali-ui';
+import { Empty, Row, Separator, when } from '@/components/djazzi-ui';
 import { useConnection } from '@/lib/connection';
 import { useColors } from '@/theme/colors';
 
-// BAARALI(06/10/2026): the meetings on the phone (validated mockup): the
-// minutes Baarali wrote (knowledge/Meetings/<source>/<day>/…), newest first;
+// DJAZZI(06/10/2026): the meetings on the phone (validated mockup): the
+// minutes Djazzi wrote (knowledge/Meetings/<source>/<day>/…), newest first;
 // a tap opens them. Recording a meeting stays on the computer for now: the
 // phone app has no recorder module yet.
 
@@ -49,7 +49,7 @@ export default function MeetingsScreen() {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={async () => { setRefreshing(true); await load(); setRefreshing(false); }} />}
         ListHeaderComponent={
           <Text style={{ marginHorizontal: 16, marginBottom: 10, fontSize: 15, lineHeight: 21, color: colors.secondaryLabel }}>
-            The minutes of your meetings: decisions, tasks and who said what. Record a meeting in Baarali on your computer.
+            The minutes of your meetings: decisions, tasks and who said what. Record a meeting in Djazzi on your computer.
           </Text>
         }
         ItemSeparatorComponent={() => <Separator />}

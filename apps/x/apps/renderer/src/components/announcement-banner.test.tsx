@@ -2,7 +2,7 @@ import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-libra
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Announcement } from '@x/shared/dist/billing.js'
 
-// BAARALI(07/10/2026): the admin console's banner at the top of the Chat.
+// DJAZZI(07/10/2026): the admin console's banner at the top of the Chat.
 
 const openPlans = vi.fn()
 vi.mock('@/lib/plans-window', () => ({ openPlans: () => openPlans() }))
@@ -24,7 +24,7 @@ import { AnnouncementBanner } from './announcement-banner'
 import { __resetAnnouncementForTests, OPEN_USAGE_EVENT } from '@/lib/announcement'
 
 const banner = (over: Partial<Announcement> = {}): Announcement => ({
-  id: 'ann_1', text: 'Nouveau : parle à Baarali.', button: 'Essayer', target: 'voice', link: null, tone: 'info',
+  id: 'ann_1', text: 'Nouveau : parle à Djazzi.', button: 'Essayer', target: 'voice', link: null, tone: 'info',
   endsAt: new Date(Date.now() + 86_400_000).toISOString(), ...over,
 })
 
@@ -42,7 +42,7 @@ describe('AnnouncementBanner', () => {
   it('shows the words, counts a view once, and the button leads where it says', async () => {
     served = banner()
     render(<AnnouncementBanner />)
-    await waitFor(() => expect(screen.getByText('Nouveau : parle à Baarali.')).toBeTruthy())
+    await waitFor(() => expect(screen.getByText('Nouveau : parle à Djazzi.')).toBeTruthy())
     fireEvent.click(screen.getByText('Essayer'))
     expect(toggle).toHaveBeenCalledWith('chat')
     await waitFor(() => expect(events).toEqual([{ id: 'ann_1', kind: 'view' }, { id: 'ann_1', kind: 'click' }]))
@@ -69,10 +69,10 @@ describe('AnnouncementBanner', () => {
   it('closes for good on every pane', async () => {
     served = banner({ target: 'none', button: null })
     render(<><AnnouncementBanner /><AnnouncementBanner /></>)
-    await waitFor(() => expect(screen.getAllByText('Nouveau : parle à Baarali.')).toHaveLength(2))
+    await waitFor(() => expect(screen.getAllByText('Nouveau : parle à Djazzi.')).toHaveLength(2))
     expect(screen.queryByText('Essayer')).toBeNull()
     fireEvent.click(screen.getAllByLabelText('Close')[0])
-    expect(screen.queryByText('Nouveau : parle à Baarali.')).toBeNull()
+    expect(screen.queryByText('Nouveau : parle à Djazzi.')).toBeNull()
     expect(events).toContainEqual({ id: 'ann_1', kind: 'dismiss' })
   })
 

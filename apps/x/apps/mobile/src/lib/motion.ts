@@ -7,14 +7,14 @@ import { useCallback, useMemo } from 'react';
 import { useConnection } from './connection';
 import { workspacePath } from './motion-project';
 
-// BAARALI(10/10/2026): the Studio Motion and the posters on the phone
+// DJAZZI(10/10/2026): the Studio Motion and the posters on the phone
 // (mockup validated by the founder the same day). The agent's files live in
 // the instance's workspace; the phone reads them over GET /workspace/<path>
 // with the pairing's key, plays a motion project with HyperFrames' own
-// player in a web view, and calls the instance's baarali-motion tools
+// player in a web view, and calls the instance's djazzi-motion tools
 // (render, poster, export_minutes) through mcp:executeTool, as the Mac does.
 
-export const MOTION_SERVER = 'baarali-motion';
+export const MOTION_SERVER = 'djazzi-motion';
 
 export * from './motion-project';
 
@@ -29,7 +29,7 @@ export function useWorkspaceFiles() {
   return { ready: !!pairing, url, headers, signed };
 }
 
-/** What the baarali-motion tools answer as data (their structuredContent). */
+/** What the djazzi-motion tools answer as data (their structuredContent). */
 export interface MotionAnswer {
   export?: { id: string; format: string; status: string; progress?: number; file?: string; error?: string };
   refused?: { code: string; message?: string };
@@ -37,7 +37,7 @@ export interface MotionAnswer {
   poster?: { files: Array<{ file: string; kind: 'pdf' | 'png'; label: string }>; print: { width: number; height: number } | null };
 }
 
-/** A baarali-motion tool, run by the instance; its data, or null when it gave none. The words, when it failed. */
+/** A djazzi-motion tool, run by the instance; its data, or null when it gave none. The words, when it failed. */
 export async function callMotionTool(rpc: RpcClient, toolName: string, input: Record<string, unknown>): Promise<{ data: MotionAnswer | null; text: string; failed: boolean }> {
   const { result } = (await rpc.call('mcp:executeTool', { serverName: MOTION_SERVER, toolName, input } as never)) as {
     result: { structuredContent?: MotionAnswer; content?: Array<{ text?: string }>; isError?: boolean } | null;

@@ -10,7 +10,7 @@ import {
   nextSessionText, sessionResetText, sessionStartedText, usageHeadline, weekPaceText, weekResetText,
 } from '@/lib/usage-reset'
 
-// Settings › Usage (Baarali, 03/10/2026): its own page, under Account. What
+// Settings › Usage (Djazzi, 03/10/2026): its own page, under Account. What
 // is left of the 5-hour session and of the week, when each one started and
 // starts over, at what pace the week can be spent, and how the limits work.
 // The countdowns move by themselves; the numbers refresh every minute.

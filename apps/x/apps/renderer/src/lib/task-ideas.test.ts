@@ -2,11 +2,11 @@ import { afterEach, describe, expect, it } from 'vitest'
 import { TASK_IDEAS, say } from './task-ideas'
 
 // The new-task ideas fill a field, whose value the translation layer does
-// not see: they ask it for the person's language (Baarali, 02/10/2026).
+// not see: they ask it for the person's language (Djazzi, 02/10/2026).
 
-type Hooked = { __baaraliText?: (text: string) => string }
+type Hooked = { __djazziText?: (text: string) => string }
 
-afterEach(() => { delete (window as Hooked).__baaraliText })
+afterEach(() => { delete (window as Hooked).__djazziText })
 
 describe('task ideas', () => {
   it('keeps the English when no translation is loaded', () => {
@@ -14,7 +14,7 @@ describe('task ideas', () => {
   })
 
   it('asks the translation layer when it is there', () => {
-    ;(window as Hooked).__baaraliText = (t) => (t === TASK_IDEAS[0].prompt ? 'Chaque matin à 7 h…' : t)
+    ;(window as Hooked).__djazziText = (t) => (t === TASK_IDEAS[0].prompt ? 'Chaque matin à 7 h…' : t)
     expect(say(TASK_IDEAS[0].prompt)).toBe('Chaque matin à 7 h…')
   })
 

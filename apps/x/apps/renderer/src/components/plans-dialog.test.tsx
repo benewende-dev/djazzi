@@ -4,7 +4,7 @@ import type { PlanOffers } from '@x/shared/src/billing.js'
 import { PlansDialog } from './plans-dialog'
 import { closePlans, openPlans } from '@/lib/plans-window'
 
-// The plans window (Baarali, 02/10/2026): what the control plane serves,
+// The plans window (Djazzi, 02/10/2026): what the control plane serves,
 // laid out, with the person's plan marked — and no way out to a browser.
 
 const OFFERS: PlanOffers = {

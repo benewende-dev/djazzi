@@ -12,7 +12,7 @@ import { useSpacesAccount } from '@/lib/spaces/account';
 import { SpacesClient } from '@/lib/spaces/client';
 import { useColors } from '@/theme/colors';
 
-// BAARALI(07/10/2026): a work group in one screen (mockup artboard 18,
+// DJAZZI(07/10/2026): a work group in one screen (mockup artboard 18,
 // claude.ai/artifact/5hiVQMibobFRRitE7ictcw): a name, then tick who joins —
 // your agents and the people of the org — and Create. Rowboat is always
 // there (write @rowboat). A baarasseur ticked here joins the org as an agent
@@ -51,9 +51,10 @@ export default function NewGroupScreen() {
     if (!client) return;
     setRoster(null);
     setPicked(new Set());
+    // 23/11/2026: one server, no org roster: the people you share a space with, and your agents.
     client
-      .listOrgMembers()
-      .then(setRoster)
+      .listContacts()
+      .then(({ members }) => setRoster(members))
       .catch((err) => {
         setRoster([]);
         setError(err instanceof Error ? err.message : String(err));
@@ -104,7 +105,7 @@ export default function NewGroupScreen() {
       const space = await client.createSpace(name.trim());
       if (ids.length > 0) await client.addMembers(space.id, ids);
       if (invite) {
-        const { link } = await client.createInvite(space.id);
+        const { link } = await client.createInvite({ spaceId: space.id });
         await Share.share({ message: link }).catch(() => {});
       }
       if (process.env.EXPO_OS === 'ios') void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);

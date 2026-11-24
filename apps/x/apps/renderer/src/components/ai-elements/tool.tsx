@@ -278,7 +278,7 @@ export const ToolGroupComponent = ({ group, isToolOpen, onToolOpenChange, getAut
   const summaryText = isCompleted
     ? `Ran ${toolCount} tool${toolCount !== 1 ? "s" : ""}`
     : `Running ${toolCount} tool${toolCount !== 1 ? "s" : ""}…`;
-  // BAARALI(05/10/2026): the summary is built in English from pieces
+  // DJAZZI(05/10/2026): the summary is built in English from pieces
   // (« ran a MCP tool, loaded a skill »), which no dictionary can translate
   // whole; the count says enough, the rows say the rest.
   const actions = "";

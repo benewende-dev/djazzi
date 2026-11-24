@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { getToolRowSummary, groupConversationItems, type ConversationItem, type ToolCall } from './chat-conversation'
 import { isBackstage, shownSteps } from './chat-steps'
 
-// BAARALI(05/10/2026): the chat an image request used to show, step by step.
+// DJAZZI(05/10/2026): the chat an image request used to show, step by step.
 const tool = (id: string, name: string, input: Record<string, unknown> = {}, status: ToolCall['status'] = 'completed'): ToolCall =>
   ({ id, name, input, status, timestamp: 0 }) as ToolCall
 const thought = (id: string, streaming = false): ConversationItem => ({ id, kind: 'reasoning', content: '…', timestamp: 0, streaming })
@@ -16,7 +16,7 @@ describe('the chat without its backstage', () => {
       tool('t1', 'loadSkill', { skillName: 'builtin-tools' }),
       thought('r2'),
       tool('t2', 'listMcpServers'),
-      tool('t3', 'executeMcpTool', { serverName: 'baarali-media', toolName: 'list_models' }),
+      tool('t3', 'executeMcpTool', { serverName: 'djazzi-media', toolName: 'list_models' }),
       tool('t4', 'generate-image', { prompt: 'a lion at sunset' }),
     ]
     expect(shownSteps(items).map((i) => i.id)).toEqual(['u', 't4'])
@@ -27,7 +27,7 @@ describe('the chat without its backstage', () => {
     expect(isBackstage(tool('t', 'loadSkill', {}, 'error'))).toBe(true)
     expect(isBackstage(tool('t', 'generate-image', {}, 'error'))).toBe(false)
     expect(isBackstage(tool('t', 'loadSkill', {}, 'running'))).toBe(true)
-    expect(isBackstage(tool('t', 'executeMcpTool', { serverName: 'baarali-media', toolName: 'generate' }))).toBe(false)
+    expect(isBackstage(tool('t', 'executeMcpTool', { serverName: 'djazzi-media', toolName: 'generate' }))).toBe(false)
   })
 
   it('joins the real steps a thought used to split into one group', () => {
@@ -39,7 +39,7 @@ describe('the chat without its backstage', () => {
   it('says what the image step is doing, then what it did', () => {
     expect(getToolRowSummary(tool('t', 'generate-image', { prompt: 'a lion' }, 'running')).verb).toBe('Creating the image')
     expect(getToolRowSummary(tool('t', 'generate-image', { prompt: 'a lion' })).verb).toBe('Image created')
-    const generate = tool('m', 'executeMcpTool', { serverName: 'baarali-media', toolName: 'generate' }, 'running')
+    const generate = tool('m', 'executeMcpTool', { serverName: 'djazzi-media', toolName: 'generate' }, 'running')
     expect(getToolRowSummary(generate).verb).toBe('Starting the creation')
   })
 })

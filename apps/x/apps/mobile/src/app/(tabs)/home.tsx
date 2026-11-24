@@ -7,13 +7,13 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { baarasseurs as shared, sessions as sessionsShared } from '@x/shared';
 
 import { AnnouncementBanner } from '@/components/announcement-banner';
-import { Today } from '@/components/baarali-today';
+import { Today } from '@/components/djazzi-today';
 import { BaarasseurAvatar, useBaarasseurs, type Baarasseur } from '@/lib/baarasseurs';
 import { useConsoleMessages } from '@/lib/console-messages';
 import { useConnection } from '@/lib/connection';
 import { useColors } from '@/theme/colors';
 
-// BAARALI(07/10/2026): the home tab, one place to ask (mockup artboard 15,
+// DJAZZI(07/10/2026): the home tab, one place to ask (mockup artboard 15,
 // claude.ai/artifact/5hiVQMibobFRRitE7ictcw): ask or talk, and Rowboat takes
 // care of it; the baarasseurs in a row with « Create » first, as on the
 // computer; then every chat, Rowboat's and theirs, the newest first.
@@ -98,7 +98,7 @@ export default function HomeScreen() {
     <View style={{ gap: 14, paddingBottom: 6 }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16 }}>
         <Text style={{ flex: 1, fontSize: 32, fontWeight: '700', color: colors.label }}>Rowboat</Text>
-        {/* BAARALI(07/10/2026): the admin console's messages. */}
+        {/* DJAZZI(07/10/2026): the admin console's messages. */}
         <Pressable
           onPress={() => { tap(); router.push('/inbox'); }}
           accessibilityRole="button"
@@ -113,7 +113,7 @@ export default function HomeScreen() {
             </View>
           ) : null}
         </Pressable>
-        {/* BAARALI(10/10/2026): « New chat » in words, as on the computer (mockup validated). */}
+        {/* DJAZZI(10/10/2026): « New chat » in words, as on the computer (mockup validated). */}
         <Pressable
           onPress={() => openChat({})}
           accessibilityRole="button"
@@ -146,7 +146,7 @@ export default function HomeScreen() {
         </Pressable>
       </View>
 
-      {/* BAARALI(07/11/2026): what waits for a yes, runs, and was done (baarali-today.tsx). */}
+      {/* DJAZZI(07/11/2026): what waits for a yes, runs, and was done (djazzi-today.tsx). */}
       <Today />
 
       <Text style={{ paddingHorizontal: 16, fontSize: 13, fontWeight: '600', color: colors.secondaryLabel }}>Your baarasseurs</Text>

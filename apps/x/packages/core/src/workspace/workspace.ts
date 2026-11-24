@@ -1,3 +1,4 @@
+import { moveToTrash } from '../filesystem/trash.js';
 import fs from 'node:fs/promises';
 import type { Stats } from 'node:fs';
 import path from 'node:path';
@@ -138,14 +139,6 @@ export async function readdir(
       const itemPath = path.join(currentPath, item.name);
       const itemRelPath = path.posix.join(currentRelPath, item.name);
 
-      // Filter by extension if specified
-      if (opts?.allowedExtensions && opts.allowedExtensions.length > 0) {
-        const ext = path.extname(item.name);
-        if (!opts.allowedExtensions.includes(ext)) {
-          continue;
-        }
-      }
-
       let itemKind: z.infer<typeof workspace.NodeKind>;
       let itemStat: { size: number; mtimeMs: number } | undefined;
 
@@ -162,6 +155,9 @@ export async function readdir(
           await readDir(itemPath, itemRelPath);
         }
       } else if (item.isFile()) {
+        if (opts?.allowedExtensions?.length && !opts.allowedExtensions.includes(path.extname(item.name))) {
+          continue;
+        }
         itemKind = 'file';
         if (opts?.includeStats) {
           const stats = await fs.lstat(itemPath);
@@ -369,7 +365,16 @@ export async function copy(
 
   // Check if destination exists
   if (!overwrite) {
-    await fs.access(toPath);
+    try {
+      await fs.access(toPath);
+      throw new Error('Destination already exists');
+    } catch (err: unknown) {
+      if (err && typeof err === 'object' && 'code' in err && err.code === 'ENOENT') {
+        // destination does not exist
+      } else {
+        throw err;
+      }
+    }
   }
 
   // Create parent directory for destination
@@ -389,28 +394,7 @@ export async function remove(
   const stats = await fs.lstat(filePath);
 
   if (trash) {
-    // Move to trash: ~/.workspace/.trash/<timestamp>-<name>
-    const trashDir = path.join(WorkDir, '.trash');
-    await fs.mkdir(trashDir, { recursive: true });
-
-    const timestamp = Date.now();
-    const basename = path.basename(filePath);
-    const trashPath = path.join(trashDir, `${timestamp}-${basename}`);
-
-    // Handle name conflicts in trash
-    let finalTrashPath = trashPath;
-    let counter = 1;
-    while (true) {
-      try {
-        await fs.access(finalTrashPath);
-        finalTrashPath = path.join(trashDir, `${timestamp}-${counter}-${basename}`);
-        counter++;
-      } catch {
-        break;
-      }
-    }
-
-    await fs.rename(filePath, finalTrashPath);
+    await moveToTrash(filePath);
   } else {
     // Permanent delete
     if (stats.isDirectory()) {

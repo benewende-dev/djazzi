@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { costRanges, entryLabel, priceText } from './media-credits'
 
-// The words of the media credits (Baarali, 03/10/2026).
+// The words of the media credits (Djazzi, 03/10/2026).
 
 describe('media credits', () => {
   it('names what each entry paid for', () => {

@@ -23,6 +23,7 @@ import { Switch } from "@/components/ui/switch"
 import { cn, compactPath, parentPath } from "@/lib/utils"
 import { SPACES_ENABLED } from "@/lib/feature-flags"
 import * as analytics from "@/lib/analytics"
+import posthog from "posthog-js"
 import { useTheme } from "@/contexts/theme-context"
 import { toast } from "sonner"
 import { AnthropicIcon, DiscordIcon, GitHubIcon, OpenAIIcon } from "@/components/onboarding/provider-icons"
@@ -60,7 +61,7 @@ const tabs: TabConfig[] = [
     icon: User,
     description: "Manage your Rowboat account",
   },
-  // Baarali (03/10/2026): what is left of the session and the week, on its own page.
+  // Djazzi (03/10/2026): what is left of the session and the week, on its own page.
   {
     id: "usage",
     label: "Usage",
@@ -431,6 +432,45 @@ function LaunchAtLoginSetting() {
   )
 }
 
+function TelemetryOptOutSetting() {
+  const [optOut, setOptOut] = useState(false)
+  const [loaded, setLoaded] = useState(false)
+
+  useEffect(() => {
+    window.ipc.invoke("app:getTelemetrySettings", null)
+      .then(({ optOut }) => setOptOut(optOut))
+      .catch(() => { /* dev builds report off */ })
+      .finally(() => setLoaded(true))
+  }, [])
+
+  const handleToggle = async (enabled: boolean) => {
+    const nextOptOut = !enabled
+    setOptOut(nextOptOut)
+    try {
+      await window.ipc.invoke("app:setTelemetrySettings", { optOut: nextOptOut })
+      if (nextOptOut) {
+        posthog.opt_out_capturing()
+      } else {
+        posthog.opt_in_capturing()
+      }
+    } catch {
+      setOptOut(!nextOptOut)
+    }
+  }
+
+  return (
+    <div className="flex items-center justify-between gap-4 rounded-md border px-3 py-2.5 mt-2">
+      <div className="min-w-0">
+        <div className="text-sm font-medium">Anonymous usage analytics</div>
+        <div className="text-xs text-muted-foreground mt-0.5">
+          Send anonymous product telemetry to help improve Rowboat. Disable to opt out.
+        </div>
+      </div>
+      <Switch checked={!optOut} onCheckedChange={handleToggle} disabled={!loaded} />
+    </div>
+  )
+}
+
 function AppearanceSettings() {
   const { theme, setTheme, chatPanePlacement, setChatPanePlacement, chatPaneSize, setChatPaneSize } = useTheme()
 
@@ -439,6 +479,7 @@ function AppearanceSettings() {
       <div>
         <h4 className="text-sm font-medium mb-3">System</h4>
         <LaunchAtLoginSetting />
+        <TelemetryOptOutSetting />
       </div>
       <div>
         <h4 className="text-sm font-medium mb-3">Theme</h4>
@@ -1524,7 +1565,7 @@ function CodeModeSettings({ dialogOpen }: { dialogOpen: boolean }) {
 
 // --- Notification Settings ---
 
-type NotificationCategoryKey = "chat_completion" | "new_email" | "agent_permission" | "background_task" | "todo" | "meeting_detection" | "meeting_notes_ready" | "space_mention" | "baarali_news"
+type NotificationCategoryKey = "chat_completion" | "new_email" | "agent_permission" | "background_task" | "todo" | "meeting_detection" | "meeting_notes_ready" | "space_mention" | "djazzi_news"
 
 const ALL_NOTIFICATION_CATEGORIES: { key: NotificationCategoryKey; label: string; description: string }[] = [
   {
@@ -1567,11 +1608,11 @@ const ALL_NOTIFICATION_CATEGORIES: { key: NotificationCategoryKey; label: string
     label: "Space mentions & DMs",
     description: "When someone mentions you, uses @here, messages you directly, or replies in a thread you follow. Also reminders you set in a space. Click to open the conversation. Only shown while the app is in the background.",
   },
-  // BAARALI(07/10/2026): the admin console's messages; they stay in the bell either way.
+  // DJAZZI(07/10/2026): the admin console's messages; they stay in the bell either way.
   {
-    key: "baarali_news",
-    label: "Messages from Baarali",
-    description: "News and offers from the Baarali team. They always stay in the bell; this only shows them on your screen.",
+    key: "djazzi_news",
+    label: "Messages from Djazzi",
+    description: "News and offers from the Djazzi team. They always stay in the bell; this only shows them on your screen.",
   },
 ]
 

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { forgetSessions, isMissingSession, missingSessions } from './missing-chats'
 
-// BAARALI(04/10/2026): a reopened chat the server does not have becomes a new chat.
+// DJAZZI(04/10/2026): a reopened chat the server does not have becomes a new chat.
 
 describe('missing chats', () => {
   it('recognizes the server saying it does not have the session, through IPC', () => {

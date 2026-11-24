@@ -93,7 +93,7 @@ export async function getSessionAccessToken(opts?: { forceRefresh?: boolean }): 
         throw new Error('Sign in with your Rowboat account to use Spaces');
     }
     // A cloud instance trades its never-expiring session for a Spaces token.
-    const exchange = process.env.BAARALI_SPACES_TOKEN_URL;
+    const exchange = process.env.DJAZZI_SPACES_TOKEN_URL;
     if (exchange) return exchangeForSpaces(exchange, await sessionToken(session.tokens), opts);
     return sessionToken(session.tokens, opts);
 }

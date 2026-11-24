@@ -4,7 +4,7 @@ import type { BillingInfo } from '@x/shared/dist/billing.js'
 import { UsagePopover } from './sidebar-session-gauge'
 import { closePlans, isPlansOpen } from '@/lib/plans-window'
 
-// The usage ring at the bottom of the sidebar (Baarali, 03/10/2026): a click
+// The usage ring at the bottom of the sidebar (Djazzi, 03/10/2026): a click
 // tells the session and the week, and leads to the usage page and the plans.
 
 afterEach(() => { cleanup(); vi.useRealTimers() })

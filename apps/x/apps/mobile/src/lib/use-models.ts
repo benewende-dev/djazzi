@@ -18,8 +18,8 @@ export interface ModelChoice {
 export interface ProviderModels {
   id: string;
   flavor: string;
-  // BAARALI(03/10/2026): `baarali` places the model in the picker (vendor, padlock).
-  models: { id: string; name?: string; baarali?: models.BaaraliModelMeta }[];
+  // DJAZZI(03/10/2026): `djazzi` places the model in the picker (vendor, padlock).
+  models: { id: string; name?: string; djazzi?: models.DjazziModelMeta }[];
 }
 
 const STORE_KEY = 'rowboat.model.v1';

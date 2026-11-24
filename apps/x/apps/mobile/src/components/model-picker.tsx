@@ -1,4 +1,4 @@
-import { Image } from 'expo-image';
+import { Image } from '@/components/sf-image';
 import * as Haptics from 'expo-haptics';
 import { useEffect, useState } from 'react';
 import { Modal, Pressable, ScrollView, Text, View } from 'react-native';
@@ -91,9 +91,9 @@ export function ModelPill({ models }: { models: ReturnType<typeof useModels> }) 
                   <Row
                     key={item.model.id}
                     label={item.model.name ?? item.model.id}
-                    detail={item.model.baarali?.strength}
-                    unlock={item.model.baarali?.unlock}
-                    recommended={Boolean(item.model.baarali?.recommended && !item.model.baarali.unlock)}
+                    detail={item.model.djazzi?.strength}
+                    unlock={item.model.djazzi?.unlock}
+                    recommended={Boolean(item.model.djazzi?.recommended && !item.model.djazzi.unlock)}
                     selected={current?.provider === p.id && current?.model === item.model.id}
                     onPress={() => void choose({ provider: p.id, model: item.model.id, name: item.model.name ?? item.model.id })}
                   />
@@ -107,12 +107,12 @@ export function ModelPill({ models }: { models: ReturnType<typeof useModels> }) 
   );
 }
 
-// BAARALI(03/10/2026): the gateway's models under a heading per vendor, as
+// DJAZZI(03/10/2026): the gateway's models under a heading per vendor, as
 // the control plane describes them (@x/shared models.vendorSections).
 type PickerRow = { kind: 'heading'; key: string; label: string } | { kind: 'model'; model: ProviderModels['models'][number] };
 
 function rowsOf(p: ProviderModels): PickerRow[] {
-  const sections = sharedModels.vendorSections(p.models, (m) => m.baarali, (m) => m.name ?? m.id);
+  const sections = sharedModels.vendorSections(p.models, (m) => m.djazzi, (m) => m.name ?? m.id);
   if (!sections) return p.models.map((model) => ({ kind: 'model', model }));
   return sections.flatMap((s) => [
     { kind: 'heading' as const, key: s.vendor, label: s.vendor ? s.name : 'Other models' },

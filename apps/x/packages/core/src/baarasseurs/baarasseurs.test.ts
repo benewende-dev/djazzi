@@ -51,7 +51,7 @@ describe('the baarasseurs (06/10/2026)', () => {
     });
 
     it('remembers a rule once, keeps the rest of the file, and shows it in the next prompt', async () => {
-        // BAARALI(11/10/2026): learning a rule must preserve the avatar selected in the app.
+        // DJAZZI(11/10/2026): learning a rule must preserve the avatar selected in the app.
         await write([{ ...mariama, avatar: 'street' }, { id: 'ibrahim', name: 'Ibrahim', createdAt: 'x', extra: 1 }]);
         expect(await rememberFor('mariama', '  Livraison offerte   au-delà de 50 sacs ')).toEqual(['Livraison offerte au-delà de 50 sacs']);
         expect(await rememberFor('mariama', 'Livraison offerte au-delà de 50 sacs')).toHaveLength(1);
@@ -63,7 +63,7 @@ describe('the baarasseurs (06/10/2026)', () => {
         expect(agent.instructions).toContain('- Livraison offerte au-delà de 50 sacs');
     });
 
-    // BAARALI(07/11/2026): the first meeting, then a new name from the conversation.
+    // DJAZZI(07/11/2026): the first meeting, then a new name from the conversation.
     it('gets to know the user until it remembers something, and renames itself on request', async () => {
         expect(personaInstructions({ ...mariama, memory: [] })).toContain('## First meeting');
         expect(personaInstructions({ ...mariama, memory: ['Appeler l’utilisateur Yann'] })).not.toContain('## First meeting');

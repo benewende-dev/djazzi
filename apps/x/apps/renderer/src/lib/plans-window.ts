@@ -1,5 +1,5 @@
 // The plans window (components/plans-dialog.tsx) is mounted once, in App.
-// Every "Upgrade" in the app asks for it here (Baarali, 02/10/2026): the
+// Every "Upgrade" in the app asks for it here (Djazzi, 02/10/2026): the
 // account lives in the app, so choosing a plan no longer opens the site in a
 // browser, where the person was not signed in.
 

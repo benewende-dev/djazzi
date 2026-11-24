@@ -1,4 +1,4 @@
-// BAARALI(06/10/2026): the fast browser mode. A small decision model, Jev
+// DJAZZI(06/10/2026): the fast browser mode. A small decision model, Jev
 // (TypeSafe, served by the control plane's /v1/llm/systemone), picks each
 // step from the numbered elements read-page already returns: the operation
 // and its target in one request, about half a second and a fraction of a

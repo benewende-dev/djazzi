@@ -4,7 +4,7 @@ import { Pressable, Text, useColorScheme } from 'react-native';
 import { BackButton } from '@/components/back-button';
 import { useColors } from '@/theme/colors';
 
-// BAARALI(06/10/2026): the baarasseurs, a stack pushed over the tabs:
+// DJAZZI(06/10/2026): the baarasseurs, a stack pushed over the tabs:
 // the list → recruiting (or editing) one, presented as a sheet.
 export default function BaarasseursLayout() {
   const colorScheme = useColorScheme();

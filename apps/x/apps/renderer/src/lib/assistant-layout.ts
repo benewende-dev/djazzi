@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useReducer } from 'react'
 import { readAssistantPreference, writeAssistantPreference } from './assistant-dock'
 
-// BAARALI(06/10/2026): 'baarasseur', the conversation open on the Baarasseurs page.
+// DJAZZI(06/10/2026): 'baarasseur', the conversation open on the Baarasseurs page.
 export type ChatLocation = 'assistant' | 'sidebar' | 'floating' | 'baarasseur'
 export interface WindowSize { width: number; height: number }
 /** Floating windows sit in a row above the bottom strip (Gmail compose style):
@@ -14,7 +14,7 @@ export interface AssistantLayout {
   sidebarVisible: boolean
   floating: FloatingChat[]
   focused: string | null
-  /** The chat on the Baarasseurs page (Baarali); absent = none. */
+  /** The chat on the Baarasseurs page (Djazzi); absent = none. */
   baarasseur?: string | null
 }
 export type LayoutAction =

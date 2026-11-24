@@ -1,6 +1,6 @@
 import { TASK_IDEAS } from '@/lib/task-ideas'
 
-// Ready-made scheduled tasks, on the page itself (Baarali, 03/10/2026): the
+// Ready-made scheduled tasks, on the page itself (Djazzi, 03/10/2026): the
 // founder looked for the ideas validated in the mockup and found them only
 // behind « New task ». A click opens the dialog with the idea written in.
 
@@ -9,7 +9,7 @@ export function TaskIdeasGallery({ onPick }: { onPick: (prompt: string) => void 
     <section className="mt-6">
       <h3 className="text-[15px] font-semibold">Ready-made ideas</h3>
       <p className="mt-0.5 text-[13px] text-muted-foreground">
-        Pick one: Baarali fills in the task, you adjust it, then create it.
+        Pick one: Djazzi fills in the task, you adjust it, then create it.
       </p>
       <div className="mt-3 grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-4">
         {TASK_IDEAS.map((idea) => (

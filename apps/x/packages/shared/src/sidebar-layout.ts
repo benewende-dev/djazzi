@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-// Baarali (09/10/2026): the pages of the app's sidebar as data, in the order
+// Djazzi (09/10/2026): the pages of the app's sidebar as data, in the order
 // the founder validated. The admin console publishes a layout (order, names,
 // hidden pages) that every app follows; without one, or offline, the app
 // keeps DEFAULT_SIDEBAR_LAYOUT. Chat always leads; the chats list stays at

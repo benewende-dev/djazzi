@@ -1,0 +1,8 @@
+{
+  "name": "djazzi-rea-runtime",
+  "private": true,
+  "description": "Isolated, versioned REA runtime; never linked into Djazzi's workspaces.",
+  "dependencies": {
+    "rea-agents": "6.5.0"
+  }
+}

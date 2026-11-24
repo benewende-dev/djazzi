@@ -1,4 +1,4 @@
-// BAARALI(03/10/2026, shared 06/10/2026): the Prompts page's library — the
+// DJAZZI(03/10/2026, shared 06/10/2026): the Prompts page's library — the
 // categories and the ready-made requests, in both languages — read by the
 // desktop (renderer lib/prompt-library.ts) and the phone alike. Data, not
 // interface: kept out of the apps' sources their translation checks read.

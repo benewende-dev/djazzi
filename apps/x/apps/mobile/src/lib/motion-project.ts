@@ -1,4 +1,4 @@
-// BAARALI(10/10/2026): what the phone reads of a motion project and of the
+// DJAZZI(10/10/2026): what the phone reads of a motion project and of the
 // agent's files, without React Native (tested in Node). motion.ts adds the
 // workspace URLs, the share sheet, Photos and the motion tools.
 

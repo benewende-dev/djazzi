@@ -8,7 +8,7 @@ import {
   type ArchitectAnswer, type PromptStore, type SavedPrompt,
 } from '@/lib/prompt-library'
 
-// The Prompts page (Baarali, 03/10/2026, validated mockup): the library of
+// The Prompts page (Djazzi, 03/10/2026, validated mockup): the library of
 // ready-made requests, the workshop that improves a request, and the
 // person's own. « Use » opens a new chat with the text written in, for the
 // person to fill the [brackets] and send.
@@ -199,7 +199,7 @@ function Workshop({ seed, planId, onUse, onSave }: {
         <div className="flex-1 space-y-4 p-4">
           {!answer && !busy && !error && (
             <p className="text-sm text-muted-foreground">
-              Describe what you want to get. Baarali turns it into a precise prompt, says why it works and suggests two other angles.
+              Describe what you want to get. Djazzi turns it into a precise prompt, says why it works and suggests two other angles.
             </p>
           )}
           {busy && (

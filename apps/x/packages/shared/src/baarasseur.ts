@@ -1,6 +1,6 @@
 import z from "zod";
 
-// BAARALI(06/10/2026): the baarasseurs — named agents the user recruits
+// DJAZZI(06/10/2026): the baarasseurs — named agents the user recruits
 // (baara, work in Dioula, and « bosseurs »). Each one is the copilot with its
 // own name, mission, tools, model and hours: it keeps every capability of the
 // assistant, and its conversations carry the agent id `baarasseur-<id>`.
@@ -16,7 +16,7 @@ export const DOCUMENTS_LIMIT = 20;
 /** Where its documents are kept, one folder each. */
 export const DOCUMENTS_DIR = "baarasseurs";
 
-// BAARALI(11/10/2026): the approved avatar family uses stable ids so the
+// DJAZZI(11/10/2026): the approved avatar family uses stable ids so the
 // phone and desktop keep the same choice in the workspace profile.
 export const AVATAR_IDS = ["original", "bop", "moki", "nova", "tiko", "nimbo", "pixel", "zest", "ink", "street"] as const;
 export type AgentAvatarId = typeof AVATAR_IDS[number];
@@ -28,7 +28,7 @@ export const AGENT_AVATARS: ReadonlyArray<{ id: AgentAvatarId; label: string }> 
     { id: "ink", label: "Ink" }, { id: "street", label: "Street" },
 ];
 
-// BAARALI(07/11/2026): the shapes a new agent picks (Grok Bot's way of
+// DJAZZI(07/11/2026): the shapes a new agent picks (Grok Bot's way of
 // making one: a shape, a colour, a name), all of the B's family: the same
 // two round eyes. The phone draws them (agent-shape.tsx); an agent without
 // one keeps its avatar.
@@ -167,14 +167,14 @@ export function personaInstructions(b: Baarasseur): string {
     const lines = [
         `# You are ${b.name}${b.role ? `, ${b.role}` : ""}`,
         "",
-        `In this conversation you are not the general assistant: you are ${b.name}, a « baarasseur » the user recruited in Baarali — a named colleague with one mission. Speak as ${b.name}, in the user's language, and keep to your mission; for anything far from it, say that the Baarali assistant is better placed.`,
+        `In this conversation you are not the general assistant: you are ${b.name}, a « baarasseur » the user recruited in Djazzi — a named colleague with one mission. Speak as ${b.name}, in the user's language, and keep to your mission; for anything far from it, say that the Djazzi assistant is better placed.`,
         "",
         "## Your mission, in the user's words",
         "<mission>",
         b.mission.trim() || "(No mission written yet: ask the user what you should take care of.)",
         "</mission>",
     ];
-    // BAARALI(07/11/2026): the first meeting, as Grok Bot's bots open: until it
+    // DJAZZI(07/11/2026): the first meeting, as Grok Bot's bots open: until it
     // remembers anything, it gets to know the user before working.
     if (b.memory.length === 0) {
         lines.push(
@@ -183,7 +183,7 @@ export function personaInstructions(b: Baarasseur): string {
             `You have not met the user yet. The app has already greeted them in your name and asked how they would like you to address them, so their first message may be that answer. Before working, get to know them with the essentials only, one short question at a time and never more than three in all: how to address them, what their activity is, and what they expect from you if your mission does not already say it. Save each answer with \`baarasseur-remember\` (id "${b.id}"), then get to work.`,
         );
     }
-    // BAARALI(07/11/2026): one made with « + » has only its first name; it
+    // DJAZZI(07/11/2026): one made with « + » has only its first name; it
     // finds its title with the user, as the templates have one.
     if (!b.role.trim()) {
         lines.push(
@@ -243,6 +243,8 @@ export type Lang = "fr" | "en";
 export const TOOLS = [
     "Gmail", "Google Calendar", "WhatsApp", "Telegram", "Google Sheets", "Google Docs", "Google Drive",
     "Outlook", "Web search", "Browser", "Images and videos",
+    // DJAZZI(12/11/2026): the social networks, for the community manager (Awa).
+    "Instagram", "Facebook", "LinkedIn", "X",
 ] as const;
 
 export const WEEKDAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"] as const;
@@ -460,6 +462,35 @@ export const TEMPLATES: Template[] = [
         "mission": {
             "fr": "Lis mes ventes et dis-moi, en 5 points maximum, ce qui marche, ce qui baisse et quoi changer.",
             "en": "Read my sales and tell me, in 5 points at most, what works, what is dropping and what to change."
+        }
+    },
+    // DJAZZI(12/11/2026): the social networks, run with the person's approval (the founder's call): she prepares, the person says yes, then it goes out.
+    {
+        "id": "awa",
+        "name": "Awa",
+        "color": "rose",
+        "tools": [
+            "Instagram",
+            "Facebook",
+            "LinkedIn",
+            "X",
+            "Images and videos"
+        ],
+        "schedule": {
+            "every": "weekday",
+            "hour": 9
+        },
+        "role": {
+            "fr": "Community manager",
+            "en": "Community manager"
+        },
+        "summary": {
+            "fr": "Posts, commentaires, messages",
+            "en": "Posts, comments, messages"
+        },
+        "mission": {
+            "fr": "Gère mes réseaux sociaux. Chaque matin de semaine, prépare les publications du jour pour chaque réseau : le texte adapté, le visuel proposé et la meilleure heure. Lis les nouveaux commentaires et messages, et prépare une réponse courte et polie, dans mon ton. Chaque vendredi, fais-moi un point en 5 lignes : ce qui a le mieux marché, ce qui a moins marché, et quoi publier la semaine suivante. Ne publie, ne réponds et n’envoie jamais rien sans mon accord : tout reste en brouillon jusqu’à ce que je dise oui.",
+            "en": "Run my social media. Every weekday morning, prepare the day’s posts for each network: the text fitted to it, the suggested visual and the best time. Read the new comments and messages, and prepare a short, polite reply in my tone. Every Friday, give me a 5-line review: what worked best, what worked less, and what to post next week. Never post, reply or send anything without my approval: everything stays a draft until I say yes."
         }
     }
 ];

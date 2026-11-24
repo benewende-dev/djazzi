@@ -5,7 +5,7 @@ import type { Notice } from '@x/shared/dist/billing.js';
 import { useConsoleMessages } from '@/lib/console-messages';
 import { useColors } from '@/theme/colors';
 
-// The bell's messages on the phone (Baarali, 07/10/2026), written in the
+// The bell's messages on the phone (Djazzi, 07/10/2026), written in the
 // admin console, the same the Mac lists. Tapping one reads it; its button
 // (or the message, when it has none) leads where it says.
 

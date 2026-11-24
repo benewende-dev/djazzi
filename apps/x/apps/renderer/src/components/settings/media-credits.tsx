@@ -3,7 +3,7 @@ import type { MediaCredits, MediaPack } from '@x/shared/dist/billing.js'
 import { Button } from '@/components/ui/button'
 import { MEDIA, costRanges, entryLabel, priceText, when } from '@/lib/media-credits'
 
-// Settings › Usage, the media part (Baarali, 03/10/2026, validated mockup):
+// Settings › Usage, the media part (Djazzi, 03/10/2026, validated mockup):
 // the media credits left and what they went to, the packs to top up with,
 // and what each kind of media costs. Payment is not open yet: the packs are
 // shown with their prices, the button says « Coming soon ».

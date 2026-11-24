@@ -3,7 +3,7 @@ import { Text, View } from 'react-native';
 
 import { useColors } from '@/theme/colors';
 
-// The faces of Spaces members (Baarali, 07/10/2026, mockup artboards 17 and
+// The faces of Spaces members (Djazzi, 07/10/2026, mockup artboards 17 and
 // 18): the initial on a steady tint, and the agent mark at the corner of an
 // agent, so people and agents tell apart at a glance.
 

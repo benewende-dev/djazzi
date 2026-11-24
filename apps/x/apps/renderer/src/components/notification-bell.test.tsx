@@ -2,7 +2,7 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Notice } from '@x/shared/dist/billing.js'
 
-// BAARALI(07/10/2026): the bell of the admin console's messages.
+// DJAZZI(07/10/2026): the bell of the admin console's messages.
 
 const openPlans = vi.fn()
 vi.mock('@/lib/plans-window', () => ({ openPlans: () => openPlans() }))
@@ -24,7 +24,7 @@ import { NotificationBell } from './notification-bell'
 import { __resetNotificationsForTests, OPEN_NOTIFICATIONS_EVENT } from '@/lib/notifications'
 
 const notice = (over: Partial<Notice> = {}): Notice => ({
-  id: 'ntf_1', title: 'La voix arrive', body: 'Parle à Baarali.', button: null, target: 'none', link: null,
+  id: 'ntf_1', title: 'La voix arrive', body: 'Parle à Djazzi.', button: null, target: 'none', link: null,
   sentAt: new Date().toISOString(), read: false, ...over,
 })
 

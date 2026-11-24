@@ -7,7 +7,7 @@ import { openPlans } from '@/lib/plans-window'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { cn } from '@/lib/utils'
 
-// The bell (Baarali, 07/10/2026; console mockup validated the same day): the
+// The bell (Djazzi, 07/10/2026; console mockup validated the same day): the
 // messages written in the admin console, newest first. Their words come from
 // the console, already in French: they are never run through the dictionary.
 

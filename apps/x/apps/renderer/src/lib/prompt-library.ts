@@ -2,9 +2,9 @@ import { CalendarClock, Clapperboard, FileText, Image, Mail, Megaphone, Mic, Sha
 import raw from './prompt-library.json?raw'
 import { PROMPT_CATEGORIES as CATEGORY_DATA, PROMPT_LIBRARY } from '@x/shared/dist/prompt-library.js'
 
-// The Prompts page (Baarali, 03/10/2026, validated mockup): ready-made
+// The Prompts page (Djazzi, 03/10/2026, validated mockup): ready-made
 // requests for a small business, and the workshop that improves one's own,
-// after the prompt studio of the first Baarali. The content lives in
+// after the prompt studio of the first Djazzi. The content lives in
 // prompt-library.json, in both languages: it is content, not interface, so
 // the translation layer and its check leave it alone.
 
@@ -78,7 +78,7 @@ export interface SavedPrompt { id: string; name: string; text: string; category:
 export interface PromptStore { favorites: string[]; saved: SavedPrompt[] }
 
 /** Kept in the workspace, so it follows the person on every device of their account. */
-export const PROMPT_STORE_PATH = 'config/baarali-prompts.json'
+export const PROMPT_STORE_PATH = 'config/djazzi-prompts.json'
 
 export function readStore(rawStore: string | null | undefined): PromptStore {
   try {

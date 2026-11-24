@@ -3,7 +3,7 @@ import type { Member } from '@rowboat/spaces-protocol';
 
 import type { useConnection } from '@/lib/connection';
 
-// BAARALI(07/10/2026): mentions typed on the phone. The phone's composer has
+// DJAZZI(07/10/2026): mentions typed on the phone. The phone's composer has
 // no @ menu: « @Fatou » arrives as plain text, which the org reads as words,
 // so nobody is told and no agent wakes. Before sending, each « @Name » of a
 // member of the space becomes the protocol's token (mentions.ts), and

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Streamdown } from 'streamdown'
+import { Streamdown } from '@/components/streamdown'
 import {
     ListChecks, Play, Square, Loader2, Trash2, Plus, X, AlertCircle,
     Repeat, Clock, Zap, ChevronLeft, ChevronDown, ChevronRight,
@@ -322,7 +322,7 @@ function NewTaskDialog({
     open: boolean
     onClose: () => void
     onCreated: (slug: string) => void
-    /** Baarali: an idea picked on the page fills the field (03/10/2026). */
+    /** Djazzi: an idea picked on the page fills the field (03/10/2026). */
     initialDescription?: string
     /**
      * Optional Copilot hand-off. When provided, the dialog opens in
@@ -367,7 +367,7 @@ function NewTaskDialog({
         try {
             const res = await window.ipc.invoke('dialog:openDirectory', { title: 'Choose the repository for this task' })
             if (!res.path) return
-            // BAARALI(05/10/2026): copied to the Baarali space first when joined to it.
+            // DJAZZI(05/10/2026): copied to the Djazzi space first when joined to it.
             const [dir] = await toInstance([res.path], 'projects')
             const added = await window.ipc.invoke('codeProject:add', { path: dir })
             if (!added.git?.isGitRepo) {
@@ -590,7 +590,7 @@ function NewTaskDialog({
                             Tip: be specific about the cadence and the format you want. <kbd className="rounded border bg-muted px-1 py-0.5 text-[10px] font-mono">⌘↵</kbd> to submit.
                         </p>
 
-                        {/* Baarali (02/10/2026): ideas that fill the field, then the developers' preset. */}
+                        {/* Djazzi (02/10/2026): ideas that fill the field, then the developers' preset. */}
                         <div className="mt-4 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Or start from an idea</div>
                         <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
                             {TASK_IDEAS.map(idea => (
@@ -1758,7 +1758,7 @@ export interface BgTasksViewProps {
 }
 
 export function BgTasksView({ onCreateWithCopilot, onEditWithCopilot, initialSlug, slugVersion }: BgTasksViewProps = {}) {
-    // Baarali: the idea picked in the gallery, handed to the new-task dialog.
+    // Djazzi: the idea picked in the gallery, handed to the new-task dialog.
     const [ideaPrefill, setIdeaPrefill] = useState<string | undefined>(undefined)
     const startFromIdea = (prompt: string) => { setIdeaPrefill(say(prompt)); setShowNewDialog(true) }
     const [items, setItems] = useState<BackgroundTaskSummary[]>([])
