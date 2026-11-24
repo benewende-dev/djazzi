@@ -1,4 +1,4 @@
-// BAARALI(2026-10-09): the chat's card for a motion project the agent made
+// DJAZZI(2026-10-09): the chat's card for a motion project the agent made
 // (mockup validated by the founder the same day): the project's name and
 // what it is, and one button that opens it in the Studio Motion.
 import { ClapperboardIcon } from 'lucide-react'

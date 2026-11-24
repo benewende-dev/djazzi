@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import type { PartnerCodeCheck, PartnerCodeState, PlanOffer } from "@x/shared/dist/billing.js"
 
-// Baarali (08/10/2026, mockup v2 validated the same day): a creator's partner
+// Djazzi (08/10/2026, mockup v2 validated the same day): a creator's partner
 // code, typed in the days after signing up (the site's ?p= link does it by
 // itself). Checked as it is typed, so the person sees whose it is and what it
 // brings before applying it; then the offered plan's days. Hidden otherwise.
@@ -144,8 +144,8 @@ export function PartnerCode({ enabled, offers, currentPlanName, onApplied }: Par
         {header(daysLeft === 1 ? "1 day left" : `${daysLeft} days left`)}
         <p className="text-xs text-muted-foreground">
           {gift
-            ? `Did a creator recommend Baarali? Their code gives you ${gift.plan} for ${gift.days} days.`
-            : "Did a creator recommend Baarali? Enter their code."}
+            ? `Did a creator recommend Djazzi? Their code gives you ${gift.plan} for ${gift.days} days.`
+            : "Did a creator recommend Djazzi? Enter their code."}
         </p>
         <div className="flex items-center gap-2">
           <div className="relative flex-1">

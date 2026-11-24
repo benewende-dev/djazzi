@@ -8,7 +8,7 @@ import {
     type Baarasseur,
 } from "@x/shared/dist/baarasseur.js";
 
-// BAARALI(06/10/2026): the baarasseurs file, read on every turn so an edit in
+// DJAZZI(06/10/2026): the baarasseurs file, read on every turn so an edit in
 // the app applies to the next message. The app writes it whole; the core only
 // adds a rule to one baarasseur's memory.
 

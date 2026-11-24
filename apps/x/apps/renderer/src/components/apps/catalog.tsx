@@ -214,7 +214,7 @@ export function CatalogTab({ onInstalled }: { onInstalled: (folder: string) => v
   const ranked = [...records].sort((a, b) =>
     ((stars[b.repo] ?? -1) - (stars[a.repo] ?? -1)) || a.name.localeCompare(b.name))
 
-  // Baarali: the apps we have a fiche for come first, by shelf; the others
+  // Djazzi: the apps we have a fiche for come first, by shelf; the others
   // wait under a link, and a search reaches every one of them.
   const searching = query.trim().length > 0
   const shown = searching ? ranked : ranked.filter((r) => FICHES[r.name] && (shelf === null || FICHES[r.name].shelf === shelf))

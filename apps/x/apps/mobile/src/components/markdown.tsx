@@ -20,6 +20,12 @@ const markdownIt = MarkdownIt({ typographer: true, breaks: true }).use(texmath, 
   delimiters: ['dollars', 'brackets'],
   engine: { renderToString: () => '' },
 });
+// Notes are documents, not chat (2026-10-28): a single newline joins lines
+// into one paragraph, as on the desktop editor.
+const documentMarkdownIt = MarkdownIt({ typographer: true, breaks: false }).use(texmath, {
+  delimiters: ['dollars', 'brackets'],
+  engine: { renderToString: () => '' },
+});
 
 // The renderer has a known crash on pathological TeX — fail soft to raw text.
 class MathBoundary extends Component<{ fallback: ReactNode; children: ReactNode }, { failed: boolean }> {
@@ -80,8 +86,10 @@ const TALL_TEX = /\\frac|\\dfrac|\\sum|\\prod|\\int|\\begin\{|\\over(?![a-z])|\\
 
 const MONO = Platform.select({ ios: 'Menlo', default: 'monospace' });
 
-export function ChatMarkdown({ children, extraRules, onLinkPress }: {
+export function ChatMarkdown({ children, extraRules, onLinkPress, variant = 'chat' }: {
   children: string;
+  /** 'document' for notes: newlines don't break lines. */
+  variant?: 'chat' | 'document';
   /** Screen-specific render-rule overrides (e.g. authed images in notes). */
   extraRules?: Record<string, unknown>;
   /** Return false to claim a tapped link (the default opens it in the browser). */
@@ -167,7 +175,7 @@ export function ChatMarkdown({ children, extraRules, onLinkPress }: {
           resizeMode="contain"
         />
       ) : null;
-    // BAARALI(10/10/2026): the agent gives files in a ```filepath block —
+    // DJAZZI(10/10/2026): the agent gives files in a ```filepath block —
     // videos, posters, PDFs, motion projects — shown as cards (file-cards.tsx).
     // Any other fence renders as the library's own rule does.
     const fence = (node: { key: string; content: string; sourceInfo?: string }, _c: unknown, _p: unknown, st: { fence: object }, inherited: object = {}) => {
@@ -190,7 +198,7 @@ export function ChatMarkdown({ children, extraRules, onLinkPress }: {
 
   // react-native-markdown-display's style/rule typings are looser than ours.
   return (
-    <Markdown markdownit={markdownIt} rules={{ ...rules, ...extraRules } as never} style={styles as never} onLinkPress={onLinkPress}>
+    <Markdown markdownit={variant === 'document' ? documentMarkdownIt : markdownIt} rules={{ ...rules, ...extraRules } as never} style={styles as never} onLinkPress={onLinkPress}>
       {/* A spoken reply's <voice> summary reads as plain text, without its tags. */}
       {children.replace(/<\/?voice>/g, '')}
     </Markdown>

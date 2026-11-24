@@ -5,12 +5,12 @@ import { ActivityIndicator, FlatList, KeyboardAvoidingView, Pressable, RefreshCo
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { todo } from '@x/shared';
 
-import { Empty, Segmented, Separator } from '@/components/baarali-ui';
+import { Empty, Segmented, Separator } from '@/components/djazzi-ui';
 import { useConnection } from '@/lib/connection';
 import { useColors } from '@/theme/colors';
 
-// BAARALI(06/10/2026): the to-do list on the phone (validated mockup): what
-// is left and what is done, a tap to tick, « Baarali » to hand one over, and
+// DJAZZI(06/10/2026): the to-do list on the phone (validated mockup): what
+// is left and what is done, a tap to tick, « Djazzi » to hand one over, and
 // a field to add one (the keyboard's microphone dictates it).
 
 type List = { blocks: Array<{ kind: 'item'; item: todo.TodoItem } | { kind: 'raw'; text: string }> };
@@ -95,12 +95,12 @@ export default function TasksScreen() {
               </Pressable>
               <View style={{ flex: 1, gap: 2 }}>
                 <Text style={{ fontSize: 16, color: it.checked ? colors.tertiaryLabel : colors.label, textDecorationLine: it.checked ? 'line-through' : 'none' }}>{it.text}</Text>
-                {it.delegated || busy ? <Text style={{ fontSize: 13, color: colors.accent }}>{busy ? 'Baarali is on it…' : 'Handed to Baarali'}</Text> : null}
+                {it.delegated || busy ? <Text style={{ fontSize: 13, color: colors.accent }}>{busy ? 'Djazzi is on it…' : 'Handed to Djazzi'}</Text> : null}
               </View>
               {!it.checked && !it.delegated && !busy ? (
                 <Pressable onPress={() => void delegate(it.key)} hitSlop={6} accessibilityRole="button"
                   style={{ paddingHorizontal: 10, height: 30, borderRadius: 15, justifyContent: 'center', backgroundColor: colors.secondaryBackground }}>
-                  <Text style={{ fontSize: 13, fontWeight: '600', color: colors.accent }}>Baarali</Text>
+                  <Text style={{ fontSize: 13, fontWeight: '600', color: colors.accent }}>Djazzi</Text>
                 </Pressable>
               ) : busy ? <ActivityIndicator /> : null}
             </View>

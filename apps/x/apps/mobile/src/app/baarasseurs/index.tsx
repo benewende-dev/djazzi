@@ -9,7 +9,7 @@ import { BaarasseurAvatar, TWO_PANES_AT, phoneLang, useBaarasseurs, type Baarass
 import { useConnection } from '@/lib/connection';
 import { useColors } from '@/theme/colors';
 
-// BAARALI(06/10/2026): the baarasseurs as contacts, as WhatsApp lists them
+// DJAZZI(06/10/2026): the baarasseurs as contacts, as WhatsApp lists them
 // (the founder's call, validated mockup claude.ai/artifact/5hiVQMibobFRRitE7ictcw):
 // the face, the name, the latest conversation and its time, then templates to
 // recruit from. On a phone a tap opens the conversation; on a wide screen (a

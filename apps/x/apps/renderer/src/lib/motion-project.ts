@@ -1,7 +1,7 @@
-// BAARALI(2026-10-09): the Studio Motion on the Mac (mockup validated by the
+// DJAZZI(2026-10-09): the Studio Motion on the Mac (mockup validated by the
 // founder the same day). A motion project is a HyperFrames composition the
 // agent writes in the workspace, motion/<project>/index.html (the instance's
-// baarali-motion tools). This reads what the studio shows from it — size,
+// djazzi-motion tools). This reads what the studio shows from it — size,
 // length, scenes, the voice and the music with its volume lane, the captions'
 // pages — and builds the page the player loads.
 

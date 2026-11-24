@@ -4,12 +4,12 @@ import { useCallback, useMemo, useState } from 'react';
 import { ActivityIndicator, Alert, FlatList, Pressable, Text, View } from 'react-native';
 import { promptLibrary, type rowboatApp } from '@x/shared';
 
-import { Empty, Row, Segmented, Separator } from '@/components/baarali-ui';
+import { Empty, Row, Segmented, Separator } from '@/components/djazzi-ui';
 import { phoneLang } from '@/lib/baarasseurs';
 import { useConnection } from '@/lib/connection';
 import { useColors } from '@/theme/colors';
 
-// BAARALI(06/10/2026): apps and prompts on the phone (validated mockup). The
+// DJAZZI(06/10/2026): apps and prompts on the phone (validated mockup). The
 // person's mini-apps (they run on the computer, which serves them), « Ask for
 // an app » in the chat, and the prompt library shared with the desktop:
 // « Use » opens a chat with the text written in.
@@ -57,7 +57,7 @@ export default function AppsScreen() {
               leading={<View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: colors.secondaryBackground, alignItems: 'center', justifyContent: 'center' }}>
                 <Image source="sf:square.grid.2x2" style={{ width: 20, height: 20 }} tintColor={colors.accent} />
               </View>}
-              onPress={() => Alert.alert(a.manifest?.name ?? a.folder, 'Your apps open in Baarali on your computer, which runs them.')}
+              onPress={() => Alert.alert(a.manifest?.name ?? a.folder, 'Your apps open in Djazzi on your computer, which runs them.')}
             />
           )}
           ListEmptyComponent={apps === null ? <ActivityIndicator style={{ marginTop: 32 }} /> : <Empty title="No app yet" />}
@@ -65,7 +65,7 @@ export default function AppsScreen() {
             <Pressable onPress={() => use(lang === 'fr' ? 'Construis-moi une petite app : ' : 'Build me a small app: ')}
               style={{ margin: 16, borderRadius: 16, borderCurve: 'continuous', backgroundColor: colors.secondaryBackground, padding: 14, gap: 4 }}>
               <Text style={{ fontSize: 16, fontWeight: '600', color: colors.label }}>Ask for an app</Text>
-              <Text style={{ fontSize: 14, color: colors.secondaryLabel }}>A till tracker, a form, a delivery note: Baarali builds it.</Text>
+              <Text style={{ fontSize: 14, color: colors.secondaryLabel }}>A till tracker, a form, a delivery note: Djazzi builds it.</Text>
             </Pressable>
           }
         />

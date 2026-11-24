@@ -5,7 +5,7 @@ import { WebView } from 'react-native-webview';
 
 import { fileKind, shareFile, useWorkspaceFiles } from '@/lib/motion';
 
-// BAARALI(10/10/2026): a poster or a PDF from the chat, full screen (mockup
+// DJAZZI(10/10/2026): a poster or a PDF from the chat, full screen (mockup
 // validated the same day). An image zooms with two fingers; a PDF is drawn
 // by iOS in a web view, which also prints it. Share sends either one on.
 

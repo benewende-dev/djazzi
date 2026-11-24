@@ -1,5 +1,5 @@
 import { useMemo, useSyncExternalStore } from 'react'
-import type { BaaraliModelMeta } from '@x/shared/dist/models.js'
+import type { DjazziModelMeta } from '@x/shared/dist/models.js'
 
 export interface ModelRef {
   provider: string
@@ -45,12 +45,12 @@ export interface ModelsSnapshot {
   // Raw catalog model ids per provider id, unpinned — for provider-scoped
   // pickers that need a provider's list without group ordering applied.
   catalogByProvider: Record<string, string[]>
-  // BAARALI(30/09/2026): display names ("provider/model" → name) when the
+  // DJAZZI(30/09/2026): display names ("provider/model" → name) when the
   // catalog has one; the picker falls back to the id.
   namesByKey: Record<string, string>
-  // BAARALI(03/10/2026): the picker's vendor group, strength and padlock
+  // DJAZZI(03/10/2026): the picker's vendor group, strength and padlock
   // ("provider/model" → meta), from the control plane's catalog.
-  metaByKey: Record<string, BaaraliModelMeta>
+  metaByKey: Record<string, DjazziModelMeta>
 }
 
 export interface UseModelsResult extends ModelsSnapshot {
@@ -98,7 +98,7 @@ async function buildSnapshot(refreshProvider?: string): Promise<ModelsSnapshot> 
   const reasoningByKey: Record<string, boolean> = {}
   const catalogByProvider: Record<string, string[]> = {}
   const namesByKey: Record<string, string> = {}
-  const metaByKey: Record<string, BaaraliModelMeta> = {}
+  const metaByKey: Record<string, DjazziModelMeta> = {}
   const groups: ModelPickerGroup[] = []
 
   for (const p of catalog.providers) {
@@ -109,7 +109,7 @@ async function buildSnapshot(refreshProvider?: string): Promise<ModelsSnapshot> 
         reasoningByKey[`${p.id}/${m.id}`] = m.reasoning
       }
       if (m.name) namesByKey[`${p.id}/${m.id}`] = m.name
-      if (m.baarali) metaByKey[`${p.id}/${m.id}`] = m.baarali
+      if (m.djazzi) metaByKey[`${p.id}/${m.id}`] = m.djazzi
     }
     groups.push({
       id: p.id,

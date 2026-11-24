@@ -1,6 +1,6 @@
 import { useSyncExternalStore } from 'react'
 
-// Conversation mode (Baarali, 07/10/2026): one tap on the composer's voice
+// Conversation mode (Djazzi, 07/10/2026): one tap on the composer's voice
 // button, then talk as on the phone. Each pause sends what was said, the
 // reply is read aloud in the open chat, and the mic listens again. No
 // floating window, no key to hold. « Interrupt » cuts a reply short and

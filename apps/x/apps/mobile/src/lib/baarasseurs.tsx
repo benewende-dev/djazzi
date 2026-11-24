@@ -6,7 +6,7 @@ import { useConnection } from '@/lib/connection';
 import { AgentAvatarImage } from '@/components/agent-avatar';
 import { AgentShape } from '@/components/agent-shape';
 
-// BAARALI(06/10/2026): the baarasseurs on the phone — the same workspace file
+// DJAZZI(06/10/2026): the baarasseurs on the phone — the same workspace file
 // as the desktop, read and written over the Mac's RPC, with the shared
 // recruiting kit (@x/shared baarasseur.ts) so both apps save alike.
 
@@ -88,7 +88,7 @@ function shapeFor(name: string): shared.AgentShapeId {
 
 export function BaarasseurAvatar({ b, size = 48 }: { b: Pick<Baarasseur, 'name' | 'color' | 'avatar' | 'shape'>; size?: number }) {
   const { bg, fg } = useTint(b.color);
-  // BAARALI(07/11/2026): an agent made with a shape is that shape, no disc;
+  // DJAZZI(07/11/2026): an agent made with a shape is that shape, no disc;
   // one from before the shapes, with no avatar either, gets one from its name.
   // The old blue B with feet ('original') is the B now.
   if (b.shape || !b.avatar || b.avatar === 'original') return <AgentShape shape={b.shape ?? (b.avatar ? 'b' : shapeFor(b.name))} color={b.color} size={size} />;

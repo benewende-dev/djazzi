@@ -10,7 +10,7 @@ export async function uploadInputFor(file: File): Promise<{ bytes?: string; file
   return { bytes: arrayBufferToBase64(await file.arrayBuffer()) }
 }
 
-// BAARALI(05/10/2026): joined to its Baarali space, the core runs there and
+// DJAZZI(05/10/2026): joined to its Djazzi space, the core runs there and
 // cannot read the computer's paths: the bytes go instead. Asked once.
 let remote: Promise<boolean> | null = null
 function coreIsRemote(): Promise<boolean> {

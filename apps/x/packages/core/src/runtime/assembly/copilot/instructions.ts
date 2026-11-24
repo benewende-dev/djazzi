@@ -146,11 +146,11 @@ export function buildStaticInstructions(composioEnabled: boolean, catalog: strin
 
     // Spaces (the team's own workspace on a Rowboat org): one nudge, the
     // skill carries the rest and attaches the whole toolset on load.
-    // Studio Motion (Baarali instances, 08/10/2026): a cheap model asked for
+    // Studio Motion (Djazzi instances, 08/10/2026): a cheap model asked for
     // « une annonce animée de 10 s » skipped the skill and drew the video
     // frame by frame in Python for 26 minutes. Only where the skill is installed.
-    const motionBlock = catalog.includes('/skills/baarali-motion/')
-        ? `\n**Animations & motion videos:** For ANY animated video, ad, promo, animated post, animated text or logo, kinetic typography, captions, lower third or countdown — "une annonce animée", "une vidéo animée", "anime mon logo" — your FIRST action MUST be \`loadSkill('baarali-motion')\`. It builds the animation from the brand and exports the MP4/GIF on Baarali's render service in about a minute. NEVER make such a video yourself with \`executeCommand\`, Python, ffmpeg, moviepy, imageio, PIL or any script drawing frames: it takes many minutes and skips the user's brand and export minutes.\n`
+    const motionBlock = catalog.includes('/skills/djazzi-motion/')
+        ? `\n**Animations & motion videos:** For ANY animated video, ad, promo, animated post, animated text or logo, kinetic typography, captions, lower third or countdown — "une annonce animée", "une vidéo animée", "anime mon logo" — your FIRST action MUST be \`loadSkill('djazzi-motion')\`. It builds the animation from the brand and exports the MP4/GIF on Djazzi's render service in about a minute. NEVER make such a video yourself with \`executeCommand\`, Python, ffmpeg, moviepy, imageio, PIL or any script drawing frames: it takes many minutes and skips the user's brand and export minutes.\n`
         : '';
 
     const spacesBlock = spacesConnected

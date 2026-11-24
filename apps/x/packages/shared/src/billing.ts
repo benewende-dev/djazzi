@@ -30,7 +30,7 @@ export const BillingUsageBucketSchema = z.object({
   sanctionedCredits: z.number(),
   usedCredits: z.number(),
   availableCredits: z.number(),
-  // When this window starts over (ISO). Baarali (02/10/2026): absent when
+  // When this window starts over (ISO). Djazzi (02/10/2026): absent when
   // the window is not running yet — a session opens with its first message.
   resetsAt: z.string().optional(),
 });
@@ -46,7 +46,7 @@ export type BillingStoreBucket = z.infer<typeof BillingStoreBucketSchema>;
 export const BillingInfoSchema = z.object({
   userEmail: z.string().nullable(),
   userId: z.string().nullable(),
-  // BAARALI(03/10/2026): the admin console, for an admin's account only.
+  // DJAZZI(03/10/2026): the admin console, for an admin's account only.
   adminUrl: z.string().nullable().optional(),
   subscriptionPlanId: BillingPlanIdSchema.nullable(),
   subscriptionStatus: z.string().nullable(),
@@ -68,8 +68,8 @@ export function getBillingPlanData(
   return catalog.plans.find((plan) => plan.id === planId) ?? null;
 }
 
-// The plans as Baarali's pricing page shows them, for the app to show the
-// same in its own window (Baarali, 02/10/2026: the account lives in the
+// The plans as Djazzi's pricing page shows them, for the app to show the
+// same in its own window (Djazzi, 02/10/2026: the account lives in the
 // app, the site is a showcase). Served by the control plane at /v1/plans,
 // already worded and priced in the person's language: the app displays.
 export const PlanOfferLevelSchema = z.object({
@@ -111,7 +111,7 @@ export const PlanOffersSchema = z.object({
 });
 export type PlanOffers = z.infer<typeof PlanOffersSchema>;
 
-// Media credits as the usage page shows them (Baarali, 03/10/2026): the
+// Media credits as the usage page shows them (Djazzi, 03/10/2026): the
 // balance, what it went to, the packs on sale and what each model costs,
 // from the control plane's /v1/media routes. Null when it serves none.
 export const MediaHistoryEntrySchema = z.object({
@@ -140,7 +140,7 @@ export const MediaCreditsSchema = z.object({
 });
 export type MediaCredits = z.infer<typeof MediaCreditsSchema>;
 
-// The banner at the top of the Chat (Baarali, 07/10/2026), written in the
+// The banner at the top of the Chat (Djazzi, 07/10/2026), written in the
 // admin console; control GET /v1/announcement. Null: none for this account.
 export const AnnouncementSchema = z.object({
   id: z.string(),
@@ -159,7 +159,7 @@ export const AnnouncementEventKindSchema = z.enum(['view', 'click', 'dismiss']);
 export type AnnouncementEventKind = z.infer<typeof AnnouncementEventKindSchema>;
 
 // The admin console's messages for this person (control GET /v1/notifications,
-// Baarali, 07/10/2026): the bell on the Mac, the inbox on the phone.
+// Djazzi, 07/10/2026): the bell on the Mac, the inbox on the phone.
 export const NoticeSchema = z.object({
   id: z.string(),
   title: z.string(),
@@ -181,9 +181,9 @@ export const NoticeEventKindSchema = z.enum(['read', 'click']);
 export type NoticeEventKind = z.infer<typeof NoticeEventKindSchema>;
 
 // A creator's partner code, typed in the app soon after signing up (control
-// GET /v1/codes/partner and POST /v1/codes/redeem, Baarali, 08/10/2026).
+// GET /v1/codes/partner and POST /v1/codes/redeem, Djazzi, 08/10/2026).
 export const PartnerCodeStateSchema = z.object({
-  /** Who recommended Baarali to this person; null: nobody yet. */
+  /** Who recommended Djazzi to this person; null: nobody yet. */
   partner: z.string().nullable(),
   /** Whether a code can still be typed: within the days after signing up. */
   canRedeem: z.boolean(),

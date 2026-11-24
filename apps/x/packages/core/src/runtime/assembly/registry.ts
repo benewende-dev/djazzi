@@ -82,7 +82,7 @@ export async function loadAgent(id: string): Promise<z.infer<typeof Agent>> {
     if (builtin) {
         return builtin.build();
     }
-    // BAARALI(06/10/2026): a baarasseur is the copilot with its persona on
+    // DJAZZI(06/10/2026): a baarasseur is the copilot with its persona on
     // top, its memory tool, and its own model when it has one.
     const baarasseurId = baarasseurIdOf(id);
     if (baarasseurId) {

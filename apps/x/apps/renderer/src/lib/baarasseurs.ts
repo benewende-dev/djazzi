@@ -5,7 +5,7 @@ import {
 } from '@x/shared/dist/baarasseur.js'
 import { appLang } from '@/lib/prompt-library'
 
-// BAARALI(06/10/2026): the baarasseurs on the desktop — one shared store over
+// DJAZZI(06/10/2026): the baarasseurs on the desktop — one shared store over
 // the workspace file (the core reads the same file on every turn) and the
 // avatar tints. The recruiting kit (templates, tools, the sentence → form
 // step, the save) is shared with the phone: @x/shared/baarasseur.
@@ -111,7 +111,7 @@ export function useChatBaarasseur(tab: { chatId: string; runId: string | null })
 // person last opened it — a scheduled run's report, an answer that came after
 // they left. Kept on this computer: when each one was last seen.
 
-const SEEN_KEY = 'baarali.baarasseurs.seen'
+const SEEN_KEY = 'djazzi.baarasseurs.seen'
 let seen: Record<string, string> = (() => {
   try { return JSON.parse(window.localStorage.getItem(SEEN_KEY) ?? '{}') as Record<string, string> } catch { return {} }
 })()

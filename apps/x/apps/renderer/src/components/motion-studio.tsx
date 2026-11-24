@@ -1,9 +1,9 @@
-// BAARALI(2026-10-09): the Studio Motion on the Mac, in place of the raw HTML
+// DJAZZI(2026-10-09): the Studio Motion on the Mac, in place of the raw HTML
 // preview of a motion project (mockup validated by the founder the same day).
 // HyperFrames' own player plays the composition with its sound, fitted to
 // the pane; under it the scenes, the captions, the voice and the music's
 // volume; beside it the export and the mix, through the instance's
-// baarali-motion tools (their structured answers, PR #176).
+// djazzi-motion tools (their structured answers, PR #176).
 import '@hyperframes/player'
 import runtimeUrl from '@hyperframes/core/runtime?url'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
@@ -14,7 +14,7 @@ import {
   type CaptionPage, type Composition,
 } from '@/lib/motion-project'
 
-const SERVER = 'baarali-motion'
+const SERVER = 'djazzi-motion'
 const POLL_MS = 3000
 
 const FORMATS = [
@@ -25,7 +25,7 @@ const FORMATS = [
 ] as const
 type FormatId = (typeof FORMATS)[number]['id']
 
-/** What the baarali-motion tools answer as data (structuredContent, instance PR #176). */
+/** What the djazzi-motion tools answer as data (structuredContent, instance PR #176). */
 interface Answer {
   export?: ExportState
   refused?: { code: string }
@@ -36,7 +36,7 @@ interface ExportState { id: string; format: string; status: string; progress?: n
 interface Allowance { period: 'week' | 'month'; usedSeconds: number; totalSeconds: number }
 type Exporting = { kind: 'idle' } | { kind: 'running'; state: ExportState } | { kind: 'done'; file: string } | { kind: 'error'; message: string }
 
-/** A baarali-motion tool's structured answer; null when it gave none (an older instance, or no tool). */
+/** A djazzi-motion tool's structured answer; null when it gave none (an older instance, or no tool). */
 async function callTool(toolName: string, input: Record<string, unknown>): Promise<Answer | null> {
   const { result } = await window.ipc.invoke('mcp:executeTool', { serverName: SERVER, toolName, input })
   return (result as { structuredContent?: Answer } | null)?.structuredContent ?? null

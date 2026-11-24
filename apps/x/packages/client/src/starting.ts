@@ -1,5 +1,5 @@
 // A cloud instance waking from sleep, or booting a new image, takes from a
-// second to a minute or two (Baarali, 02/10/2026). Meanwhile the control
+// second to a minute or two (Djazzi, 02/10/2026). Meanwhile the control
 // plane's gateway (`instance_waking`) or the instance's own gate
 // (`instance_starting`) answers 503: the request never reached the server,
 // so asking again is safe — and is what the person expects, rather than an

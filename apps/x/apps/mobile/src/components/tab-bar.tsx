@@ -8,7 +8,7 @@ import { useConnection } from '@/lib/connection';
 import { useSpacesAccount } from '@/lib/spaces/account';
 import { useColors } from '@/theme/colors';
 
-// The tabs at the foot (Baarali, 07/10/2026, mockup artboards 15 and 16,
+// The tabs at the foot (Djazzi, 07/10/2026, mockup artboards 15 and 16,
 // claude.ai/artifact/5hiVQMibobFRRitE7ictcw): the everyday places one touch
 // away, as in WhatsApp, instead of in a hidden menu; the rest is under More.
 // Shown on each tab's first screen only: a thread or an email has the room.
@@ -17,7 +17,7 @@ export const TABS = [
   { name: 'home', label: 'Rowboat', icon: 'sf:bubble.left.and.bubble.right', active: 'sf:bubble.left.and.bubble.right.fill' },
   { name: 'email', label: 'Email', icon: 'sf:envelope', active: 'sf:envelope.fill' },
   { name: 'meetings', label: 'Meetings', icon: 'sf:mic', active: 'sf:mic.fill' },
-  { name: 'spaces', label: 'Spaces', icon: 'sf:square.grid.2x2', active: 'sf:square.grid.2x2.fill' },
+  { name: 'spaces', label: 'Groups', icon: 'sf:square.grid.2x2', active: 'sf:square.grid.2x2.fill' },
   { name: 'more', label: 'More', icon: 'sf:ellipsis.circle', active: 'sf:ellipsis.circle.fill' },
 ] as const;
 
@@ -34,7 +34,11 @@ export function TabBar({ state, navigation }: BottomTabBarProps) {
   const nested = (focused.state?.index ?? 0) > 0;
   // Nobody signed in yet (onboarding, the sign-in screen): nothing to switch to.
   const someone = Boolean(pairing) || account.status === 'signedIn';
-  if (!TAB_NAMES.has(focused.name) || nested || !someone) return null;
+  // Spaces has its own bar since the upstream's 2026-10-05 redesign (Home,
+  // DMs, Activity, More, Search: spaces/(tabs)/_layout.tsx); its header
+  // leads back home (23/11/2026). Two bars would stack.
+  const ownBar = focused.name === 'spaces' && account.status === 'signedIn';
+  if (!TAB_NAMES.has(focused.name) || nested || !someone || ownBar) return null;
 
   return (
     <View

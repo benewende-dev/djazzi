@@ -6,14 +6,14 @@ import { closePlans, isPlansOpen, openPlans, subscribePlans } from '@/lib/plans-
 import { weekResetText } from '@/lib/usage-reset'
 import { cn } from '@/lib/utils'
 
-// The plans, inside the app (Baarali, 02/10/2026). Words and prices come
-// from the control plane (GET /v1/plans), the same as baarali.com/tarifs:
+// The plans, inside the app (Djazzi, 02/10/2026). Words and prices come
+// from the control plane (GET /v1/plans), the same as djazzi.com/tarifs:
 // this window only lays them out. Payment is not open yet, so a paid plan
 // says so rather than send anyone anywhere.
 
 type Currency = 'xof' | 'eur'
 
-const CURRENCY_KEY = 'baarali.plans.currency'
+const CURRENCY_KEY = 'djazzi.plans.currency'
 
 function storedCurrency(): Currency {
     try {

@@ -540,7 +540,7 @@ export function ProductTour({
         setArrived(true)
         soundsRef.current?.bump()
         cancelSpeechRef.current()
-        // Baarali: the bundled clips are English; in another language the
+        // Djazzi: the bundled clips are English; in another language the
         // step is spoken from its translated text instead.
         const words = step.voiceText ?? step.text
         const spoken = say(words)

@@ -1,5 +1,6 @@
 import { useFileViewerSource } from './file-viewer-source'
 import { useEffect, useMemo, useState } from 'react'
+import { LOCAL_RUNTIME } from '@/lib/feature-flags'
 import { AlertCircleIcon, ExternalLinkIcon, FileTextIcon, Loader2Icon } from 'lucide-react'
 import { MotionStudio } from './motion-studio'
 import { motionProject } from '@/lib/motion-project'
@@ -17,7 +18,7 @@ interface HtmlFileViewerProps {
   path: string
 }
 
-// BAARALI(2026-10-09): a motion project opens in the Studio Motion (motion-studio.tsx).
+// DJAZZI(2026-10-09): a motion project opens in the Studio Motion (motion-studio.tsx).
 export function HtmlFileViewer({ path }: HtmlFileViewerProps) {
   return motionProject(path) ? <MotionStudio key={path} path={path} /> : <HtmlPageViewer path={path} />
 }
@@ -27,6 +28,13 @@ function HtmlPageViewer({ path }: HtmlFileViewerProps) {
   const [state, setState] = useState<ViewerState>({ kind: 'loading' })
   const [iframeLoaded, setIframeLoaded] = useState(false)
   const iframeSrc = useMemo(() => source.url(path), [path, source])
+  // The web app (2026-10-12) has no protocol to serve a document's folder from,
+  // and a sandboxed frame without allow-same-origin isn't controlled by its
+  // service worker. So the document goes in as srcdoc, in the same sandbox:
+  // HTML and inline styles render, relative files don't, and a script can't
+  // reach the page. The page's CSP, which srcdoc inherits, also blocks inline
+  // script in production.
+  const [srcdoc, setSrcdoc] = useState<string | null>(null)
 
   useEffect(() => {
     let cancelled = false
@@ -48,6 +56,11 @@ function HtmlPageViewer({ path }: HtmlFileViewerProps) {
         if (stat.size === 0) {
           setState({ kind: 'empty' })
           return
+        }
+        if (!LOCAL_RUNTIME) {
+          const doc = await source.read({ path, encoding: 'utf8' })
+          if (cancelled) return
+          setSrcdoc(doc.data)
         }
         setState({ kind: 'loaded' })
       } catch (err) {
@@ -113,7 +126,7 @@ function HtmlPageViewer({ path }: HtmlFileViewerProps) {
       {state.kind === 'loaded' && (
         <iframe
           key={path}
-          src={iframeSrc}
+          {...(LOCAL_RUNTIME ? { src: iframeSrc } : { srcDoc: srcdoc ?? '' })}
           // `allow-popups` lets `target="_blank"` links reach the main process
           // window-open handler, which routes them to the system browser. Plain
           // links (same-frame navigations) are handled there via

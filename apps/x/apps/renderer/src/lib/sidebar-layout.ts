@@ -1,14 +1,14 @@
 import { useSyncExternalStore } from 'react'
 import { sidebarLayout } from '@x/shared'
 
-// Baarali (09/10/2026): the sidebar's layout as the admin console published
+// Djazzi (09/10/2026): the sidebar's layout as the admin console published
 // it. Without one yet, or offline, the founder's order (DEFAULT_SIDEBAR_LAYOUT);
 // the last one received is kept for the next launch.
 
 export type SidebarPage = sidebarLayout.SidebarPage
 type Layout = sidebarLayout.SidebarLayout
 
-const KEY = 'baarali.sidebarLayout'
+const KEY = 'djazzi.sidebarLayout'
 const listeners = new Set<() => void>()
 
 function stored(): Layout | null {

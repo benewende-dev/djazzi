@@ -14,8 +14,8 @@ import { z } from 'zod';
  *                     @here, a DM, a reply in a followed thread — its `notify`
  *                     frame, decided server-side), or a reminder set in a
  *                     space fired / a scheduled message failed to send.
- * - baarali_news:     a message from Baarali, written in the admin console
- *                     (Baarali, 07/10/2026).
+ * - djazzi_news:     a message from Djazzi, written in the admin console
+ *                     (Djazzi, 07/10/2026).
  */
 export const NotificationCategorySchema = z.enum([
   'chat_completion',
@@ -26,7 +26,7 @@ export const NotificationCategorySchema = z.enum([
   'meeting_detection',
   'meeting_notes_ready',
   'space_mention',
-  'baarali_news',
+  'djazzi_news',
 ]);
 
 export const NotificationCategoriesSchema = z.object({
@@ -38,7 +38,7 @@ export const NotificationCategoriesSchema = z.object({
   meeting_detection: z.boolean(),
   meeting_notes_ready: z.boolean(),
   space_mention: z.boolean(),
-  baarali_news: z.boolean(),
+  djazzi_news: z.boolean(),
 });
 
 export const NotificationSettingsSchema = z.object({
@@ -55,7 +55,7 @@ export const DEFAULT_NOTIFICATION_SETTINGS: NotificationSettings = {
     meeting_detection: true,
     meeting_notes_ready: true,
     space_mention: true,
-    baarali_news: true,
+    djazzi_news: true,
   },
 };
 

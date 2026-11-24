@@ -1,6 +1,6 @@
 "use client";
 
-// BAARALI(06/10/2026): the fast browser mode's card, after the validated
+// DJAZZI(06/10/2026): the fast browser mode's card, after the validated
 // mockup (claude.ai/artifact/C6AvQ6fn9rhFjwMyDiYaAH): the goal, each step
 // with its time, then the count, the duration and the cost. Strings are
 // English and whole, so the French layer translates them (fr.ts); what

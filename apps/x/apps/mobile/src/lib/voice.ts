@@ -11,7 +11,7 @@ import { File, Paths } from 'expo-file-system';
 import * as SecureStore from 'expo-secure-store';
 import type { RpcClient } from '@x/client';
 
-// The phone as a voice agent (Baarali, 07/10/2026): hold a conversation by
+// The phone as a voice agent (Djazzi, 07/10/2026): hold a conversation by
 // voice. Tap the mic, speak, tap again: the recording goes whole to the Mac
 // or the cloud instance (`voice:transcribe`, Deepgram behind the control
 // plane) and the text is sent. With the speaker on, the reply's opening is
@@ -161,7 +161,7 @@ export async function speak(rpc: RpcClient, text: string): Promise<void> {
   const mine = generation;
   const { audioBase64 } = await rpc.call('voice:synthesize', { text });
   if (generation !== mine) return;
-  const file = new File(Paths.cache, `baarali-reply-${Date.now()}.mp3`);
+  const file = new File(Paths.cache, `djazzi-reply-${Date.now()}.mp3`);
   file.write(audioBase64, { encoding: 'base64' });
   playing = file;
   const current = createAudioPlayer(file.uri);
@@ -178,7 +178,7 @@ export async function speak(rpc: RpcClient, text: string): Promise<void> {
   return done;
 }
 
-const READ_ALOUD_KEY = 'baarali.readAloud';
+const READ_ALOUD_KEY = 'djazzi.readAloud';
 
 /** The composer's speaker, remembered on the phone. */
 export function useReadAloud(): [boolean, (on: boolean) => void] {

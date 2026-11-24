@@ -7,7 +7,7 @@ import { ActivityIndicator, Alert, Pressable, Text, View } from 'react-native';
 import { fileKind, motionProject, saveToPhotos, shareFile, useWorkspaceFiles, workspacePath } from '@/lib/motion';
 import { useColors } from '@/theme/colors';
 
-// BAARALI(10/10/2026): the files the agent gives in a ```filepath block, as
+// DJAZZI(10/10/2026): the files the agent gives in a ```filepath block, as
 // cards in the chat (mockup validated the same day) — on the phone they were
 // raw paths. A motion project opens the studio; a video plays in place; a
 // poster shows itself; a PDF goes to the print shop through the share sheet.

@@ -4,7 +4,7 @@ import type { BackgroundTaskSummary } from '@x/shared/dist/background-task.js'
 import { Switch } from '@/components/ui/switch'
 import { isPlanner, scheduleWords } from '@/lib/schedule-words'
 
-// One scheduled task, as a card (Baarali, 02/10/2026): what it does in one
+// One scheduled task, as a card (Djazzi, 02/10/2026): what it does in one
 // sentence, when it runs in plain words, how its last run went, and the two
 // things one does with it, run it now or pause it. The upstream row was a
 // table line with the task's file name and a cron expression.

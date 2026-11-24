@@ -15,8 +15,8 @@ import { startWorkspaceWatcher, subscribeWorkspaceEvents, subscribeKnowledgeEven
 import { prepareCoreData, initCoreServices } from '@x/core/dist/boot/services.js';
 import { createRowboatServer } from './server.js';
 import { capabilityBroker } from './capabilities.js';
-import { createPhonePush } from './baarali-phone-push.js';
-import { watchApprovals } from './baarali-approvals.js';
+import { createPhonePush } from './djazzi-phone-push.js';
+import { watchApprovals } from './djazzi-approvals.js';
 import type { ITurnEventBus } from '@x/core/dist/runtime/turns/event-hub.js';
 import { isNotificationCategoryEnabled } from '@x/core/dist/config/notification_config.js';
 import { registerUrlOpener } from '@x/core/dist/auth/url-opener.js';
@@ -39,7 +39,7 @@ import { setTokenCipher as setGithubTokenCipher } from '@x/core/dist/apps/github
 // Core was written for Electron's main process, where a promise rejected
 // with no handler is logged and life goes on. Plain Node ends the process
 // on one instead — on a cloud instance, every device's connection with it
-// (Baarali, 02/10/2026). Same rule as Electron: say it, keep serving.
+// (Djazzi, 02/10/2026). Same rule as Electron: say it, keep serving.
 process.on('unhandledRejection', (reason) => {
   console.error('[server] unhandled rejection:', reason);
 });
@@ -54,7 +54,7 @@ async function main(): Promise<void> {
   // Client capabilities route over the WS as reverse calls (RFC Q14): the
   // connected client that advertises each capability performs it.
   const broker = capabilityBroker();
-  // BAARALI(07/11/2026): the paired phones get it too, by push (baarali-phone-push.ts).
+  // DJAZZI(07/11/2026): the paired phones get it too, by push (djazzi-phone-push.ts).
   const phones = createPhonePush({ workDir: WorkDir, fetch: globalThis.fetch, clientConnected: () => broker.hasCapableClient('notifications') });
   registerNotificationService({
     isSupported: () => broker.hasCapableClient('notifications') || phones.hasPhones(),
@@ -63,7 +63,7 @@ async function main(): Promise<void> {
       void phones.send(input);
     },
   });
-  // BAARALI(07/11/2026): a turn waiting for a yes reaches the phone, with its buttons (baarali-approvals.ts).
+  // DJAZZI(07/11/2026): a turn waiting for a yes reaches the phone, with its buttons (djazzi-approvals.ts).
   watchApprovals({ subscribeAll: (l) => container.resolve<ITurnEventBus>('turnEventBus').subscribeAll(l), send: phones.send, enabled: () => isNotificationCategoryEnabled('agent_permission') });
   registerBrowserControlService({
     execute: async (input, ctx) => {

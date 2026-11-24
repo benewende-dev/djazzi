@@ -1,6 +1,6 @@
 import type { backgroundTask } from '@x/shared';
 
-// A routine's timing in plain words (Baarali, 06/10/2026), as the desktop
+// A routine's timing in plain words (Djazzi, 06/10/2026), as the desktop
 // says it (renderer lib/schedule-words.ts): « Every day at 07:00 GMT »
 // instead of « 0 7 * * * ». Kept in the phone's own sources: its French is
 // put in at build time from these very sentences.

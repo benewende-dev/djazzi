@@ -1,4 +1,4 @@
-// When the usage windows start over (Baarali, 02/10/2026). Baarali's quota
+// When the usage windows start over (Djazzi, 02/10/2026). Djazzi's quota
 // is a 5-hour session and a week (control quota.ts), not the upstream's
 // day at 00:00 UTC. Times are told in West Africa time (GMT) — the clock of
 // the people it is for, whatever the computer is set to.

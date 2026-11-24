@@ -1,13 +1,13 @@
 import { useSyncExternalStore } from 'react'
 
-// Whether typed chats have their replies read aloud (Baarali, 07/10/2026:
+// Whether typed chats have their replies read aloud (Djazzi, 07/10/2026:
 // the composer's speaker toggle, next to dictation). One switch for the
 // whole app, remembered on this device; calls always speak, whatever it says.
 //
 // A module store like voice-ownership.ts: the composer toggles it, App reads
 // it synchronously when it sends a message and when a reply streams in.
 
-const KEY = 'baarali.readAloud'
+const KEY = 'djazzi.readAloud'
 
 function stored(): boolean {
   try {

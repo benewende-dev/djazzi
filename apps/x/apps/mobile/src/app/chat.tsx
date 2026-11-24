@@ -1,17 +1,18 @@
 import { Redirect, router, useLocalSearchParams } from 'expo-router';
-import { Image } from 'expo-image';
+import { Image } from '@/components/sf-image';
 import * as Haptics from 'expo-haptics';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
-  KeyboardAvoidingView,
+  Keyboard,
   Pressable,
   ScrollView,
   Text,
   TextInput,
   View,
 } from 'react-native';
+import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { sessions as sessionsShared } from '@x/shared';
 
@@ -25,8 +26,8 @@ import { useColors } from '@/theme/colors';
 import { baarasseurs } from '@x/shared';
 import { BaarasseurAvatar, useBaarasseurs } from '@/lib/baarasseurs';
 import { speak, spokenPart, stopSpeaking, useReadAloud, useVoiceInput } from '@/lib/voice';
-// BAARALI(07/11/2026): the continuous conversation (lib/baarali-conversation.ts).
-import { useLiveConversation } from '@/lib/baarali-conversation';
+// DJAZZI(07/11/2026): the continuous conversation (lib/djazzi-conversation.ts).
+import { useLiveConversation } from '@/lib/djazzi-conversation';
 import { useSpacesAccount } from '@/lib/spaces/account';
 
 /** The reply's text: the last model call that answered in words. */
@@ -118,7 +119,7 @@ export default function ChatScreen() {
 }
 
 /**
- * The conversation itself (BAARALI 06/10/2026: out of the screen, so the
+ * The conversation itself (DJAZZI 06/10/2026: out of the screen, so the
  * Baarasseurs page shows it beside its list on a wide screen — a foldable
  * opened). `agent`: a new chat goes to that baarasseur. `embedded`: no
  * floating header above it.
@@ -139,7 +140,7 @@ export function ChatView({ id, agent, onCreated, embedded = false, initialDraft,
   const { pairing, sessions, events, rpc } = useConnection();
   const voice = useVoiceInput(rpc);
   const [readAloud, setReadAloud] = useReadAloud();
-  // Conversation mode (Baarali, 07/10/2026): one tap on the mic, then talk as
+  // Conversation mode (Djazzi, 07/10/2026): one tap on the mic, then talk as
   // on the phone. Each pause sends what was said, the reply is read aloud,
   // and the mic listens again. « Interrupt » cuts the reading short.
   const [conversation, setConversation] = useState<'off' | 'listening' | 'thinking' | 'speaking'>('off');
@@ -208,6 +209,7 @@ export function ChatView({ id, agent, onCreated, embedded = false, initialDraft,
   const send = useCallback(async (spoken?: string): Promise<boolean> => {
     const content = (spoken ?? draft).trim();
     if (!content || !sessions) return false;
+    if (spoken === undefined) Keyboard.dismiss();
     setSending(true);
     if (spoken === undefined) setDraft('');
     try {
@@ -281,7 +283,7 @@ export function ChatView({ id, agent, onCreated, embedded = false, initialDraft,
   const voiceRef = useRef(voice);
   voiceRef.current = voice;
 
-  // BAARALI(07/11/2026): signed in to Baarali, the conversation is continuous
+  // DJAZZI(07/11/2026): signed in to Djazzi, the conversation is continuous
   // (Flux, spoken as it is written, cut-in, spoken approvals); else the loop below.
   const account = useSpacesAccount();
   const idRef = useRef(id);
@@ -334,7 +336,7 @@ export function ChatView({ id, agent, onCreated, embedded = false, initialDraft,
         const heard = await voiceRef.current.listenTurn();
         if (!conversationOn.current) break;
         if (heard === 'denied') {
-          Alert.alert('Microphone', 'Allow Baarali to use the microphone in Settings to talk to it.');
+          Alert.alert('Microphone', 'Allow Djazzi to use the microphone in Settings to talk to it.');
           break;
         }
         if (!heard) continue;
@@ -407,6 +409,9 @@ export function ChatView({ id, agent, onCreated, embedded = false, initialDraft,
         {id ? (
           <ScrollView
             ref={scrollRef}
+            keyboardDismissMode="interactive"
+            keyboardShouldPersistTaps="handled"
+            alwaysBounceVertical
             // The header is transparent (floating hamburger) — pad the content
             // below it by hand: safe area + standard header height.
             contentContainerStyle={{ paddingTop: top, paddingHorizontal: 16, paddingBottom: 16, gap: 4 }}
@@ -454,7 +459,7 @@ export function ChatView({ id, agent, onCreated, embedded = false, initialDraft,
               ) : (
                 <ActivityIndicator />
               )}
-              {/* BAARALI(07/11/2026): push-to-talk for noisy places, only the release sends. */}
+              {/* DJAZZI(07/11/2026): push-to-talk for noisy places, only the release sends. */}
               {live.pushToTalk ? (
                 <Pressable
                   accessibilityRole="button"

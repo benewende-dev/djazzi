@@ -1,5 +1,5 @@
-// Ready-made ideas for a new scheduled task (Baarali, 02/10/2026). Each one
-// fills the description field; the person adjusts it and Baarali sets up the
+// Ready-made ideas for a new scheduled task (Djazzi, 02/10/2026). Each one
+// fills the description field; the person adjusts it and Djazzi sets up the
 // rest. They only use what the app can reach: email, calendar, meeting
 // notes, the web and the to-do list. Enriched 03/10/2026: each one says
 // when, from where, in what shape, and what never to do (send).

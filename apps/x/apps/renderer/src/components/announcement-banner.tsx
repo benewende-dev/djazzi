@@ -6,7 +6,7 @@ import { openPlans } from '@/lib/plans-window'
 import { canToggleConversation, toggleConversation } from '@/lib/voice-conversation'
 import { cn } from '@/lib/utils'
 
-// The banner at the top of the Chat (Baarali, 07/10/2026; console mockup
+// The banner at the top of the Chat (Djazzi, 07/10/2026; console mockup
 // validated the same day). Its words come from the admin console, already in
 // French: they are never run through the dictionary.
 

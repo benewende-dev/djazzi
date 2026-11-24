@@ -77,7 +77,7 @@ function WorkBlock({ steps, active, started, ended }: { steps: PhoneStep[]; acti
       <Pressable onPress={() => setOpen((v) => !v)} style={styles.workHead} accessibilityRole="button" accessibilityState={{ expanded: open || active }}>
         <Text style={styles.caret}>{open || active ? '▾' : '▸'}</Text>
         {active ? (
-          <Text style={styles.workNow}>Baarali is working…</Text>
+          <Text style={styles.workNow}>Djazzi is working…</Text>
         ) : (
           <Text style={styles.workDone}>
             <Text>Worked</Text>
@@ -169,7 +169,7 @@ export function TurnView({ state, liveText, streaming, onPermission, onAskHuman 
         <Text style={styles.userText}>{userText(state.definition.input)}</Text>
       </View>
 
-      {/* BAARALI(09/10/2026): the work folded into steps, the answer in the open (lib/work-steps.ts). */}
+      {/* DJAZZI(09/10/2026): the work folded into steps, the answer in the open (lib/work-steps.ts). */}
       {steps.length > 0 && (
         <WorkBlock
           steps={steps}

@@ -47,7 +47,7 @@ export interface InvokeTopicAgentInput {
   /** The message body, verbatim (the @rowboat address included). */
   body: string;
   /**
-   * BAARALI(07/10/2026): a baarasseur answers instead of the person's own
+   * DJAZZI(07/10/2026): a baarasseur answers instead of the person's own
    * agent (baarasseur-members.ts) — its own session on the thread, its
    * persona, and its key on the spaces tools.
    */

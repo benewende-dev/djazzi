@@ -26,7 +26,7 @@ export function shouldForwardChannel(channel: string): boolean {
 export async function forwardRpc(channel: string, args: unknown): Promise<unknown> {
   const server = await whenServerReady();
   // A cloud instance still waking answers 503 without running the call:
-  // wait for it rather than fail (Baarali, @x/client starting.ts).
+  // wait for it rather than fail (Djazzi, @x/client starting.ts).
   const res = await fetchWhileStarting(() =>
     fetch(`${server.baseUrl}/rpc/${channel}`, {
       method: 'POST',

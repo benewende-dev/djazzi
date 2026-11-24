@@ -2,7 +2,7 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { PromptsView } from './prompts-view'
 
-// The Prompts page (Baarali, 03/10/2026): use a prompt, keep a favourite,
+// The Prompts page (Djazzi, 03/10/2026): use a prompt, keep a favourite,
 // improve one in the workshop.
 
 const invoke = vi.fn()
@@ -40,7 +40,7 @@ describe('PromptsView', () => {
   it('keeps a favourite in the workspace', async () => {
     render(<PromptsView onUse={() => {}} />)
     fireEvent.click(screen.getAllByLabelText('Add to favorites')[0])
-    await waitFor(() => expect(invoke).toHaveBeenCalledWith('workspace:writeFile', expect.objectContaining({ path: 'config/baarali-prompts.json' })))
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith('workspace:writeFile', expect.objectContaining({ path: 'config/djazzi-prompts.json' })))
   })
 
   it('improves a prompt in the workshop and shows its parts', async () => {

@@ -28,7 +28,7 @@ export const RowboatApiConfig = z.object({
   spacesApexUrl: z.string().nullable().optional(),
   // Whether the api proxies Composio (`/v1/composio`). Absent = it does, as
   // the Rowboat Labs backend always has; an api that does not serve it says
-  // false, and the app then needs the user's own key (Baarali, 2026-10-02).
+  // false, and the app then needs the user's own key (Djazzi, 2026-10-02).
   composio: z.boolean().optional(),
   billing: BillingCatalogSchema,
   // first-time-action reward catalog (non-archived entries); optional so the

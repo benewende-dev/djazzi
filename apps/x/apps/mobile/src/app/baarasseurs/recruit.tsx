@@ -13,7 +13,7 @@ import { useColors } from '@/theme/colors';
 import { AvatarTile } from '@/components/agent-avatar';
 import { preferredAgentAvatar } from '@/lib/agent-avatar-preference';
 
-// BAARALI(06/10/2026): recruiting (or editing) a baarasseur on the phone, as
+// DJAZZI(06/10/2026): recruiting (or editing) a baarasseur on the phone, as
 // the validated mockup draws it: a sentence the Mac turns into the form, the
 // form in iOS groups, a try-out without tools, then « Recruit ». The same
 // kit as the desktop (@x/shared baarasseur.ts), so both save alike.
@@ -81,7 +81,7 @@ export default function RecruitScreen() {
       setB((cur) => ({ ...cur, ...filled }));
       if (process.env.EXPO_OS === 'ios') void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     } catch {
-      Alert.alert('Baarali could not prepare it. Try again, or set it up yourself.');
+      Alert.alert('Djazzi could not prepare it. Try again, or set it up yourself.');
     } finally {
       setBusy(null);
     }

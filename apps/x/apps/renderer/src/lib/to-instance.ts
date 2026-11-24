@@ -1,7 +1,7 @@
 import { toast } from 'sonner'
 
-// BAARALI(05/10/2026): a folder or file picked on the computer, made readable
-// where the core runs. Joined to its Baarali space, the app's core is there,
+// DJAZZI(05/10/2026): a folder or file picked on the computer, made readable
+// where the core runs. Joined to its Djazzi space, the app's core is there,
 // not on the computer: the folder is copied to the space first (main
 // files:toInstance), which takes a moment for a big one. Elsewhere the same
 // paths come back at once.
@@ -9,9 +9,9 @@ import { toast } from 'sonner'
 /** The paths to hand over; throws with a message for the person when refused. */
 export async function toInstance(paths: string[], into: 'projects' | 'attachments'): Promise<string[]> {
   if (paths.length === 0) return paths
-  const sending = into === 'projects' ? 'Sending the folder to your Baarali space…' : 'Sending the file to your Baarali space…'
+  const sending = into === 'projects' ? 'Sending the folder to your Djazzi space…' : 'Sending the file to your Djazzi space…'
   // Shown only if it takes a while: on the computer's own core it is instant.
-  const slow = window.setTimeout(() => toast.loading(sending, { id: 'baarali-to-instance' }), 400)
+  const slow = window.setTimeout(() => toast.loading(sending, { id: 'djazzi-to-instance' }), 400)
   try {
     const result = await window.ipc.invoke('files:toInstance', { paths, into })
     const left = result.skipped.length
@@ -24,6 +24,6 @@ export async function toInstance(paths: string[], into: 'projects' | 'attachment
     throw new Error(message.replace(/^Error invoking remote method '[^']+': (\w*Error: )?/, ''))
   } finally {
     window.clearTimeout(slow)
-    toast.dismiss('baarali-to-instance')
+    toast.dismiss('djazzi-to-instance')
   }
 }

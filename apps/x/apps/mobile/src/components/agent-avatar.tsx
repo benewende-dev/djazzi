@@ -5,26 +5,26 @@ import { AccessibilityInfo, Animated, AppState, View } from 'react-native';
 import Svg, { Circle, G, Path } from 'react-native-svg';
 import { baarasseurs as shared } from '@x/shared';
 
-// BAARALI(11/10/2026): keep the B as an agent avatar after the furry mascot
+// DJAZZI(11/10/2026): keep the B as an agent avatar after the furry mascot
 // became the app's guide; existing profile ids remain compatible.
 const SOURCES: Record<shared.AgentAvatarId, ImageSource> = {
-  original: require('../../assets/baarali-avatars/original.svg'),
-  bop: require('../../assets/baarali-avatars/bop.png'),
-  moki: require('../../assets/baarali-avatars/moki.png'),
-  nova: require('../../assets/baarali-avatars/nova.png'),
-  tiko: require('../../assets/baarali-avatars/tiko.png'),
-  nimbo: require('../../assets/baarali-avatars/nimbo.png'),
-  pixel: require('../../assets/baarali-avatars/pixel.png'),
-  zest: require('../../assets/baarali-avatars/zest.png'),
-  ink: require('../../assets/baarali-avatars/ink.png'),
-  street: require('../../assets/baarali-avatars/street.png'),
+  original: require('../../assets/djazzi-avatars/original.svg'),
+  bop: require('../../assets/djazzi-avatars/bop.png'),
+  moki: require('../../assets/djazzi-avatars/moki.png'),
+  nova: require('../../assets/djazzi-avatars/nova.png'),
+  tiko: require('../../assets/djazzi-avatars/tiko.png'),
+  nimbo: require('../../assets/djazzi-avatars/nimbo.png'),
+  pixel: require('../../assets/djazzi-avatars/pixel.png'),
+  zest: require('../../assets/djazzi-avatars/zest.png'),
+  ink: require('../../assets/djazzi-avatars/ink.png'),
+  street: require('../../assets/djazzi-avatars/street.png'),
 };
 
 function OriginalMark({ size, color, blink = false }: { size: number; color: string; blink?: boolean }) {
   return (
     <Svg width={size} height={size} viewBox="250 160 530 705" accessible={false}>
       <G transform="translate(512 512) scale(1.7) translate(-505 -423)">
-        <Path d="M450 250 H502 C574 250 612 280 612 322 C612 345 602 360 590 368 Q584 373 590 378 C612 388 626 408 626 436 C626 476 590 502 512 502 H450 C413 502 384 473 384 436 V316 C384 279 413 250 450 250 Z" fill={color} />
+        <Path d="M432 250 H520 C590 250 626 304 626 376 C626 448 590 502 520 502 H432 C405 502 384 481 384 454 V298 C384 271 405 250 432 250 Z" fill={color} />
         <G transform={blink ? 'translate(0 324) scale(1 .12) translate(0 -324)' : undefined}>
           <Circle cx="500" cy="324" r="12" fill="#0A0A0A" />
           <Circle cx="554" cy="324" r="12" fill="#0A0A0A" />

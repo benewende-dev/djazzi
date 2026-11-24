@@ -27,7 +27,7 @@
 
 import path from "node:path";
 import { z } from "zod";
-import { blobLinkUrl, mcpTools, readOnlyMcpToolNames } from "@rowboat/spaces-protocol";
+import { agentOnlyMcpToolNames, blobLinkUrl, mcpTools, readOnlyMcpToolNames } from "@rowboat/spaces-protocol";
 import { isSpacesAvailable } from "../../assembly/connections.js";
 import { BuiltinToolsSchema } from "../types.js";
 
@@ -99,7 +99,7 @@ interface McpCallResult {
 export async function callOrgTool(org: OrgRecord, toolName: string, args: Record<string, unknown>, sessionId?: string | null): Promise<unknown> {
     const orgs = await import("../../../spaces/orgs.js");
     const { executeTool } = await import("../../../mcp/mcp.js");
-    // BAARALI(07/10/2026): in a baarasseur's thread session, it acts with its own key.
+    // DJAZZI(07/10/2026): in a baarasseur's thread session, it acts with its own key.
     const { actingBaarasseur, baarasseurMcpServerName } = await import("../../../spaces/baarasseur-members.js");
     const acting = actingBaarasseur(sessionId, org.id);
     const serverName = acting ? baarasseurMcpServerName(acting) : orgs.spacesMcpServerNameFor(org.id);
@@ -146,7 +146,8 @@ function projectedTool(def: (typeof mcpTools)[number]): BuiltinTool {
 }
 
 const projectedTools: Record<string, BuiltinTool> = {};
-for (const def of mcpTools) projectedTools[def.name] = projectedTool(def);
+// The agent-only tools (super agents, 2026-11-02) are left out: this assistant acts as its person, never as an agent member.
+for (const def of mcpTools) if (!agentOnlyMcpToolNames.has(def.name)) projectedTools[def.name] = projectedTool(def);
 
 // --- blob bridge ----------------------------------------------------------------
 

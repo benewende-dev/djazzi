@@ -1,6 +1,6 @@
 import z from "zod";
 import { LlmModelConfig, LlmProvider } from "@x/shared/dist/models.js";
-import type { BaaraliModelMeta } from "@x/shared/dist/models.js";
+import type { DjazziModelMeta } from "@x/shared/dist/models.js";
 import { isSignedIn } from "../account/account.js";
 import { getChatGPTStatus } from "../auth/chatgpt-auth.js";
 import container from "../di/container.js";
@@ -26,8 +26,8 @@ export interface CatalogModelEntry {
     name?: string;
     /** models.dev "supports reasoning" flag; absent = unknown. */
     reasoning?: boolean;
-    /** BAARALI(03/10/2026): the picker's vendor group, strength and padlock (gateway only). */
-    baarali?: BaaraliModelMeta;
+    /** DJAZZI(03/10/2026): the picker's vendor group, strength and padlock (gateway only). */
+    djazzi?: DjazziModelMeta;
 }
 
 export interface CatalogProviderEntry {
@@ -92,7 +92,7 @@ const AIGATEWAY_DEFAULT_BASE_URL = "https://ai-gateway.vercel.sh/v1";
 // every catalog build in between.
 const ERROR_RETRY_MS = 30_000;
 
-// BAARALI(03/10/2026): the gateway's list follows the account's plan, which
+// DJAZZI(03/10/2026): the gateway's list follows the account's plan, which
 // changes without any credential changing (an upgrade, an admin change).
 // Cached for good, a Découverte list outlived the move to Pro: it expires.
 const GATEWAY_TTL_MS = 5 * 60_000;

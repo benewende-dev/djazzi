@@ -1,0 +1,647 @@
+# Architecture cible de Djazzi
+
+Ce document dit **comment Djazzi est découpé** : les zones, les modules, qui possède quoi, et les frontières. Il part de l'existant décrit dans [`ROWBOAT_ARCHITECTURE_AUDIT.md`](./ROWBOAT_ARCHITECTURE_AUDIT.md) (§ entre parenthèses = section de l'audit) et respecte les règles de [`UPSTREAM.md`](./UPSTREAM.md). Les champs de chaque entité sont dans `AGENTIC_DATA_MODEL.md`, le pas-à-pas d'exécution dans `AGENT_RUNTIME_SPEC.md`, les règles de sécurité détaillées dans `AGENT_SECURITY_MODEL.md`.
+
+Chaque décision porte un poids, comme dans les specs de l'upstream :
+
+- **Décidé** : la décision tient. La changer, c'est rouvrir l'argument, pas seulement le code.
+- **Latitude** : l'exigence est fixée, le mécanisme reste libre.
+- **À trancher** : il faut une décision du propriétaire avant la phase concernée.
+
+---
+
+## 1. Les principes qui tranchent
+
+Quand deux choix se valent, ces principes décident, dans cet ordre.
+
+1. **Ce qui engage vit hors de l'agent.** L'argent, les approbations, les secrets, les budgets et l'audit sont tenus par du code déterministe, dans une zone où le modèle n'a pas accès. L'agent *demande*, il n'exécute jamais un engagement. (Mission §9, §77, §83, §91.)
+2. **On enveloppe Rowboat, on ne le réécrit pas.** Le moteur de tours (audit §4) est déjà la boucle *agir → suspendre → reprendre* de la mission. Goal, Task et Action se construisent **au-dessus**, pas à côté.
+3. **Une personne, une instance.** Chaque utilisateur a son Djazzi isolé. C'est l'hypothèse de Rowboat (audit §18.2), et on la transforme en frontière d'isolation au lieu de la combattre.
+4. **On ajoute, on n'édite pas.** Tout le code Djazzi vit dans un workspace à lui (`apps/djazzi/`) et se branche aux coutures existantes (UPSTREAM.md §2).
+5. **Les particularités d'un pays sont des données et des fournisseurs, jamais du cœur.** (Mission §22–24, §50.)
+
+## 2. La topologie
+
+```
+ ┌────────────────────────────── CLIENTS ──────────────────────────────┐
+ │ Desktop (Electron)   Mobile (Expo)   Web (à venir)   WhatsApp / SMS │
+ └──────┬─────────────────────┬──────────────────────────────┬─────────┘
+        │ RPC + WS (@x/client) │ approbations, notifs, statut │ canaux
+        ▼                      ▼                              ▼
+ ┌─────────────────────────────── PLAN DE CONTRÔLE (partagé, de confiance) ──┐
+ │ Identité & orgs · Instances (réveil, veille) · Goals (projection)        │
+ │ Approbations · Politique · Budgets · Usage · Coffre de secrets           │
+ │ Notifications · Pays & fournisseurs · Réveil planifié · Journal d'audit  │
+ │            ▲ Harbor : Spaces, membres, temps réel, push (inchangé)       │
+ └────────────┼──────────────────────────────────┬─────────────────────────┘
+              │ jeton d'instance, flux d'events   │ intentions de paiement
+              ▼                                   ▼
+ ┌──────────── INSTANCE DJAZZI (une par utilisateur, isolée) ─┐  ┌── SERVICE DE PAIEMENT ──┐
+ │ rowboat-server headless (ROWBOAT_WORKDIR propre)           │  │ PaymentIntent / Mandate  │
+ │ Moteur de tours + sessions (inchangé)                      │  │ Moteur de politique      │
+ │ + Moteur d'objectifs (Goal / Task / Verify)                │  │ Routeur de fournisseurs  │
+ │ Brain · bg-tasks · Code Mode · MCP · canaux                │  │ Ledger immuable          │
+ │ Navigateur headless · bac à sable de code                  │  │ Secrets financiers       │
+ └──────────────┬─────────────────────────────────────────────┘  └────────────┬────────────┘
+                │ outils, API, MCP, navigateur                                │
+                ▼                                                             ▼
+          Monde extérieur (sites, APIs, Gmail, GitHub…)          Mobile Money, cartes, banques, crypto
+```
+
+Il y a quatre zones de confiance, de la moins sûre à la plus sûre. Le détail est dans `AGENT_SECURITY_MODEL.md`.
+
+| Zone | Contient | Confiance |
+|---|---|---|
+| Client | UI, canaux de messagerie | L'utilisateur, mais l'appareil peut être perdu |
+| **Instance** | LLM, contenu web, code généré | **Non fiable** : peut être manipulée par injection de prompt |
+| **Plan de contrôle** | Règles, approbations, budgets, secrets | De confiance, code déterministe |
+| **Service de paiement** | Argent et secrets financiers | Maximale, isolé même du plan de contrôle |
+
+## 3. Les modules et leurs responsabilités
+
+### 3.1 L'instance Djazzi : `rowboat-server` enveloppé
+
+**Décidé.** L'instance *est* le `rowboat-server` de l'upstream (`apps/x/apps/server`, audit §2), lancé en headless (`standalone.ts`) avec un `ROWBOAT_WORKDIR` dédié. Tout ce que Rowboat sait faire, elle le sait : moteur de tours, sessions, Brain, bg-tasks, Code Mode, MCP, WhatsApp/Telegram.
+
+| | |
+|---|---|
+| Existe | Serveur headless ; ≈ 296 canaux migrés ; WebSocket ; verrou par dossier ; clé porteur. |
+| Manque | Auth par le plan de contrôle ; navigateur sans Electron ; mise en veille ; remontée des événements. |
+| Changement | Un package `@djazzi/instance-bridge` enregistré au démarrage. Il apporte : les implémentations Djazzi des interfaces injectées (§3.3), le client du plan de contrôle et le relais d'événements. Côté upstream, **une seule ligne d'enregistrement** dans `apps/x/apps/server/src/standalone.ts` (divergence déclarée). |
+| Risque | `standalone.ts` et `core-deps.ts` bougent souvent : garder l'accroche à une ligne. |
+
+**Auth de l'instance (Décidé).** La clé porteur unique (`apps/server/src/auth.ts`) reste, mais elle est émise et tournée par le plan de contrôle, jamais saisie par l'utilisateur. Les clients n'appellent pas l'instance avec cette clé. Ils obtiennent du plan de contrôle un jeton court, et le plan de contrôle fait office de mandataire.
+
+### 3.2 Le moteur d'objectifs (Goal / Task / Verify), dans l'instance
+
+**Décidé : au-dessus des sessions.** Un **Goal** possède un plan de **Tasks**. Chaque Task s'exécute comme une **session** Rowboat. C'est exactement le motif de `core/todo/runner.ts` (audit §8) : l'élément délégué est une session, et son résultat revient comme un reçu. On généralise ce motif au lieu d'en inventer un autre.
+
+| Élément mission | Réalisé par |
+|---|---|
+| Goal | Nouveau : fichier JSONL append-only par objectif dans le dossier de travail, même discipline que les tours (audit §4). |
+| Planner | Une session d'agent dédiée qui produit un plan structuré (sortie validée par zod). |
+| Task | Une session Rowboat, plus ses dépendances, son état et ses limites. |
+| Action | Un appel d'outil du journal de tour (`tool_invocation_*`), déjà tracé, avec sa clé `toolCallId`. |
+| WAITING_USER | Une session suspendue sur `ask-human` ou sur une permission (audit §4). |
+| WAITING_EXTERNAL | Une session suspendue sur un outil **asynchrone** (§3.4). |
+| Verify | Nouveau : étape explicite qui attache une **preuve** à une Action (§3.6). |
+| Artifact | Fichiers du dossier de travail, référencés par le Goal. |
+
+**Pourquoi dans l'instance et pas dans le plan de contrôle.** Le Goal pilote des sessions, qui vivent dans l'instance. Le mettre ailleurs créerait deux sources de vérité pour une même exécution. Le plan de contrôle tient une **projection** en lecture seule (§3.5) pour le mobile et l'observabilité, alimentée par les événements.
+
+| | |
+|---|---|
+| Existe | `core/todo` (délégation → session → reçu), planificateur du matin, sessions, file de messages. |
+| Manque | Plan structuré, dépendances, limites de durée, de coût et de dépense, vérification, états WAITING_*. |
+| Changement | Package nouveau `@djazzi/goals`, qui consomme l'API publique des sessions (`core/runtime/sessions/api.ts`) sans la modifier. |
+| Risque | L'API sessions peut évoluer upstream. Un test de contrat dans `@djazzi/goals` casse en premier à la synchro, c'est voulu. |
+
+### 3.3 Le moteur d'actions : pas un nouveau moteur, trois coutures
+
+La mission demande un `ActionEngine` central par lequel tout passe. **Il existe déjà** : chaque appel d'outil traverse le moteur de tours, qui écrit l'intention avant l'effet (audit §4, barrières durables) et consulte `IPermissionChecker`. Djazzi ne crée pas de second chemin, il remplace les implémentations injectées :
+
+| Couture existante | Implémentation Djazzi | Rôle |
+|---|---|---|
+| `IPermissionChecker` (`turns/bridges/real-permission-checker.ts`) | `DjazziPolicyChecker`, qui délègue d'abord à l'original | Ajoute le **niveau de risque** et la **capacité** requise à chaque outil, puis consulte les règles de l'utilisateur et de l'organisation. |
+| `IPermissionClassifier` (`turns/bridges/real-permission-classifier.ts`) | `DjazziClassifier`, qui enveloppe l'original | Le classifieur LLM ne peut répondre `allow` **que pour le risque bas**. Pour le risque moyen, c'est la règle de l'utilisateur. Pour le risque élevé, il est court-circuité : `defer` systématique. |
+| Catalogue d'outils (`runtime/tools/`) | Outils Djazzi dans leur propre module de domaine | Chaque outil déclare `risk: low \| medium \| high`, ses capacités (`email.send`, `payment.prepare`…) et comment le vérifier. |
+
+**Décidé :** tout outil sans niveau de risque déclaré est traité comme **élevé**. Même principe que le « ferme par défaut » de l'upstream (turn-runtime-design §9.1).
+
+### 3.4 Les actions engageantes : des outils asynchrones
+
+**Décidé. C'est la frontière de sécurité centrale de Djazzi.**
+
+Le moteur de tours connaît des outils **asynchrones** : ils n'ont *aucun exécuteur dans l'instance*. Leur demande est exposée à l'extérieur, et leur résultat revient par `advanceTurn` sous la forme `async_tool_result` (turn-runtime-design §10.1, `core/runtime/turns/api.ts`).
+
+Toutes les actions engageantes de Djazzi sont des outils asynchrones :
+
+```
+Agent (instance)                Plan de contrôle              Service de paiement
+─────────────────               ────────────────              ───────────────────
+payment.request(intent) ──►  tool_invocation_requested
+ (aucun code d'exécution)       │ reçu via le relais d'events
+                                ├─ politique + mandat ─────────►  vérifie, route,
+                                ├─ approbation humaine si requise  exécute, prouve
+                                │◄──────────────────────── résultat + preuve
+advanceTurn(async_tool_result) ◄┘
+```
+
+Conséquences :
+
+- **Même une instance entièrement compromise ne peut pas payer.** Le code qui paie n'existe pas dans l'instance.
+- **`toolCallId` devient la clé d'idempotence** de bout en bout (turn-runtime-design §23). Une reprise après crash ne relance jamais un paiement : elle attend le résultat, ou interroge le statut.
+- **L'utilisateur peut être absent.** La tâche reste en WAITING_EXTERNAL, l'instance peut s'endormir, et la réponse la réveille (§3.5).
+- **Les mandats de l'addendum** (§67–91) s'évaluent dans le service de paiement, jamais dans l'instance.
+
+Même traitement, plus tard, pour les autres engagements irréversibles : réservation payante, publication publique sensible, signature.
+
+### 3.5 Le plan de contrôle
+
+**Décidé : un service nouveau, `apps/djazzi/packages/control`, à côté de Harbor, pas dedans.**
+
+Harbor reste inchangé et continue de servir les Spaces, les membres, le temps réel et le push (audit §10). Le plan de contrôle :
+
+- partage son **Postgres**, mais dans un **schéma `djazzi` séparé**, avec **sa propre échelle de migrations** (UPSTREAM.md §2) ;
+- reprend **ses méthodes** (politique pure dans un `policy.ts` testé, journal append-only avec outbox publiée après commit, parité HTTP / MCP), en les recopiant et non en les important, pour ne pas coupler nos versions.
+
+| Sous-module | Responsabilité |
+|---|---|
+| Identité & organisations | Compte, organisation personnelle créée à l'inscription (mission §29), membres, rôles → capacités (§30). |
+| Instances | Crée, réveille, endort, sauvegarde, met à jour les instances ; émet leurs jetons. |
+| Réveil planifié | Connaît la prochaine échéance de chaque bg-task et réveille l'instance à temps. Sans lui, une instance endormie **ne déclenche plus rien** (le planificateur de `core/background-tasks` vit dans l'instance). |
+| Approbations | Source de vérité des demandes d'approbation à risque élevé : payload exact, empreinte, expiration, décision. Joignable même quand l'instance dort. |
+| Budgets & usage | `UsageRecord` par appel modèle (déjà rapporté par `turns/usage-reporter.ts`), par outil et par fournisseur ; plafonds par Goal, agent et organisation. |
+| Coffre de secrets | Jetons OAuth et clés API, chiffrés. L'instance reçoit un secret au moment de l'usage autorisé, jamais en bloc (mission §28). |
+| Projection des Goals | Vue lisible des objectifs, tâches et actions, alimentée par le relais d'événements. |
+| Notifications | Push (via Harbor/Expo), WhatsApp, SMS, email ; approbations depuis le téléphone. |
+| Pays & fournisseurs | Registre `CountryConfig` et disponibilité des fournisseurs (§3.8). |
+| Journal d'audit | Append-only : qui a demandé, approuvé et exécuté quoi. |
+
+#### Comptes et connexion
+
+**Décidé (29/09/2026) : on se connecte par numéro de téléphone, avec un code reçu par SMS.** C'est l'identifiant principal. **Décidé (01/10/2026) : l'email, Google, Apple et GitHub sont proposés aussi, dès la première version**, à l'inscription comme à la connexion. S'inscrire et se connecter sont le même geste : le compte naît à la première connexion réussie, sur le forfait Découverte.
+
+| Moyen | Preuve | Pourquoi |
+|---|---|---|
+| Téléphone | Code de 6 chiffres par SMS (sécurité §4.1) | Ce que tout le monde a, dans les 7 pays |
+| Email | Code de 6 chiffres par email, mêmes règles que le SMS | Partout, et dans les pays où le SMS n'est pas ouvert |
+| Google | OpenID Connect ; l'email compte seulement si Google le dit vérifié | Le compte le plus répandu sur Android |
+| Apple | OpenID Connect | **Obligatoire** sur iPhone dès qu'on propose Google (règle 4.8 de l'App Store) |
+| GitHub | OAuth ; seul l'email principal **vérifié** compte (`/user/emails`) | Les profils techniques |
+| Microsoft | OpenID Connect | Prévu, éteint tant qu'aucune demande ne le justifie |
+
+**Le mot de passe, au choix de la personne** (décidé le 02/10/2026 ; le 01/10, il n'y en avait pas). Le code reste la porte d'entrée : un mot de passe ne se choisit qu'après un code, et sert ensuite à se connecter sans attendre d'email. Jamais de compte créé par mot de passe seul (sécurité §4.1). Les clés d'accès (*passkeys*) viendront ensuite (sécurité §4.3).
+
+**Un utilisateur, plusieurs identités** (`user_identities`, modèle §6.1) :
+
+- **La liaison automatique ne se fait que par un email vérifié des deux côtés.** Exemple : quelqu'un inscrit par code email se connecte ensuite avec Google, sur la même adresse, que Google dit vérifiée. Sinon, c'est un nouveau compte. Lier un email non vérifié, c'est la porte classique du vol de compte.
+- **Un numéro de téléphone ne se lie jamais automatiquement** : les opérateurs réattribuent les numéros.
+- **Lier, ajouter ou retirer un moyen depuis les réglages** est un geste sensible (revalidation de moins de 5 min, sécurité §4.3). On ne retire jamais le dernier moyen.
+- **La période de 72 h** (sécurité §4.4) s'applique à toute connexion depuis un nouvel appareil sans passkey, quel que soit le moyen. Un compte Google ou GitHub se vole aussi.
+
+**Comment l'app se connecte, sans toucher à l'upstream.** Le cœur connaît déjà un serveur d'autorisation : celui de Rowboat Labs. Il le trouve à `${supabaseUrl}/auth/v1/.well-known/oauth-authorization-server` (`core/auth/providers.ts`), y enregistre l'app par enregistrement dynamique (DCR), puis se connecte en OAuth 2.1 avec PKCE et une redirection vers la machine de l'utilisateur. Le plan de contrôle joue ce rôle à la même adresse (`/v1/config` sert déjà `supabaseUrl`). La page de connexion qu'il sert propose les moyens ci-dessus. Deux compléments sont apportés aux requêtes du cœur, côté serveur : `offline_access`, pour qu'il reçoive un jeton de rafraîchissement tournant (sécurité §4.2), et `application_type: native`, puisqu'il reçoit le code sur un port local (RFC 8252). Un nouvel inscrit reçoit son compte sur Découverte. Le jeton reçu ouvre `/v1/*` pour cet utilisateur. Harbor consomme le même émetteur OIDC (`auth-oidc.ts`) sans modification.
+
+**Une bibliothèque, pas du code à la main.** Écrire soi-même un serveur OAuth, la vérification des jetons Google ou Apple et la liaison de comptes, c'est une source connue de failles. Le plan de contrôle s'appuie sur **Better Auth** (MIT, TypeScript). Elle fournit :
+
+- les codes par email et par SMS ;
+- Google, Apple, GitHub et Microsoft ;
+- la liaison de comptes et les sessions ;
+- la limitation de débit ;
+- le serveur OAuth 2.1 avec DCR et PKCE (`@better-auth/oauth-provider`).
+
+Ses tables vont dans le schéma `djazzi`. Nos règles s'ajoutent par ses points d'extension : liaison seulement par email vérifié, période de 72 h, indicatifs ouverts au SMS.
+
+**Une session déjà ouverte ne connecte jamais l'app en silence** (décidé le 03/10/2026). Quand le navigateur est déjà connecté, la page « Continuer avec ce compte ? » nomme le compte et propose « Changer de compte ». Ce bouton ferme la session du navigateur et rouvre la page de connexion avec la même demande d'autorisation. Avant, l'app prenait le compte du navigateur sans rien demander, et personne ne pouvait en choisir un autre.
+
+**Latitude :** l'envoi des SMS et des emails passe par un `CommunicationProvider` (§3.8), jamais par un fournisseur codé en dur. En développement, un faux fournisseur écrit le code dans le journal. Le choix de l'agrégateur SMS se fait par pays, sur deux critères : la délivrabilité réelle dans chacun des 7 pays, et le coût par message. Voir `WEST_AFRICA_PROVIDER_ARCHITECTURE.md`. Les mêmes plafonds valent pour l'email : par adresse, par IP, avec une expiration courte et un nombre d'essais borné.
+
+**L'ordre de construction :**
+1. les comptes, l'usage et les crédits passent en Postgres ;
+2. le serveur de connexion, avec ses six moyens et de faux envois ;
+3. l'accueil : premier écran, choix du moyen, compte Découverte, puis une instance créée pour chaque compte ;
+4. la page des tarifs dans l'app, puis le paiement.
+
+Les vrais envois (agrégateur SMS, service d'email) et les applications OAuth chez Google, Apple et GitHub se branchent par des secrets, sans changer le code.
+
+#### Les instances
+
+**Décidé (01/10/2026) : une machine Fly et son volume par compte, dans une seule app Fly (`baarali-instances`), créées la première fois qu'un appareil du compte se connecte** (`packages/control/src/instances.ts`). Pas à l'inscription sur le site : quelqu'un qui n'installe jamais l'app ne coûte rien.
+
+- **Même gabarit que l'instance du propriétaire** (`packages/instance/fly.toml`) : 2 Go, suspendue au repos, réveillée à la requête suivante.
+- **Joignable seulement par Flycast**, à travers la passerelle (sécurité §2). L'en-tête `fly-force-instance-id` choisit la machine du compte parmi celles de l'app.
+- **La passerelle** sert le mode distant de l'app upstream à `https://app.djazzi.com/instance` : RPC, fichiers de l'espace de travail et WebSocket des événements. Elle réveille la machine si elle dort, puis relaie avec la clé de l'instance. Elle répond elle-même à `/instance/health`, que l'app interroge avant d'envoyer sa clé.
+- **La mise à jour** suit la connexion d'un appareil : une machine sur une image plus ancienne que `DJAZZI_INSTANCE_IMAGE` y passe à ce moment-là, jamais au milieu d'une session.
+- **Accès anticipé** : au plus `DJAZZI_MAX_INSTANCES` instances (20 par défaut). Au-delà, l'app reçoit `instances_full`.
+- **Le disque** (décidé le 05/10/2026) : 10 Go par instance (`DJAZZI_INSTANCE_DISK_GB`). Fly en prend un instantané chaque jour, gardé 14 jours (`DJAZZI_INSTANCE_BACKUP_DAYS`). Un disque plus petit, comme ceux de 1 Go créés avant, est agrandi quand sa machine dort, puis elle redémarre à neuf au réveil pour voir sa nouvelle taille ; jamais sous la personne qui s'en sert. La console admin montre la place prise et la dernière sauvegarde.
+- **Le plan de contrôle tourne sur une seule machine** : deux appareils qui se connectent ensemble obtiennent la même instance grâce à un verrou en mémoire. Le jour où il en a plusieurs, ce verrou passe en base.
+
+#### Le quota d'utilisation
+
+**Décidé (30/09/2026) : l'utilisation se mesure en deux fenêtres, 5 heures et une semaine,** comme chez les assistants grand public. L'utilisateur ne compte ni messages ni crédits : il voit une jauge par fenêtre et l'heure à laquelle elle se remet à zéro.
+
+| | Fenêtre de session | Fenêtre hebdomadaire |
+|---|---|---|
+| Durée | 5 heures | 7 jours |
+| Ouverture | Au premier appel modèle, quand aucune session n'est en cours | À la date d'ouverture du compte, puis tous les 7 jours à la même heure |
+| Budget | Un quart du budget hebdomadaire | Fixé par le forfait |
+| Remise à zéro | 5 heures après son ouverture | À l'échéance suivante |
+
+- **Ce qu'on mesure : le coût réel de chaque appel**, lu dans `usage.cost` d'OpenRouter (le plan de contrôle demande `usage: { include: true }`). Il est compté en crédits, l'unité de l'upstream (`CREDITS_PER_DOLLAR`, 100 M = 1 $). Une réponse sans coût est comptée au **plancher** d'un millième de dollar et marquée `estimated`, jamais à zéro.
+- **Tout passe par là :** texte, images et tâches de fond appellent `/v1/llm`, donc le même quota. Un Goal consomme le quota de son propriétaire, appel par appel.
+- **Le refus se décide avant l'appel.** Si l'une des deux fenêtres est épuisée, `/v1/llm` répond `429` avec `{ error: { code: "quota_reached", window: "session" | "week", resets_at } }`. **Un appel commencé n'est jamais coupé** : il peut dépasser le budget de son propre coût, compté ensuite. Le moteur d'objectifs relira la jauge avant chaque tâche (phase 1).
+- **Les budgets se calculent à partir des prix** (ci-dessous) : aucun budget n'est saisi à la main.
+
+#### Les forfaits
+
+**Décidé (30/09/2026) : une marge d'au moins 55 % garantie après le coût des modèles,** même pour quelqu'un qui épuise son quota chaque semaine. L'application est internationale : chaque forfait a **un prix fixe par devise**, hors taxes, choisi par le propriétaire (pas une conversion au jour le jour). **On facture en euros et en francs CFA seulement** : les deux francs CFA ont une parité fixe avec l'euro, donc nos prix ne dérivent jamais entre eux. Seuls les modèles se paient en dollars, d'où la réserve de change.
+
+| Forfait | EUR | F CFA (XOF, XAF) | Période | Budget modèles / semaine | / session de 5 h |
+|---|---|---|---|---|---|
+| Découverte | gratuit | gratuit | — | 0,08 $ | 0,02 $ |
+| Semaine | 5 € | 3 300 F | une semaine, prépayée | 2,04 $ | 0,51 $ |
+| Essentiel | 20 € | 13 000 F | mois | 1,96 $ | 0,49 $ |
+| Pro | 100 € | 65 000 F | mois | 9,96 $ | 2,49 $ |
+| Pro | 200 € | 130 000 F | mois | 19,96 $ | 4,99 $ |
+
+- **Semaine** est l'Essentiel d'une seule semaine, payé d'avance : LigdiCash ne sait pas prélever de façon récurrente, et le marché connaît le prépayé (crédit téléphonique).
+- **Pro** existe en deux niveaux d'utilisation, environ 5 et 10 fois l'Essentiel.
+**Accès Chat et Work (13/10/2026, validé par le fondateur).** Découverte ouvre Chat, la recherche web avec sources, l’analyse de fichiers, la rédaction, la traduction, la dictée et la conversation vocale, dans ses quotas existants. Work regroupe les projets, agents personnalisés, tâches, routines, code et Studio et nécessite un forfait payant actif ou un essai payant valide. Les médias restent accessibles à tous les forfaits avec des crédits médias séparés : ce droit n’ouvre pas Work. Les prix et les fenêtres d’utilisation ne changent pas. `desktop/assets/mobile/work-policy.ts` et `assets/work-runtime.ts` appliquent le contrôle au build du serveur et du bureau : requêtes Work avant invocation, agents personnalisés, outils Work même depuis Chat, tâches autonomes et écritures dans les dossiers réservés. Une vérification échouée refuse l’action ; aucune autorisation ne survit à un changement de compte. Les arrêts restent disponibles. Le plan de contrôle refuse les nouveaux rendus, aperçus et revues Studio à Découverte, même avec des crédits médias ; les exports existants restent lisibles. Les textes communs aux offres du site, du bureau et du mobile sont dans `control/src/plan-access-copy.ts` ; les clients le copient au build et conservent les prix et les quotas servis par le compte.
+
+- **Découverte** ne sert que les modèles les moins chers qui savent appeler des outils (environ 0,05 centime l'appel), jamais les modèles `:free` d'OpenRouter, dont la limite de requêtes est commune à toute notre clé. Son coût est un budget accepté, pas une marge.
+
+Le budget d'une offre payante se déduit de son prix, dans cet ordre (`apps/djazzi/packages/control/src/pricing.ts`) :
+
+1. le prix converti en dollars, la monnaie des modèles, au taux de référence BCE du jour de la décision (parité fixe pour le franc CFA) ;
+2. moins une **réserve de change** de 5 % (si l'euro baisse face au dollar) et une **réserve de frais de paiement** de 5 % plus 0,35 $ par paiement, à vérifier contre la réponse écrite de LigdiCash (fournisseurs §8) : c'est le revenu net ;
+3. 45 % du revenu net au plus pour les modèles, **divisé par 1,055**, la commission d'OpenRouter sur l'achat de crédits ;
+4. on garde **la devise la moins favorable**, pour que toutes tiennent la marge ; un mois se répartit sur 52/12 semaines.
+
+Un test parcourt chaque offre et chaque devise, et casse si la marge à pleine utilisation passe sous 55 %. Changer un prix, un taux ou une commission ne se fait donc que dans `catalog.ts`, et le test dit tout de suite si la garantie tient encore.
+
+Ce que la marge de 55 % paie encore : l'hébergement de l'instance, le plan de contrôle, les SMS, le support, et les utilisateurs de Découverte. Les taxes s'ajoutent au prix affiché.
+
+#### Les modèles par forfait
+
+Décidé le 30/09/2026, réglable depuis la console d'admin depuis le 03/10/2026 (`model-access.ts`, onglet Modèles, sur le modèle du catalogue de wenastudio).
+
+**Ce que le propriétaire règle, modèle par modèle** : visible ou masqué, le forfait payant à partir duquel il s'ouvre, « Conseillé » (en tête de son éditeur), et son point fort (Polyvalent, Puissant, Raisonnement, Codage, Recherche web, Analyse d'images, Rapide ; déduit de l'identifiant tant qu'il n'est pas posé). On ouvre ou masque d'un geste toute la gamme d'un éditeur. Un réglage vit dans `djazzi.model_settings` (migration 5) et arrive aux sélecteurs en moins d'une minute.
+
+**Un modèle jamais réglé reste ouvert aux forfaits payants** et hors de Découverte : le jour du déploiement, personne ne perd un modèle. **Sauf ceux d'OpenRouter lui-même** (`openrouter/…`, 05/10/2026) : ses routeurs choisissent un autre modèle à la place de la personne, et ses modèles « mystère » sont des avant-premières qui disparaissent en quelques semaines et gardent souvent ce qu'on leur envoie. Ils restent masqués tant que le propriétaire ne les ouvre pas. **Un modèle qu'OpenRouter ne liste plus**, encore choisi dans une app, part vers le modèle par défaut du forfait au lieu d'échouer ; le plan de contrôle connaît la liste par la dernière lecture du sélecteur des apps.
+
+**Ce que voit chaque forfait** (`GET /v1/llm/models`) : un modèle masqué n'apparaît pas ; un modèle d'un forfait au-dessus reste visible, **avec un cadenas et le forfait qui l'ouvre** (« dès Pro max »), choix du propriétaire du 03/10/2026, et ne s'appelle pas. Chaque modèle porte `djazzi` : son éditeur, son point fort, « Conseillé », et `unlock` s'il est verrouillé. Le défaut du forfait vient en premier, puisque le cœur choisit le premier modèle listé pour une installation neuve. Découverte voit sa liste, et en cadenas les seuls modèles réglés : les centaines d'autres noieraient la liste gratuite.
+
+**Un appel vers un modèle que le forfait n'ouvre pas est remplacé, pas refusé** : par le premier modèle « Conseillé » ouvert au forfait, dans l'ordre des éditeurs, sinon par le défaut de Découverte. Même raison que pour Découverte ci-dessous.
+
+**Découverte** n'appelle que sa liste, réglée dans la console (l'ordre compte : le premier est le défaut). Tant qu'aucune n'est enregistrée, c'est celle du code (`DISCOVERY_MODELS`, `catalog.ts`), testée en français le 30/09/2026 : **DeepSeek V4.1 Flash** par défaut, au choix du propriétaire, puis **GPT-6 Luna** si le premier échoue. Le plan de contrôle applique la liste :
+
+- un modèle hors liste est **remplacé** par le défaut, pas refusé : le travail de fond du cœur (notes, titres, connaissances) demande ses propres modèles et doit continuer de tourner ;
+- chaque appel part avec la liste entière dans `models`, pour qu'OpenRouter passe au suivant si l'un tombe, et avec la **réflexion coupée** : sans elle, DeepSeek dépense les jetons de la réponse à réfléchir et ne rend rien ;
+- la génération d'images et les autres routes que `/chat/completions` sont **refusées** (403 `not_in_plan`) avant le quota, sans ouvrir de session ;
+- le catalogue `GET /v1/llm/models` ne montre que la liste ouverte, pour que le sélecteur ne propose rien qui serait remplacé ;
+- l'enregistrement d'usage garde le modèle demandé à côté du modèle servi.
+
+L'instance part sur DeepSeek V4.1 Flash quel que soit le forfait (`DJAZZI_ASSISTANT_MODEL` le change) ; un choix déjà fait dans l'app n'est jamais écrasé.
+
+#### Les médias
+
+Décidé le 30/09/2026. La vidéo, la voix et la musique passent par **Pixazo**, avec une seule clé gardée dans le plan de contrôle (`/v1/media`, `media.ts` et `media-route.ts`). Les prix ont été lus sur les pages modèles de pixazo.ai le 30/09/2026. Quand une promotion court, on garde le prix normal, pour ne jamais compter moins que ce qu'on paie.
+
+| Modèle | Usage | Prix retenu | Crédits (requête par défaut) |
+|---|---|---|---|
+| Seedance 2.0 Mini | vidéo, 4 à 30 s, 720p | 0,0756 $/s (promotion : 0,03024 $/s) | 38 (5 s) |
+| Veo 3.1 Fast | vidéo, 4, 6 ou 8 s | 0,10 $/s sans son, 0,15 $/s avec | 80 (8 s) |
+| Veo 3.1 | vidéo, 720p, son compris | 0,40 $/s | 320 (8 s) |
+| Gemini 3.8 Flash TTS | voix, 4 000 caractères au plus | 0,01728 $ la minute commencée, estimée à 12 caractères par seconde | 2 la minute |
+| Lyria 3 / Lyria 3 Pro | musique | 0,042 $ / 0,084 $ le morceau | 5 / 9 |
+
+**Des crédits médias, pas le quota du texte** (décidé le 01/10/2026). Une vidéo coûte d'un coup ce qu'une conversation coûte en plusieurs heures : un quota taillé pour le texte la refusait, ou se vidait d'un coup. Les médias se paient donc sur un **solde de crédits médias**, acheté en recharges et gardé jusqu'à ce qu'il soit dépensé :
+
+- **Un crédit = un centime de notre coût** (`MEDIA_CREDIT_USD`), arrondi au-dessus. Ce sont des nombres qu'on lit (« 38 crédits »), alors que les unités du quota en montreraient des millions.
+- **Les recharges** (`MEDIA_PACKS`, `catalog.ts`) gardent la même garantie que les forfaits : une recharge dépensée jusqu'au dernier crédit laisse au moins 55 % de ce qu'on garde de son prix, dans chaque devise (`packCredits`, `test/pricing.test.ts`). Les frais de Pixazo sur ses propres recharges ne sont écrits nulle part : on réserve ceux d'OpenRouter (5,5 %) en attendant.
+
+| Recharge | EUR | F CFA | Crédits |
+|---|---|---|---|
+| `medias-2` | 2 € | 1 300 F | 71 |
+| `medias-5` | 5 € | 3 300 F | 203 |
+| `medias-20` | 20 € | 13 000 F | 851 |
+
+- **Tous les forfaits y ont droit, Découverte compris** : un crédit est payé avant d'être dépensé, il ne prend rien au budget du forfait.
+- **Réglables depuis la console d'admin** (onglet Modèles › Médias · Pixazo, 03/10/2026), comme les modèles de texte : visible ou masqué, le forfait à partir duquel il s'ouvre (Découverte compris), « Conseillé » (celui que l'agent préfère pour son type). Pixazo ne publie aucune liste de ses modèles : le catalogue reste `media.ts`, un modèle par adaptateur (chemin, corps, prix), et chaque modèle ajouté au code apparaît dans la console. Un modèle jamais réglé reste ouvert à tous. `list_models` ne donne à l'agent que ce que le forfait ouvre ; une génération vers un autre est **refusée** (403 `not_in_plan`) avant tout débit, pas remplacée : une demande de média nomme son modèle et son prix.
+- **Le solde est un journal** (`MediaLedgerEntry`) : recharge, débit et remboursement. Le solde est leur somme. Le débit se fait **avant l'envoi**, en une seule opération atomique, pour que deux demandes simultanées ne dépensent pas les mêmes crédits. S'il n'y a pas assez de crédits, la réponse est `402 insufficient_media_credits`, avec le prix et le solde.
+- **Un échec est rendu, une seule fois.** Si Pixazo refuse l'envoi, ou si la génération échoue (y compris une génération « terminée » sans fichier), le débit est rendu. Le journal n'applique qu'un remboursement par débit, même si deux suivis se croisent.
+- **Une recharge n'est appliquée qu'une fois par paiement** : sa référence (le reçu, la transaction mobile money) est unique. Tant qu'aucun moyen de paiement n'est branché, l'opérateur ajoute une recharge à la main (`POST /v1/admin/media-credits`, jeton `DJAZZI_ADMIN_TOKEN`). Le paiement appellera la même règle.
+- **Une génération n'est visible que de son compte.** Celle d'un autre compte répond 404.
+- **Le relevé d'usage** (`UsageRecord`) garde le coût réel de chaque génération, dans l'unité du quota, pour suivre ce qu'on dépense chez Pixazo.
+
+**Durable avec Postgres** (`DATABASE_URL`, décidé le 01/10/2026). Le journal y est en ajout seul : un déclencheur refuse toute modification et toute suppression. Un débit verrouille la ligne du compte pendant sa transaction. Sans base, le magasin en mémoire oublie tout quand la machine s'arrête, et le solde du propriétaire (`DJAZZI_OWNER_MEDIA_CREDITS`) revient à chaque démarrage.
+
+**Côté agent**, l'instance déclare un serveur MCP `djazzi-media` dans `config/mcp.json` et un skill disque `skills/djazzi-media/SKILL.md` (`packages/instance`, `seed.ts` et `media-mcp.ts`). Aucun fichier de l'upstream ne change :
+- le skill se charge quand on demande une vidéo, une voix ou une musique, et n'attache que les outils MCP existants (`listMcpTools`, `executeMcpTool`), qui gardent leur demande d'accord avant chaque appel ;
+- le serveur expose trois outils : `list_models`, `generate` et `check`. Le client MCP du cœur abandonne au bout de 60 s, alors qu'une voix prend déjà plus d'une minute. `generate` rend donc la main tout de suite, et `check` attend au plus 45 s par appel. L'agent rappelle `check` jusqu'à ce que le fichier soit enregistré dans `generated_media/` ;
+- le jeton est lu dans `oauth.json` : `mcp.json` ne contient aucun secret.
+
+**Les images** (05/10/2026) ne passent pas par ce serveur : l'outil `generate-image` du cœur les fait. Aucun skill de l'upstream ne l'attache, donc l'agent chargeait toute la boîte à outils (76 outils), puis cherchait dans `djazzi-media` et s'y bloquait. L'instance pose donc un deuxième skill disque, `skills/djazzi-images/SKILL.md`, qui n'attache que `generate-image`. Le cœur n'offre cet outil que si un modèle d'image est réglé, ce qu'il ne fait qu'à la connexion au portail, jamais sur une instance : le seed règle donc `google/gemini-2.5-flash-image` quand aucun n'est choisi. L'image est enregistrée sur l'instance ; l'app du bureau la lit là-bas par l'espace de travail (`workspace:readFile`) quand le chemin n'existe pas sur l'ordinateur (`apps/djazzi/packages/desktop/src/from-instance.ts`), sinon la discussion ne montrerait qu'une carte de fichier.
+
+**Le motion design** (08/10/2026) passe par un troisième serveur MCP de l'instance, `djazzi-motion` (`motion-mcp.ts`), et son skill disque `skills/djazzi-motion/SKILL.md` : toutes les discussions en profitent, l'assistant comme chaque baarasseur, depuis le Mac ou le téléphone. Un projet est une composition [HyperFrames](https://github.com/heygen-com/hyperframes) (Apache-2.0) dans `motion/<projet>/index.html`, partie d'un des 8 modèles (`motion-templates.ts`) et du kit de marque `config/brand.json`, puis modifiée comme n'importe quel HTML. Le mouvement est l'API Web Animations, que HyperFrames positionne image par image ; jamais GSAP, dont la licence interdit les outils d'animation sans code. Les plans filmés, la voix et la musique viennent de `djazzi-media` (Pixazo). Le kit de marque garde quatre rôles (fond, texte, accent, surbrillance) et jusqu'à six autres couleurs de la marque ; il signale un couple illisible sans corriger seul.
+
+**L'export** (08/10/2026) : l'outil `render` envoie le dossier du projet au plan de contrôle (`POST /v1/motion/renders`, `motion.ts`), qui le passe en flux, sans le garder, au service de rendu `baarali-render` (`packages/render`) : Chrome, FFmpeg et le producteur HyperFrames, le lint complet avant chaque rendu. Formats : MP4 1080p, MP4 léger 720p (WhatsApp), GIF, WebM transparent ; 30 ou 60 images par seconde (60 compte double). Chaque forfait inclut des minutes d'export par mois civil UTC (Découverte 0 (Studio réservé à Work), Essentiel 30, Pro 120, Pro max 300) ; Semaine, payé à la semaine, en a 3 par semaine, la semaine du quota, ancrée à la création du compte. Au-delà, 5 crédits médias la minute (3 jusqu'au 09/10/2026 : mesuré en production, le rendu coûte environ 2 centimes de dollar la minute de vidéo), comptés à la seconde sur la période : les crédits étant entiers, la période paie l'arrondi supérieur de toutes ses secondes en plus, et chaque export la différence qu'il y ajoute (trois exports de 4 s au-delà coûtent 1 crédit, pas 3). Le service de rendu tourne sur une machine performance-4x de 8 Go, avec 4 navigateurs de capture : 10 s de vidéo en 1080×1920 se rendent en 69 s. Minutes et crédits sont pris avant le rendu, en une transaction, et rendus en entier si le rendu échoue. Le fichier est rapatrié dans `motion/<projet>/exports/`, donc lisible sur le Mac comme sur le téléphone. Le service n'a pas d'IP publique (Flycast, secret partagé `DJAZZI_RENDER_SECRET`) et un pare-feu interdit à Chrome le réseau privé de Fly, où vivent les instances : les pages rendues sont écrites par un agent.
+
+**L'aperçu** (09/10/2026) : l'agent écrit sa vidéo sans la voir, et la plupart des modèles qu'il fait tourner ne lisent pas d'image. L'outil `preview` envoie le projet, sans ses sons, au plan de contrôle (`POST /v1/motion/review`, `motion-review.ts`). Le service de rendu en prend quelques images fixes (`POST /stills`, `stills.ts` : une par scène par défaut, à 70 % de la scène, 960 px de grand côté, une demande à la fois par machine). Un modèle de vision (GLM 5.3 Flash par défaut, `MOTION_REVIEW_MODEL`) les relit en directeur artistique : texte coupé ou trop petit, chevauchements, alignements, curseur à côté de sa cible. L'agent reçoit la critique en mots, avec le correctif CSS de chaque défaut ; les images restent dans `motion/<projet>/previews/`. La relecture est comptée dans le quota d'usage à son coût réel (environ 0,0005 $) ; 30 aperçus par heure au plus.
+
+**Le studio sur le Mac** (09/10/2026) : ouvrir `motion/<projet>/index.html` dans l'app montre le studio (`renderer/src/components/motion-studio.tsx`) au lieu de la page brute. Le lecteur officiel `@hyperframes/player` joue la composition avec son son, ajustée au panneau ; le moteur HyperFrames n'y est ajouté que pour l'aperçu (le rendu ajoute le sien), et la page tourne dans un bac à sable opaque : elle ne peut rien lire de l'app. Le volume de la musique suit sa courbe de mixage dans l'aperçu comme à l'export. Sous la vidéo, les scènes, les sous-titres, la voix et la courbe de la musique ; à côté, l'export (formats, progression, minutes restantes), le mixage à deux curseurs et les fichiers exportés. L'app appelle elle-même les outils `djazzi-motion` (`mcp:executeTool`), qui répondent aussi en données (`structuredContent`, `wait: false` pour suivre l'export sans bloquer). Dans le chat, un projet s'affiche en carte « Vidéo Motion » avec « Ouvrir le studio ».
+
+**Sur le fil, on garde le schéma de l'upstream** (§3.14) : `GET /v1/me` porte la session dans le compartiment `daily` et la semaine dans `monthly`, et `usageDay` donne l'heure de remise à zéro de la session. Les libellés de l'écran d'usage upstream (« jour », « mois ») sont donc faux jusqu'à ce que la couche de marque et d'i18n (§3.12) les remplace : c'est accepté pour la phase 0, où seul le propriétaire utilise l'app.
+
+#### La console d'admin
+
+**Décidée le 03/10/2026, sur `app.djazzi.com/admin`.** Elle n'existe que si `DJAZZI_ADMIN_EMAILS` liste au moins une adresse. On s'y connecte comme dans l'app, et seule une adresse de cette liste, **vérifiée**, l'ouvre. Toute autre personne connectée voit « Accès réservé » et peut changer de compte ; sans session, on est envoyé à la page de connexion, qui ramène à la console. Le jeton de l'opérateur (`DJAZZI_ADMIN_TOKEN`) ouvre aussi ses routes JSON (`/admin/api/*`), pour les scripts.
+
+- **Ce qu'on y fait :** changer le forfait d'un client ; lui offrir des crédits médias (au plus 10 000 par geste) ; remettre sa session de 5 h à zéro ; suspendre ou rétablir son compte ; réveiller, mettre à jour ou redémarrer son instance.
+- **Une offre de crédits suit la règle des recharges** : une recharge telle qu'elle est vendue, ou un montant libre. Avec une référence de paiement, le même paiement n'ajoute qu'une fois, qu'il arrive par la console ou par `POST /v1/admin/media-credits` : la référence est le reçu tel quel. Sans référence, chaque geste est un don à part.
+- **Le forfait se change dans la console, et y reste** : `DJAZZI_PLAN_ID` ne fait que poser celui du propriétaire à la création de son compte ; un redémarrage ne défait plus un changement.
+- **Une instance en échec passe en tête** de « Ce qui demande ton attention » ; chaque machine a un lien vers ses journaux sur le tableau de bord de Fly.
+- **Les deux niveaux Pro s'appellent « Pro » et « Pro max »** dans la console : ils ont le même nom dans le catalogue, le plus cher devient « Pro max ».
+- **Un compte suspendu n'ouvre plus rien** : ni `/v1` (403 `account_suspended`), quel que soit son jeton, ni son instance par la passerelle. Rien n'est servi, rien n'est dépensé.
+- **Le coût réel des modèles** (crédits des 7 derniers jours, en dollars et en F CFA) ne se voit que dans la console, jamais dans l'app d'un client.
+- **Chaque action est écrite dans un journal** (`admin_log`), avec qui l'a faite. Ce journal est en ajout seul, comme celui des médias : un déclencheur refuse toute modification et toute suppression.
+- **Un cookie seul ne change rien.** Une écriture exige un en-tête que seule la page de la console envoie : un autre site ne peut pas le poser sans notre accord CORS.
+
+- **La barre de l'app** (09/10/2026, `sidebar.ts`) : l'onglet Barre de l'app de la console règle l'ordre des pages de la barre de gauche, leur nom et celles qui sont masquées ; Chat reste en tête, les Échanges en bas. Une publication (une ligne dans `djazzi.sidebar_layout`, migration 13) arrive chez tout le monde sur `GET /v1/sidebar` en 10 minutes au plus ; « Revenir à l'ordre d'origine » l'efface. Une app hors ligne garde la dernière barre connue. Chaque publication s'écrit au Journal.
+- **Les annonces** (07/10/2026, `announcements.ts`) : un bandeau en haut du Chat, écrit dans l'onglet Annonces. Un seul à la fois : publier retire celui d'avant, programmé compris. Il dit un texte (160 caractères au plus), et peut avoir un bouton qui mène aux forfaits, à la page Utilisation, au mode conversation ou à une page **https** ; il vise tout le monde, Découverte ou les forfaits payants, et dure 60 jours au plus. Les apps le lisent avec le jeton du compte (`GET /v1/announcement`) toutes les 10 minutes et quand la fenêtre revient ; elles ne reçoivent ni le public visé ni l'auteur. Vues, clics et fermetures comptent chaque personne une fois (`POST /v1/announcement/:id/events`) ; une fermeture vaut pour le compte, sur tous ses appareils. Le bandeau du téléphone lit la même route, par l'instance, en haut de l'onglet d'accueil.
+
+- **Les notifications** (07/10/2026, `notifications.ts`) : un message écrit dans l'onglet Notifications, pour tout le monde, Découverte, les forfaits payants, ceux qui ont atteint leur limite (session ou semaine en cours), les inactifs depuis 14 jours, ou un client par son email. La console compte les personnes avant l'envoi et demande une confirmation. Le message part tout de suite ou à une heure choisie (60 jours au plus) ; qui le reçoit se décide quand il part, et jamais un compte suspendu. Il se lit **dans l'app** (la cloche de la barre du Mac, la page Notifications du téléphone, `GET /v1/notifications`) et, si on le coche, **par email** (Resend, depuis l'adresse des codes de connexion, par lots de 100). L'email porte un lien de désinscription signé (`/n/u/…`, avec la désinscription en un clic des messageries) : une désinscription coupe ces emails, pas les codes ni les messages dans l'app. Lus et clics comptent la première fois, dans l'app comme dans l'email (image d'un pixel, lien `/n/c/…`). Le Mac montre les nouveaux à l'écran pendant qu'il tourne (catégorie « Messages de Djazzi » des réglages), jamais ceux reçus app fermée. Le serveur dort quand personne ne l'utilise : un envoi programmé part à son heure s'il est éveillé, sinon à la première requête qui le réveille. « M'envoyer un test » l'envoie à l'admin seul, hors journal.
+
+- **Les messages automatiques** (07/10/2026) : ils partent seuls quand la situation arrive, chacun activé ou coupé depuis la console. Limite atteinte (dans l'app, une fois par session ou par semaine, avec le temps avant la suivante), crédits médias sous 20 (dans l'app, une fois par semaine au plus), client inactif depuis 14 jours (email, une seule fois, coupé par défaut) et bienvenue (app et email, le jour de l'inscription). Ils voyagent comme une notification pour une personne, donc la cloche, l'email et la désinscription marchent pareil ; la table `auto_message_sends` garantit un seul envoi par période. Ils restent hors de la liste « Envoyés ».
+
+- **Le programme partenaires** (07/10/2026) : des influenceurs et créateurs de la sous-région partagent leur lien `djazzi.com/?p=CODE` ou leur code. Le lien pose un cookie sur tout le domaine (60 jours) ; à l'inscription, la personne est rattachée au partenaire (le premier garde le client), et le code peut aussi se saisir dans l'app dans les 7 jours (`POST /v1/codes/redeem`). Elle reçoit un forfait offert (Essentiel 7 jours par défaut), qui revient seul au forfait d'avant, avec un message 3 jours avant. Chaque paiement de cette personne pendant 12 mois rapporte au partenaire 20 %, 25 % dès 10 clients payants, 30 % dès 50 (40 % au plus : au-delà, un client qui consomme tout son quota coûte plus qu'il ne rapporte). Une commission est payable après 30 jours, par mobile money, dès 10 000 F CFA ; le paiement est noté avec son numéro de transaction. Les commissions naîtront avec le paiement des forfaits : `PartnerProgram.payment` attend la notification du paiement.
+
+- **Le côté public du programme** (07/10/2026) : la page `djazzi.com/partenaires` (paliers, simulateur de gains en F CFA, règles honnêtes, formulaire de candidature protégé contre les robots et limité à 5 envois par heure et par adresse) ; la console accepte une candidature (le lien part au créateur par email) ou l'écarte. L'espace `app.djazzi.com/partenaire`, derrière la connexion, montre au partenaire son lien, son palier, ses gains par mois et son numéro de mobile money, dont chaque changement est noté au journal ; un partenaire accepté avant d'avoir un compte est lié à sa première connexion avec son email vérifié. Un visiteur arrivé par un lien voit un bandeau « Offert par… » sur l'accueil.
+
+La saisie du code dans les apps suit ; puis les codes promo et le parrainage entre clients.
+
+**Les objets 3D paramétriques** (13/10/2026) : le volet [CadQuery dans Motion Studio](CADQUERY.md) décrit les outils, les fichiers partagés par le Mac et le mobile et le moteur installé dans l’instance. Il appartient à Work ; les vidéos et affiches utilisent ensuite le pipeline Motion habituel.
+
+### 3.6 La vérification : exécuté ≠ vérifié
+
+**Décidé.** Une Action a deux états distincts : `executed` et `verified`. Chaque outil à effet déclare comment prouver son effet :
+
+- identifiant renvoyé par l'API ;
+- relecture d'un endpoint de statut ;
+- état du DOM après l'action ;
+- email de confirmation reçu ;
+- reçu du fournisseur ;
+- pour la blockchain, la confirmation on-chain.
+
+La preuve est attachée à l'Action dans le journal. Un Goal ne passe `COMPLETED` que si ses actions critiques sont `verified`. Sinon il passe WAITING_USER, avec la raison. (Mission §35, §85.)
+
+**Latitude :** la vérification peut être un outil appelé par l'agent, ou une étape automatique du moteur d'objectifs. Il faut commencer par la seconde pour les outils engageants, la première pour le reste.
+
+### 3.7 Modèles : OpenRouter par défaut
+
+| | |
+|---|---|
+| Existe | OpenRouter et Ollama déjà supportés (`core/models/`). La configuration distingue déjà un `assistantModel` et des `taskModels` par type de tâche (`shared/models.ts`) : c'est le **routage par tâche** de la mission §11, déjà en place. |
+| Manque | Retirer la passerelle Rowboat Labs (`/v1/llm`, audit §11) ; router aussi selon le coût et la disponibilité. |
+| Changement | Config initiale Djazzi : fournisseur = OpenRouter, avec des modèles recommandés par tâche. C'est un fichier de données, pas du code. |
+| Risque | Les identifiants de modèles meurent. Il faut une synchro du catalogue (le `models-dev.ts` upstream la fait déjà) et une alerte quand le solde OpenRouter s'épuise (le 402 coupe *tous* les modèles, y compris les gratuits). |
+
+### 3.8 Pays et fournisseurs
+
+**Décidé.** Un package `@djazzi/providers`, sans aucune dépendance au runtime, contient :
+
+- les interfaces `PaymentProvider`, `CommerceProvider`, `TravelProvider`, `TransportProvider`, `DeliveryProvider`, `MapsProvider`, `CommunicationProvider` ;
+- le type `Money { amount: entier en unité mineure, currency: ISO 4217 }` : jamais de flottant (mission §26) ;
+- le registre `CountryConfig` : pays, devise, langues, fournisseurs disponibles par catégorie, avec un statut `SUPPORTED`, `RESEARCH_REQUIRED` ou `UNAVAILABLE`.
+
+Qui utilise quoi :
+
+- **Le service de paiement** implémente `PaymentProvider`.
+- **L'instance** utilise les autres interfaces à travers des **skills** (chercher un vol, comparer des produits), avec le repli dans l'ordre de la mission §14 : API native, puis MCP, puis intégration, puis navigateur, puis vision.
+- **Ajouter un pays = ajouter une entrée de registre et des implémentations.** Le cœur ne change pas.
+
+Le détail par marché est dans `WEST_AFRICA_PROVIDER_ARCHITECTURE.md`.
+
+### 3.9 Le service de paiement
+
+**Décidé : un déploiement séparé du plan de contrôle** (`apps/djazzi/packages/payments`), avec son propre rôle de base de données. Ce rôle est le seul à pouvoir écrire dans le ledger, et le seul à détenir les secrets financiers.
+
+Il porte, dans cet ordre de construction (mission §90) :
+
+1. `PaymentIntent`, `PaymentMandate`, le moteur de politique et le ledger ;
+2. les fournisseurs existants ;
+3. le Mobile Money ;
+4. les cartes virtuelles ;
+5. les achats autonomes ;
+6. la crypto ;
+7. le routage avancé.
+
+Le **moteur de politique** est une fonction pure. Il prend l'intention, le mandat et l'historique du ledger, et rend `EXECUTE`, `REQUIRE_APPROVAL` ou `BLOCK` avec la raison. Il se teste exhaustivement sans réseau, comme `policy.ts` dans Harbor.
+
+**Décidé (29/09/2026) : Djazzi ne détient jamais d'argent.** Dans la zone UEMOA, détenir des fonds pour autrui ou émettre de la monnaie électronique relève d'agréments de la BCEAO. Djazzi reste donc **orchestrateur** : l'argent va directement du moyen de paiement de l'utilisateur au marchand, via un agrégateur ou un établissement agréé, et ne transite jamais par un compte Djazzi.
+
+Conséquences qui s'imposent au code :
+
+- pas de solde, pas de portefeuille, pas de compte de passage côté Djazzi ;
+- le ledger **enregistre** des mouvements exécutés par des tiers, il n'en **porte** aucun ;
+- un remboursement est demandé au fournisseur ou au marchand, jamais versé par Djazzi ;
+- l'abonnement de l'utilisateur à Djazzi est un flux séparé (Djazzi y est le marchand) et n'a rien à voir avec les dépenses des agents.
+
+Reste à faire valider ce montage par un juriste avant le premier encaissement réel.
+
+### 3.10 Le navigateur côté serveur
+
+**Décidé : même outil, autre moteur.** L'outil `browser-control` (audit §6) parle aujourd'hui au navigateur Electron. Djazzi fournit une implémentation **Chromium headless** du même service de contrôle, par instance, avec :
+
+- son propre profil (cookies et sessions de l'utilisateur, isolés) ;
+- les mêmes éléments indexés (DOM structuré, pas de vision par défaut) ;
+- les mêmes skills par site.
+
+**JEV** (`benewende-dev/jev-ultrafast`, fork de `browser-use/jev-ultrafast`, MIT, v0.1.0 du 18/09/2026) est un agent de navigation **par choix plutôt que par génération**. À chaque étape, il lit un tableau indexé des éléments de la page. Un modèle spécialisé (Jev, de TypeSafe) choisit en un seul aller-retour l'opération (`CLICK`, `TYPE_TEXT`, `SELECT`, `SCROLL`, `WAIT`, `DONE`, `BLOCKED`) et l'élément visé. Un petit LLM (via OpenRouter) n'écrit du texte que pour `TYPE_TEXT`.
+
+| | |
+|---|---|
+| Forces | Très rapide (Google Flights en ≈ 7 s selon ses mesures). Pas de vision. Aucune sortie du modèle ne devient sélecteur, coordonnées ou JavaScript. Petit (≈ 850 lignes, lisible). Même famille que les skills par site déjà utilisés par Rowboat (browser-use / browser-harness). |
+| Limites (déclarées par ses auteurs) | Pas d'iframes, de shadow DOM, d'upload, de pop-ups, de canvas, ni de défilement imbriqué. Or les pages de paiement sont souvent en iframe : **JEV ne fera pas de checkout**, ce qui tombe bien, puisque les paiements passent par le service de paiement (§3.4). Les auteurs précisent aussi que leurs mesures ne sont pas un banc de fiabilité : 3 exécutions d'une seule tâche. |
+| Dépendance | L'API de TypeSafe (`api.typesafe.ai`, clé payante) reçoit l'état de la page à chaque étape. C'est un tiers qui voit ce que l'agent voit, donc un point à couvrir dans `AGENT_SECURITY_MODEL.md` (données de l'utilisateur envoyées hors de Djazzi). |
+| Langage | Python ≥ 3.12, alors que l'instance est en Node. |
+
+**Décidé : JEV est un accélérateur optionnel, pas le moteur du navigateur.**
+
+- Il tourne comme **processus annexe (Python) dans l'instance**, relié au même Chromium headless par le protocole de débogage (CDP).
+- Il est exposé comme **un outil de plus**, `browser.pursue(url, goal)`, réservé aux **objectifs de lecture et de recherche** : trouver des vols, filtrer des hôtels, ouvrir une page. Son `DONE` est toujours suivi d'une vérification indépendante (§3.6), comme le font ses propres exemples.
+- **Tout geste engageant** (valider un formulaire, réserver) repasse par `browser-control`, avec son niveau de risque et son approbation.
+- **Si TypeSafe est indisponible, trop cher ou refusé par l'utilisateur, `browser-control` fait le travail seul.** Djazzi ne dépend pas de JEV pour fonctionner.
+- L'adopter pour de bon se décide sur **mesures** : un banc de tâches réelles sur des sites d'Afrique de l'Ouest (compagnies régionales, hôtels, commerce en ligne), qui compare taux de réussite, durée et coût avec `browser-control` seul.
+
+| | |
+|---|---|
+| Existe | Interface d'outil, éléments indexés, skills par site ; `apps/main/src/browser/control-service.ts`. |
+| Manque | Un moteur sans Electron. |
+| Risque | `page-scripts.ts` (18 Ko) contient la logique d'indexation dans le processus Electron. Il faut la réutiliser telle quelle (injectée dans Chromium) plutôt que la réécrire, pour profiter des corrections upstream. |
+
+### 3.11 Code Mode dans le cloud
+
+Code Mode (audit §9) lance Claude Code ou Codex sur la machine qui héberge le serveur. En cloud, cette machine est l'instance. Il faut donc un **bac à sable de code** à l'intérieur de l'instance, ou un bac à sable éphémère à part pour chaque session de code.
+
+**Latitude.** Les identifiants des agents de code (compte Claude ou ChatGPT de l'utilisateur, ou clés via le coffre) ne passent jamais par le LLM.
+
+### 3.12 FR / EN
+
+**Décidé : l'i18n est une couche, pas une réécriture.**
+
+- **Agents et contenus :** la langue d'exécution (`executionLocale`) est injectée dans les instructions composées (`runtime/assembly/compose-instructions.ts`) par un « trait » Djazzi. On ne modifie pas le prompt de base de l'upstream.
+- **UI :** toutes les chaînes Djazzi naissent traduites, via un package `@djazzi/i18n`. **Décidé (29/09/2026)** pour les chaînes **upstream** :
+  1. **D'abord, proposer l'i18n à l'upstream.** Une issue d'abord, pour valider l'approche avec leurs mainteneurs, puis une première PR petite (le mécanisme et un écran) plutôt qu'une extraction massive. Si elle est acceptée, la divergence disparaît et le monde entier en profite.
+  2. **Seulement en cas de refus, extraire nous-mêmes, composant par composant**, en évitant `App.tsx`. Chaque extraction est alors une divergence déclarée.
+- **Marque :** « Djazzi » ne s'affiche que via la couche i18n et marque. Les identifiants internes ne bougent pas (UPSTREAM.md §2).
+
+### 3.13 Clients
+
+| Client | Existe | Cible |
+|---|---|---|
+| Desktop | ✅ | Deux modes : instance **locale** (le Rowboat d'aujourd'hui, données sur la machine) ou instance **cloud** (le plan de séparation upstream l'a validé, `apps/x/REMOTE_SERVER.md`). **Décidé (01/10/2026) : l'app distribuée est en cloud.** Après la connexion, elle se branche d'elle-même sur l'instance du compte, par la passerelle (§3.5 « Les instances », `apps/djazzi/packages/desktop`). |
+| Mobile | ✅ (appairage, chat, notifications) | Ajouter la connexion au plan de contrôle, **les approbations** (mission §40) et le statut des Goals. |
+| Web | ❌ | Le renderer parle à `window.ipc`, et `@x/client` fournit déjà le jumeau HTTP typé des mêmes canaux (`packages/client/src/rpc.ts`). Une coquille web qui adapte l'un à l'autre est **faisable sans réécrire l'UI**. À planifier après le premier jalon. |
+| WhatsApp / SMS | ✅ WhatsApp, Telegram (`core/channels`) | Canal de premier rang pour les approbations et le suivi : c'est l'interface réelle du marché. |
+| Voix | ⚠️ dictée et TTS | Même runtime (mission §41) ; la TTS du backend Rowboat Labs est à remplacer. |
+
+### 3.14 Ce qui remplace le backend Rowboat Labs
+
+Chaque appel à `API_URL` (audit §11) trouve son remplaçant, **fonction par fonction** :
+
+| Route Rowboat Labs | Remplaçant Djazzi |
+|---|---|
+| `/v1/config` | Config servie par le plan de contrôle (même schéma `RowboatApiConfig`). |
+| `/v1/me` | Identité du plan de contrôle. |
+| `/v1/llm`, `/v1/llm/models` | OpenRouter directement, avec la clé détenue par le plan de contrôle. |
+| `/v1/search/exa` | Recherche via le plan de contrôle (Exa ou autre, clé chez nous). |
+| `/v1/composio` | **Désactivé en V1.** Les intégrations V1 passent par les connecteurs natifs de Rowboat (Gmail, agendas) et par MCP. Composio se réévalue quand le besoin d'intégrations nombreuses apparaît (§8). `/v1/config` le dit (`composio: false`, 02/10/2026) : l'app ne l'appelle plus, seule une clé Composio de l'utilisateur l'active. |
+| `/v1/voice/text-to-speech/` | Mandataire TTS dans le plan de contrôle. |
+| `/v1/google-oauth/claim-picked` | OAuth Google géré par le plan de contrôle (fin du retour sur `localhost` en cloud). |
+| `/v1/billing/*`, `/v1/referral` | Budgets et usage Djazzi ; parrainage hors V1. |
+| PostHog | Désactivé ; observabilité Djazzi propre (§4). |
+
+**Décidé :** le plan de contrôle expose ces routes **avec les mêmes chemins et les mêmes schémas**. L'instance pointe simplement `API_URL` vers le plan de contrôle. On ne modifie aucun des fichiers qui appellent `API_URL` : c'est la plus grosse économie de divergence du projet.
+
+## 4. Observabilité
+
+Chaque Goal s'inspecte sans lire de logs épars (mission §36) :
+
+- **Dans l'instance :** les journaux JSONL de tours et de Goals sont déjà la trace complète (outil, entrée, sortie, permission, durée, usage). `inspect-cli.ts` existe côté upstream.
+- **Dans le plan de contrôle :** la projection indexe `goalId`, `taskId`, `toolCallId` (qui sert d'`actionId`) et un `traceId`. L'écran « pourquoi a-t-il échoué ? » lit cette projection.
+- **Coûts :** `UsageRecord` agrège modèle, outils, navigateur, calcul et fournisseurs par Goal.
+
+## 5. Cycles de vie
+
+Les états et transitions exacts sont spécifiés dans `AGENT_RUNTIME_SPEC.md`. En résumé :
+
+| Objet | États |
+|---|---|
+| Goal | DRAFT → PLANNING → RUNNING ⇄ WAITING_USER / WAITING_EXTERNAL / PAUSED → COMPLETED / FAILED / CANCELLED |
+| Task | pending → running ⇄ waiting_user / waiting_external → verified / failed / cancelled (avec retry borné) |
+| Action | requested → (permission) → executed → verified / unverified / failed |
+| Approval | pending → approved / rejected / expired ; liée à **une** action et à l'empreinte de son payload |
+| Instance | provisioning → running ⇄ sleeping → updating → archived |
+| Mandate | draft → active ⇄ paused → exhausted / expired / revoked |
+
+## 6. Hébergement
+
+**Décidé (29/09/2026) : les instances s'endorment quand elles ne servent pas.** Une instance inactive ne consomme pas de calcul ; elle se réveille sur une requête d'un client, sur une réponse attendue (approbation, résultat de paiement) ou sur le réveil planifié (§3.5).
+
+**Décidé (30/09/2026) : Fly.io, région Paris (`cdg`).** Chaque instance est une *Fly Machine* avec son volume.
+
+| Besoin | Réponse de Fly.io (documentation lue le 30/09/2026) |
+|---|---|
+| Volume persistant | Un volume par Machine, lié à sa région. Il n'est pas répliqué : les sauvegardes sont à notre charge (sécurité §6.3). |
+| Veille | `autostop = suspend` : la mémoire est figée dans un instantané, et le réveil prend « quelques centaines de millisecondes ». Une Machine suspendue ne coûte **que son stockage**. |
+| Réveil | Le proxy Fly réveille la Machine à la première requête (`autostart`). Le plan de contrôle et le réveil planifié passent par lui. |
+| Isolation | Chaque Machine est une micro-VM Firecracker : **isolation noyau pour toutes les instances** (sécurité §9.1). |
+| Région | Paris (`cdg`) et Johannesburg (`jnb`) existent. Paris est retenu parce que le trafic d'Afrique de l'Ouest passe en grande partie par l'Europe (câbles sous-marins). **Mesuré le 01/10/2026 : Paris répond 3,5 fois plus vite que Johannesburg** depuis l'Afrique de l'Ouest (ci-dessous). |
+
+**Limite connue.** La suspension exige une Machine de **2 Go de mémoire au plus**. Mesuré : l'instance en utilise environ 610 Mo, ce qui laisse 1,4 Go pour un Chromium headless. Si ça ne suffit pas, deux parades : lancer Chromium seulement quand une tâche en a besoin, ou accepter l'arrêt simple (`autostop = stop`), avec un réveil de plusieurs secondes.
+
+#### Mesures de la phase 0 (01/10/2026)
+
+Faites sur les deux apps réelles (`warell-control` et `warell-owner`, `shared-cpu-1x`, Paris), et sur une app jetable à deux Machines identiques (Paris et Johannesburg), supprimée aussitôt après.
+
+**Mémoire de l'instance**, avec l'app de bureau et l'app mobile connectées : 610 Mo utilisés sur 2 Go. Dossier de travail : 10 Mo. Chromium n'est pas dans l'image : en phase 0, les actions de navigateur passent par le client connecté (capacité `browser-control` de l'upstream). Sa mémoire se mesurera quand il entrera dans l'image.
+
+**Démarrage et réveil**
+
+| | Durée |
+|---|---|
+| Démarrage à froid de l'instance (Machine lancée → serveur prêt) | 9 s |
+| Réveil de l'instance suspendue, par le tunnel `fly proxy` | 2,3 s |
+| Réveil du plan de contrôle suspendu, par Internet (3 essais) | 0,9 à 1,1 s |
+| Requête sur le plan de contrôle éveillé | 0,4 s |
+
+Le réveil coûte donc environ **une demi-seconde à deux secondes de plus** sur la première requête, ce qui reste invisible à côté du temps de réponse d'un modèle.
+
+**Latence depuis l'Afrique de l'Ouest** (sondes publiques Globalping, HTTPS, temps jusqu'au premier octet, médiane de 3 essais) :
+
+| Sonde | Vers Paris | Vers Johannesburg | Porte d'entrée Fly |
+|---|---|---|---|
+| Ouagadougou (Burkina Faso Internet Exchange) | 132 ms | 453 ms | Amsterdam |
+| Cotonou (ISOCEL) | 107 ms | 491 ms | Paris |
+| Lagos | 128 ms | 479 ms | Londres |
+
+Le trafic d'Afrique de l'Ouest entre chez Fly **en Europe** dans tous les cas : une Machine à Johannesburg ajoute l'aller-retour Europe-Afrique du Sud. Aucune sonde publique n'existe en Côte d'Ivoire sur ce réseau : Abidjan reste à mesurer, par une sonde RIPE Atlas ou par un testeur sur place.
+
+**Coût** (tarifs Fly.io lus le 01/10/2026 ; Paris = tarif de base × 1,13) :
+
+| | Prix |
+|---|---|
+| Instance 2 Go éveillée | 12,13 $ par 30 jours, soit 0,017 $ de l'heure |
+| Instance endormie | stockage seulement : volume de 10 Go à 0,15 $/Go/mois (1,50 $/mois), plus le disque système de la Machine à 0,15 $/Go/mois, plus ses instantanés, facturés au Go stocké |
+| Plan de contrôle 256 Mo éveillé en continu | 2,21 $ par 30 jours |
+| Trafic sortant (Europe) | 0,02 $/Go |
+
+Une instance éveillée **2 heures par jour** coûte environ **1,20 $ par mois** ; 8 heures par jour, environ 4,20 $. Ce coût sort de la marge de 55 % (§3.5).
+
+**Ce que les mesures ont appris**
+
+- **Une app ouverte garde l'instance éveillée** : le lien WebSocket de l'app de bureau ou du téléphone compte comme du trafic. Le coût réel dépend donc du temps où l'app reste ouverte, pas seulement du temps de travail de l'agent.
+- **Une instance suspendue ne fait plus rien** : ses tâches de fond sont gelées avec elle. Le réveil planifié du plan de contrôle (§3.5) est donc indispensable avant d'ouvrir les tâches programmées.
+- **L'accueil upstream exige un espace d'équipe** dès qu'un compte est connecté, et bloque tant qu'aucun serveur d'espaces n'existe. **Traité** : la préparation de l'instance (`packages/instance/src/seed.ts`) le marque comme fait. L'accueil Djazzi (connexion par téléphone) le remplacera.
+
+**Les alternatives regardées** (30/09/2026), pour pouvoir changer si Fly.io déçoit :
+
+| Plateforme | Ce qui convient | Ce qui bloque |
+|---|---|---|
+| Koyeb | Micro-VM Firecracker, veille légère avec réveil en ≈ 200 ms | Rachetée par Mistral en février 2026, recentrée sur l'inférence IA ; la veille légère est citée parmi les fonctions menacées ; compatibilité veille + volume non documentée |
+| Northflank | Micro-VM, veille qui garde le volume, déploiement possible dans notre propre compte cloud | Réveil à froid (pas d'instantané mémoire) |
+| Railway | Volumes, facturation à la minute, veille | Conteneurs, pas de micro-VM ; créer une instance par utilisateur par API est moins naturel |
+| Modal, Daytona | Bacs à sable rapides à créer | Faits pour des sessions courtes (durée de vie bornée, archivage automatique) : bons candidats pour le **bac à sable de code** (§3.11), pas pour l'instance |
+| Cloudflare Containers | Une instance par utilisateur, veille gratuite | **Disque effacé à chaque veille** : incompatible avec le dossier de travail |
+| Grands clouds (AWS, Google, Azure) | Tout est possible | Tout est à construire et à administrer |
+
+**Plan de repli : Northflank**, parce qu'il garde l'isolation par micro-VM et permet de migrer plus tard vers notre propre compte cloud. Rien dans l'instance ne dépend de Fly.io : le plan de contrôle parle à l'hébergeur par une interface `InstanceHost` (créer, réveiller, endormir, sauvegarder), dont Fly.io est la première implémentation.
+
+Contrainte connue : on privilégie le **managé**, pas de VPS à administrer soi-même. Le plan de contrôle et le service de paiement, eux, sont des services classiques.
+
+## 7. Récapitulatif
+
+**Ce qu'on garde de Rowboat, sans y toucher :**
+
+- le moteur de tours et les sessions ;
+- les permissions (via leurs interfaces) ;
+- le catalogue d'outils et les skills ;
+- le Brain, les bg-tasks, Code Mode, MCP ;
+- les canaux WhatsApp et Telegram ;
+- `rowboat-server`, l'app mobile, le desktop ;
+- Harbor.
+
+**Ce qu'on ajoute**, dans `apps/djazzi/` :
+
+| Package | Contenu |
+|---|---|
+| `@djazzi/instance-bridge` | Politique, classifieur, relais d'événements, client du plan de contrôle |
+| `@djazzi/goals` | Goal, planner, tâches, vérification |
+| `@djazzi/providers` | Interfaces fournisseurs, `Money`, `CountryConfig` |
+| `@djazzi/i18n` | Traductions et marque |
+| `control` | Le plan de contrôle |
+| `payments` | Le service de paiement |
+| (package à nommer) | Le navigateur headless |
+
+**Ce qu'on modifie dans l'upstream**, et déclare dans `DIVERGENCES.md` :
+
+- une ligne d'enregistrement dans `apps/x/apps/server/src/standalone.ts` ;
+- la configuration initiale des modèles ;
+- plus tard, l'extraction i18n si l'upstream la refuse.
+
+**Ce qu'on remplace :** le backend Rowboat Labs (par le plan de contrôle, en gardant les mêmes routes) et PostHog.
+
+**Ce qu'on laisse mourir chez eux :** `runtime/legacy`.
+
+## 8. Décisions
+
+| # | Question | État |
+|---|---|---|
+| 1 | Connexion | **Décidé 29/09 :** téléphone + code SMS (§3.5). **Décidé 01/10 :** aussi email + code, Google, Apple, GitHub ; **02/10 :** mot de passe facultatif, choisi après un code ; liaison seulement par email vérifié ; Better Auth. Restent l'agrégateur SMS par pays et le service d'email. |
+| 2 | Hébergement des instances | **Décidé 29/09 :** mise en veille obligatoire. **Décidé 30/09 :** Fly.io, Paris, repli Northflank (§6). |
+| 3 | i18n des chaînes upstream | **Décidé 29/09 :** proposée d'abord à l'upstream (§3.12). |
+| 4 | Composio | **Décidé 29/09 :** désactivé en V1, MCP et connecteurs natifs à la place (§3.14). |
+| 5 | Argent des clients | **Décidé 29/09 :** Djazzi ne détient jamais d'argent (§3.9). Reste la validation juridique. |
+| 6 | JEV | **Décidé 29/09 :** accélérateur optionnel de lecture et recherche, adopté sur mesures (§3.10). |
+| 7 | Facturation de l'usage | **Décidé 30/09 :** quota en deux fenêtres, 5 h et semaine, au coût réel ; Découverte gratuite, Semaine 5 €, Essentiel 20 €, Pro 100 € ou 200 €, prix fixes en euros et en F CFA ; marge de 55 % garantie à pleine utilisation (§3.5). |

@@ -3,11 +3,11 @@ import {
   Activity, BookOpen, CloudSun, Dumbbell, LayoutGrid, LineChart, Mic, Network, Newspaper, Telescope, Timer, Wallet,
 } from 'lucide-react'
 
-// Baarali (02/10/2026): what a person reads on an app's card. The registry
+// Djazzi (02/10/2026): what a person reads on an app's card. The registry
 // only carries a package name and the publisher's own English sentence, so
 // each app we list gets a plain name, what it is for, an icon and a shelf.
 // The words are English like the rest of the interface; the French comes
-// from the dictionary (apps/baarali/packages/desktop/src/i18n/fr.ts).
+// from the dictionary (apps/djazzi/packages/desktop/src/i18n/fr.ts).
 //
 // An app without a fiche is not hidden: it waits under « other apps », as
 // the registry wrote it, and a search still finds it.
@@ -72,7 +72,7 @@ export const FICHES: Record<string, Fiche> = {
   },
   'podcast-generator': {
     title: 'Podcast on demand',
-    summary: 'Give it a topic, a link or a document: Baarali makes a two-voice episode you listen to right here.',
+    summary: 'Give it a topic, a link or a document: Djazzi makes a two-voice episode you listen to right here.',
     icon: Mic, shelf: 'life', capabilities: ['copilot'], agents: 0,
   },
   'weather-dashboard': {
@@ -110,7 +110,7 @@ export function accessOf(capabilities: string[], agents: number): Access[] {
   const out: Access[] = []
   for (const cap of capabilities) {
     if (cap === 'llm') out.push({ label: 'Uses your AI', tone: 'plain' })
-    else if (cap === 'copilot') out.push({ label: 'Acts through Baarali', tone: 'account' })
+    else if (cap === 'copilot') out.push({ label: 'Acts through Djazzi', tone: 'account' })
     else if (cap === 'voice') out.push({ label: 'Voice', tone: 'plain' })
     else out.push({ label: `Your ${toolkitName(cap)} account`, tone: 'account' })
   }
@@ -122,7 +122,7 @@ export function accessOf(capabilities: string[], agents: number): Access[] {
 /** One line per capability, for the install dialog. */
 export function capabilityLine(cap: string): string {
   if (cap === 'llm') return 'Use your AI models (it counts against your plan)'
-  if (cap === 'copilot') return 'Have Baarali act for you, with its tools and what it knows about you'
+  if (cap === 'copilot') return 'Have Djazzi act for you, with its tools and what it knows about you'
   if (cap === 'voice') return 'Speak and listen (text to speech and transcription)'
   return `Read and act on your ${toolkitName(cap)} account`
 }

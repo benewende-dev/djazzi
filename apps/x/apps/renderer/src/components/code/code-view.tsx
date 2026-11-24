@@ -129,7 +129,7 @@ export function CodeView({
     const res = await window.ipc.invoke('dialog:openDirectory', { title: 'Choose a project folder' })
     if (!res.path) return
     try {
-      // BAARALI(05/10/2026): copied to the Baarali space first when joined to it.
+      // DJAZZI(05/10/2026): copied to the Djazzi space first when joined to it.
       const [dir] = await toInstance([res.path], 'projects')
       const added = await window.ipc.invoke('codeProject:add', { path: dir })
       await refresh()
