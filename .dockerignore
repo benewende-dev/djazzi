@@ -1,4 +1,4 @@
-# Baarali images build from the repo root (apps/baarali/packages/*/Dockerfile).
+# Djazzi images build from the repo root (apps/djazzi/packages/*/Dockerfile).
 # Local installs and builds never enter the context: the image rebuilds them.
 **/node_modules
 **/dist
@@ -14,6 +14,6 @@ apps/x/apps/mobile/android
 apps/x/apps/main/.package
 apps/x/apps/main/out
 
-# BAARALI(17/10/2026): local checkouts and the private marketing kit are not build inputs.
+# DJAZZI(17/10/2026): local checkouts and the private marketing kit are not build inputs.
 .worktrees
 marketing

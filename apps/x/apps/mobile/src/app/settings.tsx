@@ -11,19 +11,19 @@ import * as analytics from '@/lib/analytics';
 import { useModels } from '@/lib/use-models';
 import { useColors } from '@/theme/colors';
 
-// BAARALI(06/10/2026): the settings on the phone (validated mockup): the
+// DJAZZI(06/10/2026): the settings on the phone (validated mockup): the
 // account with its plan and the week's use, the default model, the computer
 // it is linked to, notifications, language and theme (the phone's own).
 
 type Info = billingShared.BillingInfo;
-const PLANS_URL = 'https://baarali.com/tarifs';
+const PLANS_URL = 'https://djazzi.com/tarifs';
 
 export default function SettingsScreen() {
   const colors = useColors();
   const { rpc, pairing, unpair, status } = useConnection();
   const models = useModels();
   const [info, setInfo] = useState<Info | null>(null);
-  // A creator's partner code (08/10/2026): who recommended Baarali, the offered days.
+  // A creator's partner code (08/10/2026): who recommended Djazzi, the offered days.
   const [partner, setPartner] = useState<PartnerState | null>(null);
 
   useFocusEffect(useCallback(() => {
@@ -35,7 +35,7 @@ export default function SettingsScreen() {
   }, [rpc]));
 
   const plan = info ? billingShared.getBillingPlanData(info.catalog, info.subscriptionPlanId) : null;
-  // Baarali's week rides the « monthly » bucket, as on the desktop's gauge.
+  // Djazzi's week rides the « monthly » bucket, as on the desktop's gauge.
   const bucket = info?.monthly;
   const used = bucket && bucket.sanctionedCredits > 0 ? Math.min(1, bucket.usedCredits / bucket.sanctionedCredits) : 0;
 
@@ -84,7 +84,7 @@ export default function SettingsScreen() {
         </Pressable>
       </View>
 
-      <Text style={head}>Baarali</Text>
+      <Text style={head}>Djazzi</Text>
       <View style={group}>
         {partner?.partner ? <SRow label="Recommended by" value={partner.partner} /> : null}
         {partner?.canRedeem && !partner.partner ? <SRow label="Partner code" value="›" onPress={() => router.push('/partner-code')} /> : null}
@@ -100,7 +100,7 @@ export default function SettingsScreen() {
         {pairing ? <SRow label="Unpair" danger onPress={() => { analytics.mobileUnpaired('user'); void unpair().then(() => router.replace('/sign-in')); }} /> : null}
       </View>
       <Text style={{ marginHorizontal: 20, marginTop: 8, fontSize: 13, lineHeight: 18, color: colors.tertiaryLabel }}>
-        The language and the theme follow your phone. Connections (Gmail, WhatsApp…) are set up in Baarali on your computer.
+        The language and the theme follow your phone. Connections (Gmail, WhatsApp…) are set up in Djazzi on your computer.
       </Text>
     </ScrollView>
   );

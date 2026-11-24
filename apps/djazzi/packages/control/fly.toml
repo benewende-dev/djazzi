@@ -1,0 +1,34 @@
+# The control plane on Fly, Paris (architecture §6, decided 30/09/2026).
+# Secrets (fly secrets): OPENROUTER_API_KEY, DJAZZI_INSTANCE_TOKEN.
+app = "warell-control"
+primary_region = "cdg"
+
+[env]
+  DJAZZI_PUBLIC_URL = "https://app.djazzi.com"
+  DJAZZI_PLAN_ID = "essentiel"
+  # Our Spaces server (packages/spaces, baarali-spaces), decided 02/10/2026.
+  DJAZZI_SPACES_URL = "https://spaces.djazzi.com"
+  # The installers of the latest published release (djazzi-desktop.yml).
+  # Set, the home page offers the download instead of sign-in.
+  DJAZZI_DOWNLOAD_BASE = "https://github.com/benewende-dev/djazzi/releases/latest/download"
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  # One machine always up (07/11/2026): it is the one that wakes the
+  # instances at the time of their routines (src/wakes.ts). Asleep, it
+  # woke nobody, and no routine ran with the apps closed.
+  auto_stop_machines = "suspend"
+  auto_start_machines = true
+  min_machines_running = 1
+
+  [[http_service.checks]]
+    method = "GET"
+    path = "/health"
+    interval = "30s"
+    timeout = "5s"
+    grace_period = "10s"
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "256mb"

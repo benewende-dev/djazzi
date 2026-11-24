@@ -5,7 +5,7 @@ import type { ServerFrame } from '@rowboat/spaces-protocol';
 import { asksBaarasseur } from './baarasseur-members.js';
 import { buildInvocationMessage } from './topic-agent.js';
 
-// BAARALI(07/10/2026): what wakes a baarasseur in a group, and how its turn is headed.
+// DJAZZI(07/10/2026): what wakes a baarasseur in a group, and how its turn is headed.
 
 const notify = (over: Partial<Extract<ServerFrame, { kind: 'notify' }>>): ServerFrame => ({
     kind: 'notify',

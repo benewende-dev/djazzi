@@ -4,16 +4,16 @@ import * as Haptics from 'expo-haptics';
 import { useState } from 'react';
 import { ActivityIndicator, Platform, View } from 'react-native';
 
-import { BaaraliSignInView } from '@/components/baarali-sign-in-view';
+import { DjazziSignInView } from '@/components/djazzi-sign-in-view';
 import { useSpacesAccount } from '@/lib/spaces/account';
-import { connectInstance, sendCode, signInWithPassword, SignInError, verifyCode, type SignInProblem } from '@/lib/baarali-sign-in';
+import { connectInstance, sendCode, signInWithPassword, SignInError, verifyCode, type SignInProblem } from '@/lib/djazzi-sign-in';
 import { useConnection } from '@/lib/connection';
 import { useColors } from '@/theme/colors';
 
-// BAARALI: the account's sign-in, its own screen since the 2026-11-23 sync.
+// DJAZZI: the account's sign-in, its own screen since the 2026-11-23 sync.
 // It lived on the Spaces tab's first screen until then (07/10/2026); the
 // upstream made Spaces a section with its own tabs (spaces-home.tsx), so the
-// one way into Baarali now stands apart from it. The email, then the code it
+// one way into Djazzi now stands apart from it. The email, then the code it
 // receives, or the password; the browser stays for Google and Apple. Signing
 // in also links the person's cloud instance, then opens the home.
 export default function SignInScreen() {
@@ -38,7 +38,7 @@ function SignIn() {
   const colors = useColors();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  // Baarali (07/10/2026): signing in happens here, with no web page: the
+  // Djazzi (07/10/2026): signing in happens here, with no web page: the
   // email, then the code it receives. The browser stays for Google and Apple.
   const [step, setStep] = useState<'email' | 'code'>('email');
   const [email, setEmail] = useState('');
@@ -87,12 +87,12 @@ function SignIn() {
     // The same cloud instance as the person's Mac: their chats, here.
     try {
       const server = await connectInstance(session, Device.deviceName ?? (Platform.OS === 'web' ? 'Navigateur' : 'iPhone'));
-      await pair({ url: server.url, token: server.key, name: 'Baarali' });
+      await pair({ url: server.url, token: server.key, name: 'Djazzi' });
       if (process.env.EXPO_OS === 'ios') void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       router.replace('/home');
     } catch (err) {
       // Signed in to Spaces all the same; the chats wait for the instance.
-      // BAARALI(09/11/2026): the home says why and offers to link again (the
+      // DJAZZI(09/11/2026): the home says why and offers to link again (the
       // sign-in screen gave way to Spaces at once, and the reason was lost).
       say(err);
       router.replace('/home');
@@ -129,7 +129,7 @@ function SignIn() {
   };
 
   return (
-    <BaaraliSignInView
+    <DjazziSignInView
       step={step} email={email} code={code} busy={busy} error={error}
       onEmail={value => { setEmail(value); setError(null); }}
       onCode={value => { setCode(value.replace(/\D/g, '').slice(0, 6)); setError(null); }}

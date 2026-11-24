@@ -7,7 +7,7 @@ import type { Announcement } from '@x/shared/dist/billing.js';
 import { useConsoleMessages } from '@/lib/console-messages';
 import { useColors } from '@/theme/colors';
 
-// The banner at the top of the home tab (Baarali, 07/10/2026), written in the
+// The banner at the top of the home tab (Djazzi, 07/10/2026), written in the
 // admin console, the same one the Mac shows above its Chat. Closed here, it
 // is closed on every device.
 

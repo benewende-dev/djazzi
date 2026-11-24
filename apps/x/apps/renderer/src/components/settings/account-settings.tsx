@@ -55,7 +55,7 @@ export function AccountSettings({ dialogOpen, onOpenUsage }: AccountSettingsProp
     setBillingLoadedAt(Date.now())
   }
   const currentPlan = billing ? getBillingPlanData(billing.catalog, billing.subscriptionPlanId) : null
-  // Baarali (03/10/2026): what the plan includes, worded like the pricing
+  // Djazzi (03/10/2026): what the plan includes, worded like the pricing
   // page (control /v1/plans), so the account says what one pays for.
   const [offers, setOffers] = useState<PlanOffer[] | null>(null)
   useEffect(() => {
@@ -250,7 +250,7 @@ export function AccountSettings({ dialogOpen, onOpenUsage }: AccountSettingsProp
                 </ul>
               </div>
             )}
-            {/* Baarali: the limits in short; Settings › Usage tells them in full. */}
+            {/* Djazzi: the limits in short; Settings › Usage tells them in full. */}
             <button
               type="button"
               onClick={onOpenUsage}
@@ -311,7 +311,7 @@ export function AccountSettings({ dialogOpen, onOpenUsage }: AccountSettingsProp
 
       <Separator />
 
-      {/* BAARALI(03/10/2026): the admin console, for an admin's account only (control /v1/me). */}
+      {/* DJAZZI(03/10/2026): the admin console, for an admin's account only (control /v1/me). */}
       {billing?.adminUrl && (
         <>
           <div className="space-y-3">

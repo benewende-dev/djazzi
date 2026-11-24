@@ -89,7 +89,7 @@ describe('assistant container ownership', () => {
     expect(restoreAssistantLayout(JSON.stringify(saved), ['a', 'b'])).toMatchObject({ sidebar: 'b', sidebarVisible: false })
   })
 
-  it('holds the Baarasseurs page conversation in its own slot (Baarali, 06/10/2026)', () => {
+  it('holds the Baarasseurs page conversation in its own slot (Djazzi, 06/10/2026)', () => {
     let state = reduce(initialAssistantLayout('a'), { type: 'place', id: 'm', location: 'baarasseur', size })
     expect(state).toMatchObject({ assistant: 'a', baarasseur: 'm' })
     expect(chatLocation(state, 'm')).toBe('baarasseur')

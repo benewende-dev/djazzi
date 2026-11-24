@@ -1,0 +1,254 @@
+/*
+ * The Djazzi theme of the desktop app. Nothing upstream changes:
+ * scripts/brand.mjs copies this file into the build and imports it after
+ * App.css. `html:root` and `html.dark` outrank the upstream's `:root` and
+ * `.dark`, whatever the bundle order.
+ *
+ * Decided 01/10/2026 (second pass): one tone per theme, like the site
+ * (djazzi.com). The upstream's own neutrals stay, white and light greys by
+ * day, the anthracite by night; only the blue becomes the brand's, as the
+ * accent: focus rings, links, the selected row of the sidebar.
+ *
+ * 02/10/2026: the upstream's primary is black by day, white by night — the
+ * send button, the main buttons, checks — and its own messages sat in a
+ * black bubble: the app read black and white. The primary is the brand
+ * blue in both themes, and one's own messages sit in it, like the send
+ * button (02/10/2026, the founder's call over a lighter wash).
+ */
+
+html:root {
+  --primary: #1a6dff;
+  --primary-foreground: #ffffff;
+  --sidebar-primary: #1a6dff;
+  --sidebar-primary-foreground: #ffffff;
+  --rowboat-bubble: #1a6dff;
+  --rowboat-bubble-foreground: #ffffff;
+  --ring: #1a6dff;
+  --sidebar-ring: #1a6dff;
+  --sidebar-accent: rgba(26, 109, 255, 0.1);
+  --sidebar-accent-foreground: #155eef;
+  --rowboat-link: #155eef;
+}
+
+html.dark {
+  --primary: #1a6dff;
+  --primary-foreground: #ffffff;
+  --sidebar-primary: #1a6dff;
+  --sidebar-primary-foreground: #ffffff;
+  --rowboat-bubble: #1a6dff;
+  --rowboat-bubble-foreground: #ffffff;
+  --ring: #4d8dff;
+  --sidebar-ring: #4d8dff;
+  --sidebar-accent: rgba(77, 141, 255, 0.16);
+  --sidebar-accent-foreground: #8fb4ff;
+  --rowboat-link: #6f9fff;
+}
+
+/* The sidebar's icons, as the first Djazzi drew them (02/10/2026): bare,
+ * soft grey at rest, blue only on the row you are on, and lifted a pixel
+ * under the pointer. The label stays at full ink, which keeps the list
+ * readable at a glance. */
+[data-sidebar="menu-button"] > svg {
+  stroke-width: 1.75;
+  transition: transform 0.22s cubic-bezier(0.2, 0.8, 0.3, 1), color 0.18s ease;
+}
+/* An icon that already says something in colour (a recording, in red) keeps it. */
+[data-sidebar="menu-button"] > svg:not([class*="text-"]) {
+  color: var(--muted-foreground);
+}
+[data-sidebar="menu-button"][data-active="true"] > svg:not([class*="text-"]) {
+  color: var(--primary);
+}
+[data-sidebar="menu-button"]:hover > svg,
+[data-sidebar="menu-button"]:focus-visible > svg {
+  transform: translateY(-1px) scale(1.12);
+}
+[data-sidebar="menu-button"]:active > svg {
+  transform: translateY(0) scale(0.96);
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-sidebar="menu-button"] > svg { transition: none; }
+  [data-sidebar="menu-button"]:hover > svg,
+  [data-sidebar="menu-button"]:focus-visible > svg,
+  [data-sidebar="menu-button"]:active > svg { transform: none; }
+}
+
+/* The site's type (03/10/2026): Inter for everything, Source Serif 4 for a
+ * page's title (its h1, or a big welcome line), as on djazzi.com (control public/, OFL in assets/fonts).
+ * Bundled with the app, so it reads the same offline. People's notes keep
+ * the same face; code stays monospace. */
+@font-face {
+  font-family: "Inter";
+  src: url("./djazzi-fonts/inter.woff2") format("woff2");
+  font-weight: 400 800;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Source Serif 4";
+  src: url("./djazzi-fonts/source-serif-4.woff2") format("woff2");
+  font-weight: 400 700;
+  font-style: normal;
+  font-display: swap;
+}
+html:root {
+  --djazzi-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", ui-sans-serif, system-ui, sans-serif;
+  --djazzi-serif: "Source Serif 4", Georgia, "Times New Roman", serif;
+}
+html body,
+html .font-sans,
+html .tiptap-editor .ProseMirror {
+  font-family: var(--djazzi-sans);
+}
+html h1:not(.prose *, .ProseMirror *, [data-streamdown] *),
+html :is(.text-2xl, .text-3xl).font-semibold:not(.prose *, .ProseMirror *, [data-streamdown] *) {
+  font-family: var(--djazzi-serif);
+  font-weight: 500;
+  letter-spacing: -0.02em;
+}
+
+/* No sparkles (03/10/2026, the founder's call): the star reads « made by AI ».
+ * A button keeps its words; a slot that only held the star keeps its room. */
+svg.lucide-sparkles,
+svg.lucide-sparkle,
+svg.lucide-wand-sparkles {
+  display: none;
+}
+svg.lucide-sparkles.shrink-0 {
+  display: block;
+  visibility: hidden;
+}
+div:has(> svg.lucide-sparkles:only-child) {
+  display: none;
+}
+
+/* Night (03/10/2026, the founder's call): the whole window in the sidebar's
+ * black, so the app reads as one surface. The composer stays apart: a
+ * raised grey with a visible edge, brighter when one types. A hairline
+ * keeps the sidebar's edge. */
+html.dark {
+  --background: #171717;
+  --rowboat-raised: #262626;
+  --rowboat-wash: #2c2c2c;
+}
+html.dark .rowboat-chat-input {
+  border-color: rgba(255, 255, 255, 0.12);
+  box-shadow: 0 10px 30px rgb(0 0 0 / 0.45);
+}
+html.dark .rowboat-chat-input:focus-within {
+  border-color: rgba(77, 141, 255, 0.45);
+}
+
+/* DJAZZI(15/10/2026): approved compact Chat/Work navigation. The account,
+ * usage ring and synchronization footer keep their existing markup and styles. */
+.djazzi-new-action { margin-bottom:6px; background:var(--sidebar-accent); border:1px solid var(--border); }
+.djazzi-project-host { min-height:100px; overflow:hidden; }
+.djazzi-project-host .rowboat-header { border:0; margin-top:6px; }
+.djazzi-compact-model { min-width:0; max-width:170px; }
+.djazzi-compact-model > button, .djazzi-compact-model > span { max-width:100%; }
+.djazzi-compact-model [data-slot="popover-trigger"] { max-width:100%; }
+.djazzi-compact-model button > span:first-of-type { max-width:120px; }
+.rowboat-chat-input textarea { max-height:160px; }
+.djazzi-chat-welcome { display:flex; flex-direction:column; align-items:center; gap:12px; text-align:center; max-width:600px; margin:auto; padding:24px 12px; }
+.djazzi-chat-welcome h1 { font-size:24px; line-height:1.2; }
+.djazzi-chat-welcome-wide { padding:36px 20px; }
+.djazzi-chat-welcome-wide h1 { font-size:clamp(28px,3vw,38px); }
+.djazzi-chat-welcome p { max-width:440px; color:var(--muted-foreground); font-size:13px; line-height:1.6; }
+.djazzi-chat-starters { display:flex; flex-wrap:wrap; justify-content:center; gap:8px; margin-top:12px; }
+.djazzi-chat-starters button { display:flex; align-items:center; gap:8px; border:1px solid var(--border); border-radius:10px; padding:10px 12px; font-size:12px; color:var(--muted-foreground); text-align:left; }
+.djazzi-chat-starters button:hover { background:var(--accent); color:var(--foreground); }
+.djazzi-work-gate { display:flex; flex:1; min-width:0; flex-direction:column; align-items:center; justify-content:center; gap:18px; padding:70px 28px; text-align:center; }
+.djazzi-gate-symbol { display:grid; place-items:center; width:60px; height:60px; border:1px solid var(--border); border-radius:18px; background:var(--muted); }
+.djazzi-work-gate h1 { max-width:500px; font-size:30px; line-height:1.2; }
+.djazzi-work-gate p { max-width:470px; font-size:14px; color:var(--muted-foreground); line-height:1.7; }
+.djazzi-work-gate small { max-width:450px; font-size:12px; color:var(--muted-foreground); line-height:1.7; }
+.djazzi-work-gate button, .djazzi-studio-library button, .djazzi-code-home > button, .djazzi-code-home .djazzi-section-heading button, .djazzi-project-grid button, .djazzi-work-sessions button { display:inline-flex; align-items:center; gap:8px; border:1px solid var(--border); border-radius:9px; padding:9px 12px; font-size:12px; text-align:left; transition:background .15s; }
+.djazzi-work-gate button:hover, .djazzi-studio-library button:hover, .djazzi-code-home > button:hover, .djazzi-code-home .djazzi-section-heading button:hover, .djazzi-project-grid button:hover, .djazzi-work-sessions button:hover { background:var(--accent); }
+button.djazzi-primary { background:var(--primary); border-color:var(--primary); color:var(--primary-foreground); }
+button.djazzi-primary:hover { background:color-mix(in srgb, var(--primary),black 10%); }
+.djazzi-code-home, .djazzi-studio-library { flex:1; min-width:0; overflow:auto; padding:clamp(24px,4vw,56px); }
+.djazzi-code-home { max-width:980px; margin:0 auto; width:100%; }
+.djazzi-work-welcome { display:flex; align-items:center; gap:14px; padding:12px 0 38px; }
+.djazzi-work-welcome h1, .djazzi-studio-library h1 { font-size:29px; line-height:1.3; }
+.djazzi-work-welcome p, .djazzi-studio-library p { color:var(--muted-foreground); font-size:13px; line-height:1.6; margin-top:5px; }
+.djazzi-section-heading { display:flex; justify-content:space-between; align-items:center; gap:12px; margin:20px 0 12px; }
+.djazzi-section-heading h2, .djazzi-studio-library h2 { font-size:13px; font-weight:600; }
+.djazzi-work-sessions { display:flex; flex-direction:column; gap:7px; }
+.djazzi-work-sessions button { width:100%; padding:14px; border-color:transparent; background:var(--muted); }
+.djazzi-work-sessions button > span:first-of-type { flex:1; min-width:0; }
+.djazzi-work-sessions strong, .djazzi-project-grid strong, .djazzi-studio-projects strong { display:block; font-size:13px; font-weight:500; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.djazzi-work-sessions small, .djazzi-project-grid small, .djazzi-add-project small, .djazzi-studio-projects small { display:block; margin-top:3px; color:var(--muted-foreground); font-size:11px; }
+.djazzi-session-state { color:var(--muted-foreground); font-size:11px; }
+.djazzi-session-state[data-status="needs-you"] { color:#ba7900; }
+.djazzi-session-state[data-status="working"] { color:var(--primary); }
+.djazzi-project-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); gap:10px; }
+.djazzi-project-grid button { display:grid; grid-template-columns:24px 1fr 16px; padding:14px; }
+.djazzi-project-grid strong { grid-column:2; }
+.djazzi-project-grid small { grid-column:2; margin:0; }
+.djazzi-project-grid button > svg:last-child { grid-column:3; grid-row:1 / span 2; }
+.djazzi-empty-hint { color:var(--muted-foreground); padding:18px 0; font-size:13px; }
+button.djazzi-add-project { display:flex; flex-direction:column; justify-content:center; width:100%; min-height:170px; border-style:dashed; color:var(--muted-foreground); }
+.djazzi-studio-library { display:flex; flex-direction:column; gap:24px; }
+.djazzi-studio-projects { display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:12px; }
+.djazzi-studio-projects button { padding:18px; }
+.djazzi-studio-projects button > span { flex:1; min-width:0; }
+.djazzi-studio-empty { display:flex; flex-direction:column; align-items:center; gap:8px; padding:40px; border:1px dashed var(--border); border-radius:14px; color:var(--muted-foreground); }
+@media(max-width:800px) { .djazzi-mode-tabs { left:65%; } .djazzi-session-state { display:none; } .djazzi-chat-starters { flex-direction:column; } }
+@media(prefers-reduced-motion:reduce) { .djazzi-work-gate button, .djazzi-studio-library button, .djazzi-code-home button { transition:none; } }
+html.dark [data-sidebar="sidebar"] {
+  border-right: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+/* The Spaces heading is a title, not a menu row: its icon moves like the
+ * others' all the same (03/10/2026). */
+[data-tour-id="nav-spaces"] > svg {
+  stroke-width: 1.75;
+  color: var(--muted-foreground);
+  transition: transform 0.22s cubic-bezier(0.2, 0.8, 0.3, 1);
+}
+[data-tour-id="nav-spaces"]:hover > svg {
+  transform: translateY(-1px) scale(1.12);
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-tour-id="nav-spaces"] > svg { transition: none; }
+  [data-tour-id="nav-spaces"]:hover > svg { transform: none; }
+}
+
+/* DJAZZI(15/10/2026): reuse the complete chat composer for the first Work request. */
+.djazzi-work-home-composer { position:relative; margin-bottom:32px; background:var(--background); }
+.djazzi-work-project-options { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px; padding-bottom:10px; color:var(--muted-foreground); font-size:12px; }
+.djazzi-work-project-options label, .djazzi-work-project-add { display:flex; align-items:center; gap:7px; }
+.djazzi-work-project-add { padding:5px 0; }
+.djazzi-work-home-composer select { max-width:260px; padding:5px 8px; border:1px solid var(--border); border-radius:7px; background:var(--background); color:var(--foreground); }
+/* DJAZZI(07/11/2026): one sidebar. A paid page on Découverte wears a padlock; the rest folds under « More ». */
+.djazzi-locked [data-sidebar="menu-button"]::after { content:""; width:12px; height:12px; margin-left:auto; flex:none; background:currentColor; opacity:.55; -webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round'%3E%3Crect x='5' y='11' width='14' height='10' rx='2'/%3E%3Cpath d='M8 11V7a4 4 0 0 1 8 0v4'/%3E%3C/svg%3E") center/contain no-repeat; mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round'%3E%3Crect x='5' y='11' width='14' height='10' rx='2'/%3E%3Cpath d='M8 11V7a4 4 0 0 1 8 0v4'/%3E%3C/svg%3E") center/contain no-repeat; }
+.djazzi-more { margin:0 8px 4px; }
+.djazzi-more > summary { list-style:none; display:flex; align-items:center; gap:8px; height:30px; padding:0 8px; border-radius:8px; cursor:pointer; color:var(--muted-foreground); font-size:13px; }
+.djazzi-more > summary::-webkit-details-marker { display:none; }
+.djazzi-more > summary::before { content:""; width:10px; height:10px; background:currentColor; -webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m9 6 6 6-6 6'/%3E%3C/svg%3E") center/contain no-repeat; mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m9 6 6 6-6 6'/%3E%3C/svg%3E") center/contain no-repeat; transition:transform .15s; }
+.djazzi-more[open] > summary::before { transform:rotate(90deg); }
+.djazzi-more > summary:hover { color:var(--foreground); background:var(--sidebar-accent); }
+.djazzi-more > .group, .djazzi-more [data-sidebar="group"] { padding-left:0; padding-right:0; }
+.djazzi-gate-pill { margin-bottom:-6px; padding:4px 12px; border:1px solid var(--border); border-radius:999px; font-size:12px; font-weight:600; color:var(--muted-foreground); }
+/* An agent's eyes blink now and then (djazzi-agent-shape.tsx). */
+@keyframes djazzi-blink { 0%, 94%, 100% { transform:scaleY(1); } 97% { transform:scaleY(.1); } }
+.djazzi-agent-eyes { transform-box:fill-box; transform-origin:center; animation:djazzi-blink 5.5s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) { .djazzi-agent-eyes { animation:none; } }
+/* DJAZZI(07/11/2026): the work block (components/work-steps.tsx): a line that
+   moves while Djazzi works, a timeline of steps, a clear waiting state. */
+.djazzi-work-bar { position:relative; height:2px; margin-top:-1px; overflow:hidden; border-radius:999px; background:color-mix(in oklab, var(--foreground) 8%, transparent); }
+.djazzi-work-bar::after { content:""; position:absolute; inset:0 auto 0 0; width:34%; border-radius:inherit; background:var(--foreground); opacity:.55; animation:djazzi-work-run 1.6s ease-in-out infinite; }
+@keyframes djazzi-work-run { 0% { transform:translateX(-100%); } 100% { transform:translateX(300%); } }
+.djazzi-steps { position:relative; }
+.djazzi-steps::before { content:""; position:absolute; left:15px; top:12px; bottom:12px; width:1px; background:var(--border); }
+.djazzi-step-dot { position:relative; z-index:1; background:var(--background); border:1px solid var(--border); color:var(--muted-foreground); }
+.djazzi-step[data-state="done"] .djazzi-step-dot { background:var(--muted); border-color:transparent; color:var(--foreground); }
+.djazzi-step[data-state="current"] .djazzi-step-dot { border-color:var(--foreground); }
+.djazzi-step[data-state="failed"] .djazzi-step-dot { border-color:transparent; background:color-mix(in oklab, #f59e0b 18%, transparent); color:#d97706; }
+.djazzi-step[data-state="waiting"] .djazzi-step-dot { border-color:transparent; background:var(--foreground); color:var(--background); }
+.djazzi-step-pulse { background:var(--foreground); animation:djazzi-step-pulse 1.4s ease-in-out infinite; }
+@keyframes djazzi-step-pulse { 0%, 100% { transform:scale(.7); opacity:.55; } 50% { transform:scale(1); opacity:1; } }
+.djazzi-shimmer { background:linear-gradient(90deg, var(--foreground) 0%, var(--foreground) 40%, var(--muted-foreground) 50%, var(--foreground) 60%, var(--foreground) 100%); background-size:250% 100%; -webkit-background-clip:text; background-clip:text; color:transparent; animation:djazzi-shimmer 2.4s linear infinite; }
+@keyframes djazzi-shimmer { from { background-position:100% 0; } to { background-position:-150% 0; } }
+.djazzi-work.is-waiting > button { border-color:var(--foreground); box-shadow:0 0 0 3px color-mix(in oklab, var(--foreground) 10%, transparent); }
+.djazzi-work-badge { background:var(--foreground); color:var(--background); box-shadow:0 0 0 2px var(--background); }
+@media (prefers-reduced-motion: reduce) { .djazzi-work-bar::after, .djazzi-step-pulse, .djazzi-shimmer { animation:none; } .djazzi-shimmer { color:var(--foreground); background:none; } }

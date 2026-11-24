@@ -328,7 +328,7 @@ export default function SpaceThreadScreen() {
   const send = async (typed: string): Promise<boolean> => {
     if (sending) return false;
     setSending(true);
-    // BAARALI(07/10/2026): « @Name » typed without the menu names the member for real.
+    // DJAZZI(07/10/2026): « @Name » typed without the menu names the member for real.
     const body = tokenizeMentions(typed, members.values());
     // The × holds for one reply.
     const toPeople = peopleOnly && followUp !== undefined && !spaces.mentionsAnyone(body);
@@ -348,7 +348,7 @@ export default function SpaceThreadScreen() {
       );
       setInvocations((prev) => foldInvocations(prev, started));
       setReplies((prev) => (prev ? settlePending(prev, pending.id, message) : prev));
-      // BAARALI(07/10/2026): a reply that calls @rowboat asks the instance to answer, as the desktop does.
+      // DJAZZI(07/10/2026): a reply that calls @rowboat asks the instance to answer, as the desktop does.
       void askRowboatIfCalled(rpc, { address: org, spaceId: space, spaceName: params.title ?? '', messageId: message.id, threadRootId: root, body: message.body }).catch(() => {});
       return true;
     } catch (err) {

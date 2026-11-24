@@ -1356,7 +1356,7 @@ export function GeneralStream({
             {writable ? <Composer
                 // Spaces redesign (2026-10-21): the @rowboat hint moved to the composer's
                 // Ask Rowboat chip, so the placeholder just names where you're writing.
-                // BAARALI(03/10/2026): through say(): the editor shows it by CSS, out of the translation layer's sight.
+                // DJAZZI(03/10/2026): through say(): the editor shows it by CSS, out of the translation layer's sight.
                 placeholder={say(space.kind === 'direct'
                     ? (isSelfDirect(space, org.memberId) ? 'Note to self' : `Message ${memberNames.get(directAvatarId(space, org.memberId)) ?? 'them'}`)
                     : `Message #${space.name}`)}

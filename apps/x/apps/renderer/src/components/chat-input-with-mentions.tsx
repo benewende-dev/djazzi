@@ -69,7 +69,7 @@ import { canToggleConversation, interruptConversation, toggleConversation, useCo
 // Loaded when first opened: the settings bring the whole app's state with them.
 const SettingsDialog = lazy(() => import('@/components/settings-dialog').then((m) => ({ default: m.SettingsDialog })))
 
-/** What « Documents » lets one pick in the composer's + menu (Baarali). */
+/** What « Documents » lets one pick in the composer's + menu (Djazzi). */
 const DOCUMENT_TYPES = '.pdf,.doc,.docx,.odt,.rtf,.txt,.md,.xls,.xlsx,.ods,.csv,.ppt,.pptx,.odp'
 
 export type StagedAttachment = {
@@ -328,7 +328,7 @@ function ChatInputInner({
   }, [attachments, draftKey])
   const [focusNonce, setFocusNonce] = useState(0)
   const fileInputRef = useRef<HTMLInputElement>(null)
-  // Baarali: the file picker filtered to what the menu item names ('' = any file).
+  // Djazzi: the file picker filtered to what the menu item names ('' = any file).
   const pickFiles = useCallback((accept: string) => {
     const input = fileInputRef.current
     if (!input) return
@@ -488,7 +488,7 @@ function ChatInputInner({
         defaultPath,
       })
       if (!picked) return
-      // BAARALI(05/10/2026): copied to the Baarali space first when joined to it.
+      // DJAZZI(05/10/2026): copied to the Djazzi space first when joined to it.
       const [chosen] = await toInstance([picked], 'projects')
       onWorkDirChange?.(chosen)
       await rememberWorkDir(chosen)
@@ -608,8 +608,8 @@ function ChatInputInner({
         }
         const mime = result.mimeType || getMimeFromExtension(getExtension(filePath))
         const image = isImageMime(mime)
-        // BAARALI(05/10/2026): the agent reads the file where the core runs:
-        // copied to the Baarali space first when joined to it.
+        // DJAZZI(05/10/2026): the agent reads the file where the core runs:
+        // copied to the Djazzi space first when joined to it.
         const [readable] = await toInstance([filePath], 'attachments')
         newAttachments.push({
           id: `att-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
@@ -622,7 +622,7 @@ function ChatInputInner({
         })
       } catch (err) {
         console.error('Failed to read file:', filePath, err)
-        toast.error(err instanceof Error && /Baarali space/.test(err.message) ? err.message : `Failed to read: ${getFileDisplayName(filePath)}`)
+        toast.error(err instanceof Error && /Djazzi space/.test(err.message) ? err.message : `Failed to read: ${getFileDisplayName(filePath)}`)
       }
     }
     if (newAttachments.length > 0) {
@@ -904,7 +904,7 @@ function ChatInputInner({
           </Tooltip>
           <DropdownMenuContent align="start" className="w-72 max-w-[calc(100vw-2rem)] p-2">
             <div className="rounded-[14px] border border-border/80 bg-background p-1">
-              {/* Baarali (03/10/2026): what one can join, said plainly; then the
+              {/* Djazzi (03/10/2026): what one can join, said plainly; then the
                   Library's notes (the @ menu) and the connected accounts. */}
               <DropdownMenuItem onSelect={() => pickFiles('image/*')} className="h-9 rounded-[9px] px-2.5">
                 <ImagePlus className="size-4" />

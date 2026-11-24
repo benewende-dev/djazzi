@@ -4,13 +4,13 @@ import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, FlatList, Pressable, RefreshControl, Switch, Text, View } from 'react-native';
 import type { backgroundTask } from '@x/shared';
 
-import { Empty, Separator, when } from '@/components/baarali-ui';
+import { Empty, Separator, when } from '@/components/djazzi-ui';
 import { useConnection } from '@/lib/connection';
 import { scheduleWords } from '@/lib/schedule-words';
 import { useColors } from '@/theme/colors';
 
-// BAARALI(06/10/2026): the routines on the phone (validated mockup): what
-// Baarali does on its own, when, its last report, a switch to pause one, a tap
+// DJAZZI(06/10/2026): the routines on the phone (validated mockup): what
+// Djazzi does on its own, when, its last report, a switch to pause one, a tap
 // to run it now. A new one is asked for in the chat, in plain words.
 
 type Task = backgroundTask.BackgroundTaskSummary;
@@ -57,7 +57,7 @@ export default function RoutinesScreen() {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={async () => { setRefreshing(true); await load(); setRefreshing(false); }} />}
         ListHeaderComponent={
           <Text style={{ marginHorizontal: 16, marginBottom: 10, fontSize: 15, lineHeight: 21, color: colors.secondaryLabel }}>
-            What Baarali does on its own, when you said. It reports here and in your notifications.
+            What Djazzi does on its own, when you said. It reports here and in your notifications.
           </Text>
         }
         ItemSeparatorComponent={() => <Separator />}

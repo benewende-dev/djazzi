@@ -1,4 +1,4 @@
-# Baarali / Rowboat monorepo
+# Djazzi / Rowboat monorepo
 
 Three pnpm workspaces, plus product docs and a marketing kit. Each area keeps its own guide; this file holds only what is true everywhere.
 
@@ -6,7 +6,7 @@ Three pnpm workspaces, plus product docs and a marketing kit. Each area keeps it
 |---|---|---|
 | `apps/x/` | The Rowboat desktop app (Electron + React) and its packages, including the mobile app and the Spaces web app | none yet — read `apps/x/package.json` scripts and the package READMEs; the web app is [`apps/x/apps/renderer/WEB.md`](apps/x/apps/renderer/WEB.md) |
 | `apps/harbor/` | Harbor, the Spaces server, and the spaces protocol package | [`apps/harbor/AGENTS.md`](apps/harbor/AGENTS.md) |
-| `apps/baarali/` | Baarali control plane, instances, render service, desktop branding and Spaces deployment | [`apps/baarali/AGENTS.md`](apps/baarali/AGENTS.md) |
+| `apps/djazzi/` | Djazzi control plane, instances, render service, desktop branding and Spaces deployment | [`apps/djazzi/AGENTS.md`](apps/djazzi/AGENTS.md) |
 | `docs/` | Product docs that belong to no one app (the Spaces design language, notes) | — |
 | `marketing/` | Brand assets, product communication, screenshots and campaign briefs | — |
 

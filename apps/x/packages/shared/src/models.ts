@@ -108,9 +108,9 @@ export const LlmModelConfig = z.object({
   deferBackgroundTasks: z.boolean().optional(),
 });
 
-// BAARALI(03/10/2026): a model's place in the picker, as the control plane
-// sends it on /v1/llm/models (apps/baarali control model-access.ts).
-export const BaaraliModelMeta = z.object({
+// DJAZZI(03/10/2026): a model's place in the picker, as the control plane
+// sends it on /v1/llm/models (apps/djazzi control model-access.ts).
+export const DjazziModelMeta = z.object({
   vendor: z.string(),
   vendorName: z.string(),
   vendorRank: z.number(),
@@ -119,11 +119,11 @@ export const BaaraliModelMeta = z.object({
   // The plan that opens it; set: shown with a padlock, not selectable.
   unlock: z.string().optional(),
 });
-export type BaaraliModelMeta = z.infer<typeof BaaraliModelMeta>;
+export type DjazziModelMeta = z.infer<typeof DjazziModelMeta>;
 
 /**
- * BAARALI(03/10/2026): a picker's models sorted by vendor, as the control
- * plane describes them (apps/baarali control model-access.ts, pickerGroups):
+ * DJAZZI(03/10/2026): a picker's models sorted by vendor, as the control
+ * plane describes them (apps/djazzi control model-access.ts, pickerGroups):
  * one section per vendor in the catalog's order; inside, « Conseillé » first,
  * then what the plan opens, then what it padlocks, each by name. Items
  * without a description go last, in a section with an empty vendor. null when
@@ -131,7 +131,7 @@ export type BaaraliModelMeta = z.infer<typeof BaaraliModelMeta>;
  */
 export function vendorSections<T>(
   items: T[],
-  metaOf: (item: T) => BaaraliModelMeta | undefined,
+  metaOf: (item: T) => DjazziModelMeta | undefined,
   nameOf: (item: T) => string,
 ): Array<{ vendor: string; name: string; items: T[] }> | null {
   if (!items.some((i) => metaOf(i))) return null;

@@ -2,7 +2,7 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import type { PartnerCodeState, PlanOffer } from '@x/shared/dist/billing.js'
 
-// BAARALI(08/10/2026): a creator's partner code in Settings › Account.
+// DJAZZI(08/10/2026): a creator's partner code in Settings › Account.
 
 const DAY = 86_400_000
 let state: PartnerCodeState | null = null

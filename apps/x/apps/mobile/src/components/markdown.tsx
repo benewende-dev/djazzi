@@ -175,7 +175,7 @@ export function ChatMarkdown({ children, extraRules, onLinkPress, variant = 'cha
           resizeMode="contain"
         />
       ) : null;
-    // BAARALI(10/10/2026): the agent gives files in a ```filepath block —
+    // DJAZZI(10/10/2026): the agent gives files in a ```filepath block —
     // videos, posters, PDFs, motion projects — shown as cards (file-cards.tsx).
     // Any other fence renders as the library's own rule does.
     const fence = (node: { key: string; content: string; sourceInfo?: string }, _c: unknown, _p: unknown, st: { fence: object }, inherited: object = {}) => {

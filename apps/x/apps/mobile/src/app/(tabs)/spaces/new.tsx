@@ -12,7 +12,7 @@ import { useSpacesAccount } from '@/lib/spaces/account';
 import { SpacesClient } from '@/lib/spaces/client';
 import { useColors } from '@/theme/colors';
 
-// BAARALI(07/10/2026): a work group in one screen (mockup artboard 18,
+// DJAZZI(07/10/2026): a work group in one screen (mockup artboard 18,
 // claude.ai/artifact/5hiVQMibobFRRitE7ictcw): a name, then tick who joins —
 // your agents and the people of the org — and Create. Rowboat is always
 // there (write @rowboat). A baarasseur ticked here joins the org as an agent

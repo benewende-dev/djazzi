@@ -845,11 +845,11 @@ export function DockSidebar({
 
   // ----- data: background agents label -----
   const [bgAgentsLabel, setBgAgentsLabel] = useState<string | null>(null)
-  // BAARALI(23/11/2026): a paused routine is not failing.
+  // DJAZZI(23/11/2026): a paused routine is not failing.
   const bgAgentsFailed = bgTaskSummaries.some((t) => t.active && t.lastRunError)
   useEffect(() => {
     const update = () => {
-      // BAARALI(23/11/2026): the same rule as the badge above.
+      // DJAZZI(23/11/2026): the same rule as the badge above.
       const failed = bgTaskSummaries.filter((t) => t.active && t.lastRunError).length
       if (failed > 0) {
         setBgAgentsLabel(`${failed} failed · Needs review`)
@@ -988,7 +988,7 @@ export function DockSidebar({
       // The top section: Assistant (resumes the most recent chat, falling
       // back to a fresh one — white tile), then Projects and Spaces, then a
       // divider before the destinations.
-      // BAARALI(2026-10-09): « New chat » above Chat, as in the sidebar.
+      // DJAZZI(2026-10-09): « New chat » above Chat, as in the sidebar.
       ...(onNewChat ? [{
         item: {
           key: 'new-chat', label: 'New chat', icon: SquarePen,
@@ -1011,7 +1011,7 @@ export function DockSidebar({
           },
         },
       ] : []),
-      // Baarali (09/10/2026): Projects is « Code », right under Chat, as in the sidebar.
+      // Djazzi (09/10/2026): Projects is « Code », right under Chat, as in the sidebar.
       {
         item: {
           key: 'workspaces', label: 'Code', icon: Code2, tourId: 'nav-workspaces',

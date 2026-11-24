@@ -1,4 +1,4 @@
-// BAARALI(05/10/2026): the chat without its backstage (mockup validated by
+// DJAZZI(05/10/2026): the chat without its backstage (mockup validated by
 // the founder). Asked for an image, a person saw « Load skill builtin-tools ·
 // 76 tools attached », « listed a MCP server, loaded a skill » and a
 // « Thought for a few seconds » between every step: how the agent finds

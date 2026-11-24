@@ -1,4 +1,4 @@
-// BAARALI(09/10/2026): the chat shows the agent's work as steps, one line
+// DJAZZI(09/10/2026): the chat shows the agent's work as steps, one line
 // each, its thinking and tools folded under each (mockup validated by the
 // founder). In each turn, the agent's last words, with nothing after them,
 // are the answer and stay in the open; everything before is work. Each thing
@@ -118,7 +118,7 @@ export function segmentTurns(items: ConversationItem[], working: boolean): TurnS
     const index = r++
     const items = runs[index]
     const last = index === runs.length - 1
-    // BAARALI(07/11/2026): the usage line comes after the first model call,
+    // DJAZZI(07/11/2026): the usage line comes after the first model call,
     // not at the end: only the turn itself says it is over (it made a
     // turn waiting for an approval look « Worked 0 s »).
     const finished = !working || !last
@@ -132,7 +132,7 @@ export function segmentTurns(items: ConversationItem[], working: boolean): TurnS
     const work = answer === -1 ? items.filter((it) => !trailing(it)) : items.slice(0, answer).filter((it) => !trailing(it))
     if (work.length) {
       const steps = stepsOf(work)
-      // BAARALI(08/11/2026): words streaming in the middle of the work are not
+      // DJAZZI(08/11/2026): words streaming in the middle of the work are not
       // the end of it: the work stays live until the turn says it is over (it
       // folded and opened again at each sentence).
       const active = !finished

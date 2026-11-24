@@ -27,14 +27,14 @@ import { router, usePathname, useRootNavigationState } from 'expo-router';
 
 import { BackButton } from '@/components/back-button';
 import { registerWithMac } from '@/lib/push';
-import { AgentResponder } from '@/components/baarali-agent-responder';
+import { AgentResponder } from '@/components/djazzi-agent-responder';
 import { useConnection } from '@/lib/connection';
 import { ConnectionProvider } from '@/lib/connection';
 import { SpacesAccountProvider, useSpacesAccount } from '@/lib/spaces/account';
 
 SplashScreen.preventAutoHideAsync();
 
-// BAARALI(07/10/2026): tabs at the foot instead of the drawer (the founder's
+// DJAZZI(07/10/2026): tabs at the foot instead of the drawer (the founder's
 // call, mockup claude.ai/artifact/5hiVQMibobFRRitE7ictcw, artboards 15 and
 // 16): the everyday places in (tabs), everything else pushed over them with
 // a native back button.
@@ -53,7 +53,7 @@ export default function RootLayout() {
           <SpacesAccountProvider>
           <PushRegistrar />
           <PushNavigator />
-          {/* BAARALI(07/11/2026): taps on the agent's notifications, its approvals (baarali-agent-responder.tsx). */}
+          {/* DJAZZI(07/11/2026): taps on the agent's notifications, its approvals (djazzi-agent-responder.tsx). */}
           <AgentResponder />
           {/* Android leaves light status-bar icons on our light pages; follow the
               app's scheme (2026-10-28). iOS already adapts on its own. */}
@@ -88,9 +88,9 @@ export default function RootLayout() {
             <Stack.Screen name="settings" options={{ title: 'Settings' }} />
             <Stack.Screen name="notifications" options={{ title: 'Notifications' }} />
             <Stack.Screen name="partner-code" options={{ title: 'Partner code' }} />
-            {/* BAARALI(07/10/2026): the admin console's messages, behind the home tab's bell. */}
+            {/* DJAZZI(07/10/2026): the admin console's messages, behind the home tab's bell. */}
             <Stack.Screen name="inbox" options={{ title: 'Notifications' }} />
-            {/* BAARALI(10/10/2026): the Studio Motion and the agent's files, full screen. */}
+            {/* DJAZZI(10/10/2026): the Studio Motion and the agent's files, full screen. */}
             <Stack.Screen name="studio" options={{ headerShown: false, presentation: 'fullScreenModal' }} />
             <Stack.Screen name="viewer" options={{ title: '', headerTransparent: false, headerStyle: { backgroundColor: '#000000' }, headerTintColor: '#ffffff' }} />
             <Stack.Screen name="pairing" options={{ title: '' }} />

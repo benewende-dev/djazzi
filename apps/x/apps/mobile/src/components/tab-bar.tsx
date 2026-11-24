@@ -8,7 +8,7 @@ import { useConnection } from '@/lib/connection';
 import { useSpacesAccount } from '@/lib/spaces/account';
 import { useColors } from '@/theme/colors';
 
-// The tabs at the foot (Baarali, 07/10/2026, mockup artboards 15 and 16,
+// The tabs at the foot (Djazzi, 07/10/2026, mockup artboards 15 and 16,
 // claude.ai/artifact/5hiVQMibobFRRitE7ictcw): the everyday places one touch
 // away, as in WhatsApp, instead of in a hidden menu; the rest is under More.
 // Shown on each tab's first screen only: a thread or an email has the room.

@@ -43,8 +43,8 @@ import {
 import { useDebounce } from './hooks/use-debounce';
 import { DockSidebar, LAST_SPACE_STORAGE_KEY } from '@/components/dock-sidebar';
 import { SpacesAccount } from '@/components/spaces-account';
-// BAARALI(23/11/2026): Baarali's sidebar, its own file; sidebar-content.tsx stays the upstream's.
-import { SidebarContentPanel } from '@/components/baarali-sidebar-content';
+// DJAZZI(23/11/2026): Djazzi's sidebar, its own file; sidebar-content.tsx stays the upstream's.
+import { SidebarContentPanel } from '@/components/djazzi-sidebar-content';
 import { SuggestedTopicsView } from '@/components/suggested-topics-view';
 import { LiveNotesView } from '@/components/live-notes-view';
 import { BgTasksView } from '@/components/bg-tasks-view';
@@ -99,9 +99,9 @@ import { dispatchCreditExhausted, dispatchCreditReplenished } from "@/lib/credit
 import { ensureMarkdownExtension, normalizeWikiPath, splitWikiFragment, stripKnowledgePrefix, toKnowledgePath, wikiLabel } from '@/lib/wiki-links'
 import { splitFrontmatter, joinFrontmatter } from '@/lib/frontmatter'
 import { extractConferenceLink } from '@/lib/calendar-event'
-// BAARALI(04/10/2026): Baarali's onboarding in place of the upstream's (components/baarali-onboarding).
-import { BaaraliOnboarding } from '@/components/baarali-onboarding'
-import { clearSaved as clearOnboarding, loadSaved as loadOnboarding, shouldShow as shouldShowOnboarding } from '@/components/baarali-onboarding/model'
+// DJAZZI(04/10/2026): Djazzi's onboarding in place of the upstream's (components/djazzi-onboarding).
+import { DjazziOnboarding } from '@/components/djazzi-onboarding'
+import { clearSaved as clearOnboarding, loadSaved as loadOnboarding, shouldShow as shouldShowOnboarding } from '@/components/djazzi-onboarding/model'
 import { ComposioGoogleMigrationModal } from '@/components/composio-google-migration-modal'
 import { ModelRecommendationUpdateModal, type RecommendationUpdate } from '@/components/model-recommendation-update-modal'
 import { CommandPalette, type CommandPaletteMention } from '@/components/command-palette'
@@ -827,7 +827,7 @@ function TitlebarControls({
   onWidthChange?: (px: number) => void
 }) {
   const rootRef = useRef<HTMLDivElement | null>(null)
-  // BAARALI: the toggle folds Local's sidebar (SidebarProvider's onOpenChange).
+  // DJAZZI: the toggle folds Local's sidebar (SidebarProvider's onOpenChange).
   const { state, toggleSidebar } = useSidebar()
   useEffect(() => {
     const el = rootRef.current
@@ -837,8 +837,8 @@ function TitlebarControls({
     observer.observe(el)
     return () => observer.disconnect()
   }, [onWidthChange])
-  // Baarali (03/10/2026): with the sidebar open, the buttons sit close
-  // together at its right edge, as in the first Baarali; folded, they follow
+  // Djazzi (03/10/2026): with the sidebar open, the buttons sit close
+  // together at its right edge, as in the first Djazzi; folded, they follow
   // the traffic lights.
   const expanded = state !== 'collapsed'
   return (
@@ -888,8 +888,8 @@ function TitlebarControls({
   )
 }
 
-/** BAARALI(23/11/2026): Baarali shows no Spaces | Local tabs (one sidebar, its « Groupes » section). */
-const BAARALI_MODE_TABS: boolean = false
+/** DJAZZI(23/11/2026): Djazzi shows no Spaces | Local tabs (one sidebar, its « Groupes » section). */
+const DJAZZI_MODE_TABS: boolean = false
 
 /** Spaces | Local, centred in the titlebar (2026-11-06). Spaces is the team
     surface alone, as the web app shows it; Local is everything on this
@@ -1027,15 +1027,15 @@ function App() {
   const [isLiveNotesOpen, setIsLiveNotesOpen] = useState(false)
   const [isBgTasksOpen, setIsBgTasksOpen] = useState(false)
   const [isAppsOpen, setIsAppsOpen] = useState(false)
-  // Baarali (03/10/2026): the Prompts page.
+  // Djazzi (03/10/2026): the Prompts page.
   const [isPromptsOpen, setIsPromptsOpen] = useState(false)
-  // Baarali (06/10/2026): the Baarasseurs page.
+  // Djazzi (06/10/2026): the Baarasseurs page.
   const [isBaarasseursOpen, setIsBaarasseursOpen] = useState(false)
   // Spaces is open from the first frame (2026-11-09), in the space last
   // left, so a launch never shows Local while the servers load; the landing
   // effect below confirms the space once they have.
   const [initialSpace] = useState(() => SPACES_ENABLED ? lastSpaceLocation() : null)
-  // BAARALI(23/11/2026): Baarali opens on the assistant, its first purpose;
+  // DJAZZI(23/11/2026): Djazzi opens on the assistant, its first purpose;
   // Spaces is one tab away (the upstream lands in Spaces since 2026-11-06).
   const [isSpacesOpen, setIsSpacesOpen] = useState(false)
   // Local's sidebar closes with ⌘B (2026-11-13), remembered across launches.
@@ -1263,7 +1263,7 @@ function App() {
       : []
   ), [sessionChat.error])
   const [agentId] = useState<string>('copilot')
-  // BAARALI(06/10/2026): a fresh chat opened to write to a baarasseur sends as it.
+  // DJAZZI(06/10/2026): a fresh chat opened to write to a baarasseur sends as it.
   const agentByChatRef = useRef(new Map<string, string>())
   const [presetMessage, setPresetMessage] = useState<string | undefined>(undefined)
 
@@ -1442,7 +1442,7 @@ function App() {
     }
   }, [hoverIsProcessing, hoverConversation, pttStatus])
 
-  // The composer's speaker (Baarali, 07/10/2026): the OPEN chat's replies,
+  // The composer's speaker (Djazzi, 07/10/2026): the OPEN chat's replies,
   // read from its own session like the call's — its <voice> summaries as they
   // stream, or, when the model wrote none, the reply's opening once the turn
   // ends. Never during a call, which speaks for itself.
@@ -1776,7 +1776,7 @@ function App() {
     if (holder && holder !== CALL_VOICE_HOLDER) releaseVoice(holder)
   }, [voice])
 
-  // Conversation mode (Baarali, 07/10/2026; lib/voice-conversation.ts): the
+  // Conversation mode (Djazzi, 07/10/2026; lib/voice-conversation.ts): the
   // composer's voice button. The mic stays open in the app window, each pause
   // sends what was said to the open chat, the reply is read aloud by the
   // reader above, then the mic listens again. Deaf while the assistant works
@@ -3848,7 +3848,7 @@ function App() {
     loadRuns()
   }, [loadRuns])
 
-  // Baarali: which chats are a baarasseur's, for the chat pane's strip.
+  // Djazzi: which chats are a baarasseur's, for the chat pane's strip.
   useEffect(() => { noteRunAgents(runs) }, [runs])
   // The Baarasseurs page (validated mockup, 08/10/2026): who is at work now
   // (a green dot), and what moved since each was last opened (the badges).
@@ -4659,7 +4659,7 @@ function App() {
       // A to-do item's session keeps its own agent on continuation — typing
       // in that chat steers the item's work, it doesn't summon the copilot.
       const sessionAgentId = runs.find((r) => r.id === currentRunId)?.agentId
-      // A baarasseur's chat stays its own the same way (Baarali, 06/10/2026).
+      // A baarasseur's chat stays its own the same way (Djazzi, 06/10/2026).
       const effectiveAgentId = sessionAgentId === 'todo-item-agent' || isBaarasseurAgent(sessionAgentId)
         ? sessionAgentId!
         : agentByChatRef.current.get(submitTab.chatId) ?? agentId
@@ -5007,7 +5007,7 @@ function App() {
     }
   }, [cancelRecordingIfActive, loadRun])
 
-  // BAARALI(04/10/2026): the reopened tabs' chats are looked up once first; a
+  // DJAZZI(04/10/2026): the reopened tabs' chats are looked up once first; a
   // chat the server does not have opens as a new chat (lib/missing-chats.ts).
   const missingAtStartRef = useRef<Promise<Set<string>> | null>(null)
   useEffect(() => {
@@ -5524,7 +5524,7 @@ function App() {
   // Feature-importance funnel: one event per view the user lands on. Keyed on
   // the view *type* so switching files/threads inside a view doesn't re-fire.
   useEffect(() => {
-    // Baarali's Prompts page is not one of the upstream's analytics views.
+    // Djazzi's Prompts page is not one of the upstream's analytics views.
     if (currentViewState.type !== 'prompts' && currentViewState.type !== 'baarasseurs') analytics.viewOpened(currentViewState.type)
   }, [currentViewState.type])
 
@@ -5866,7 +5866,7 @@ function App() {
   // Spaces, so switching back and forth keeps both places.
   const appMode: AppMode = SPACES_ENABLED && isSpacesOpen ? 'spaces' : 'local'
   // Spaces owns ⌘B for its own rail (SpacesView); here it is Local's sidebar.
-  // BAARALI(23/11/2026): one sidebar in every view, the groups in it; ⌘B is always its.
+  // DJAZZI(23/11/2026): one sidebar in every view, the groups in it; ⌘B is always its.
   useSidebarShortcut(true, toggleLocalSidebar)
   const lastLocalViewRef = useRef<ViewState>({ type: 'chat', runId: null })
   useEffect(() => {
@@ -6036,7 +6036,7 @@ function App() {
 
   useEffect(() => {
     const handle = (url: string) => {
-      // BAARALI(07/10/2026): a console message's notification opens the bell.
+      // DJAZZI(07/10/2026): a console message's notification opens the bell.
       if (isNotificationsLink(url)) {
         window.dispatchEvent(new CustomEvent(OPEN_NOTIFICATIONS_EVENT))
         return
@@ -6709,7 +6709,7 @@ function App() {
     async function checkOnboarding() {
       try {
         const result = await window.ipc.invoke('onboarding:getStatus', null)
-        // BAARALI(04/10/2026): also without a Baarali session, and while this
+        // DJAZZI(04/10/2026): also without a Djazzi session, and while this
         // window's onboarding is under way (an instance says it was done).
         const signedIn = await window.ipc.invoke('oauth:getState', null)
           .then((r) => !!r.config?.rowboat?.connected)
@@ -6738,7 +6738,7 @@ function App() {
     if (opts?.startTour) {
       window.setTimeout(() => setTourActive(true), 400)
     }
-    // BAARALI(04/10/2026): the first request picked at the end, in the composer to read before sending.
+    // DJAZZI(04/10/2026): the first request picked at the end, in the composer to read before sending.
     if (opts?.prompt) setHomeComposerPreset(opts.prompt)
   }, [])
 
@@ -7687,14 +7687,14 @@ function App() {
               // place (validated mockup, 08/10/2026); asking for the sidebar
               // back returns to the cards, the person's choice untouched.
               if (baarasseurFocus && open) { setOpenBaarasseur(null); return }
-              // BAARALI: the titlebar's toggle (TitlebarControls) folds Local's sidebar.
+              // DJAZZI: the titlebar's toggle (TitlebarControls) folds Local's sidebar.
               if (open !== localSidebarOpen) toggleLocalSidebar()
             }}
           >
             {/* Kept mounted in Spaces, closed off-canvas, so its state survives. */}
             <SidebarContentPanel
               {...sidebarNavProps}
-              // BAARALI(23/11/2026): the « Groupes » section opens a group in place.
+              // DJAZZI(23/11/2026): the « Groupes » section opens a group in place.
               onOpenSpace={openSpace}
               onOpenSpaces={() => { void openSpaces() }}
               activeSpace={spaceSelection}
@@ -8550,8 +8550,8 @@ function App() {
               onSearch={() => setIsSearchOpen(true)}
               onWidthChange={setTitlebarControlsWidthPx}
             />
-            {/* BAARALI(23/11/2026): no Spaces | Local tabs; the groups live in the one sidebar (founder's call). */}
-            {SPACES_ENABLED && BAARALI_MODE_TABS && <AppModeTabs mode={appMode} onSelect={selectAppMode} />}
+            {/* DJAZZI(23/11/2026): no Spaces | Local tabs; the groups live in the one sidebar (founder's call). */}
+            {SPACES_ENABLED && DJAZZI_MODE_TABS && <AppModeTabs mode={appMode} onSelect={selectAppMode} />}
           </SidebarProvider>
         </div>
         <CommandPalette
@@ -8600,7 +8600,7 @@ function App() {
         onOpenChange={setVoiceSetupOpen}
         defaultTab="account"
       />
-      <BaaraliOnboarding
+      <DjazziOnboarding
         open={showOnboarding}
         onComplete={handleOnboardingComplete}
       />

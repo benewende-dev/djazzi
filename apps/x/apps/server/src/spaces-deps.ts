@@ -49,7 +49,7 @@ onSpaceAgentActivity((event) => emitSpacesEvent(event));
 void startSpaceAgentActivity().catch((err) => console.error('[spaces] agent activity feed failed to start:', err));
 // The server's `notify` frames become OS notifications (unread arc, 2026-09-10).
 startSpaceNotifications();
-// BAARALI(07/10/2026): the baarasseurs in groups listen for their name.
+// DJAZZI(07/10/2026): the baarasseurs in groups listen for their name.
 startBaarasseurListeners();
 // The per-response index ("which run posted this reply"): same bus, its own
 // consumer — see core/spaces/response-index.
@@ -91,7 +91,7 @@ type SpacesHostChannel =
   | 'spaces:signInOrg' | 'spaces:removeOrg'
   | 'spaces:accountState' | 'spaces:signInRowboat' | 'spaces:addOrgByAddress'
   | 'spaces:uploadBlob' | 'spaces:linkPreview'
-  // BAARALI(07/10/2026): a baarasseur as a member, for a group's addMembers.
+  // DJAZZI(07/10/2026): a baarasseur as a member, for a group's addMembers.
   | 'spaces:enrollBaarasseur'
   | 'spaces:invokeRowboat' | 'spaces:topicSession' | 'spaces:responseSession' | 'spaces:stopRowboat'
   | 'spaces:bounceLive'
@@ -107,7 +107,7 @@ export const spacesRpcHandlers: SpacesHandlers = {
   // table's roster, agent and invocation channels still run in main.
   ...harborChannelHandlers({ getClient: orgs.getClient, getLive: orgs.getLive, subscriptions, emit: emitSpacesEvent }),
 
-  // BAARALI(07/10/2026): a baarasseur as a member, made once (core baarasseur-members.ts).
+  // DJAZZI(07/10/2026): a baarasseur as a member, made once (core baarasseur-members.ts).
   'spaces:enrollBaarasseur': async (args) => {
     const orgId = args.orgId ?? (args.orgAddress ? orgIdForAddress(args.orgAddress) : null);
     if (!orgId) throw new Error('unknown org');

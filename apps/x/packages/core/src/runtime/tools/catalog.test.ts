@@ -361,7 +361,7 @@ describe("BuiltinTools permission audit", () => {
             // Ghostwriter: types into ANOTHER app at the user's cursor —
             // always gated (the auto judge keeps voice flow smooth).
             "paste-at-cursor": "prompt",
-            // BAARALI(06/10/2026): the one click the fast browser mode stops before.
+            // DJAZZI(06/10/2026): the one click the fast browser mode stops before.
             "browser-confirm": "prompt",
             // Spaces blob bridge: upload pushes local bytes toward a
             // team-visible org, so it's gated (the auto judge decides);

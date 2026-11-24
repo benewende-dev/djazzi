@@ -195,7 +195,7 @@ export async function transcribeAudio(audio: Buffer, opts?: { mimeType?: string 
 }
 
 /**
- * Signed-in path (Baarali, 07/10/2026): the whole recording to the account's
+ * Signed-in path (Djazzi, 07/10/2026): the whole recording to the account's
  * pre-recorded route, which reads any container (an iPhone's m4a included);
  * an api without it (404) falls back to streaming through the live socket.
  */

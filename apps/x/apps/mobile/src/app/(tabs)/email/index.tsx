@@ -3,13 +3,13 @@ import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, FlatList, RefreshControl, Text, View } from 'react-native';
 import type { blocks } from '@x/shared';
 
-import { Empty, Row, Segmented, Separator, senderName, when } from '@/components/baarali-ui';
+import { Empty, Row, Segmented, Separator, senderName, when } from '@/components/djazzi-ui';
 import { useConnection } from '@/lib/connection';
 import { setOpenThread } from '@/lib/email-thread';
 import { useColors } from '@/theme/colors';
 
-// BAARALI(06/10/2026): the mailbox on the phone (validated mockup): the
-// important threads, the rest, and the drafts; a reply Baarali prepared shows
+// DJAZZI(06/10/2026): the mailbox on the phone (validated mockup): the
+// important threads, the rest, and the drafts; a reply Djazzi prepared shows
 // on its row, and the thread lets you send or edit it.
 
 type Thread = blocks.GmailThread;
@@ -93,7 +93,7 @@ export default function EmailScreen() {
         )}
         ListEmptyComponent={
           threads === null ? <ActivityIndicator style={{ marginTop: 32 }} />
-          : !connected ? <Empty title="No mailbox connected" text="Connect Gmail or Outlook in Baarali on your computer: your emails show up here." />
+          : !connected ? <Empty title="No mailbox connected" text="Connect Gmail or Outlook in Djazzi on your computer: your emails show up here." />
           : <Empty title="Nothing here" />
         }
       />

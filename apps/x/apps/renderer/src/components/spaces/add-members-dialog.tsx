@@ -20,7 +20,7 @@ import { isDeparted, isOwnAgent } from '@/lib/spaces-direct'
 // who is already here. They learn of it by their sidebar and the stream's
 // join line; no notification in v1.
 //
-// BAARALI(07/10/2026): the person's baarasseurs are offered too. One that is
+// DJAZZI(07/10/2026): the person's baarasseurs are offered too. One that is
 // not on the server yet joins it first as an agent the person owns (core
 // spaces/baarasseur-members.ts keeps its key), then the space, like the
 // phone's « New group » does.
@@ -48,7 +48,7 @@ export function AddMembersDialog({ org, space, members, open, onOpenChange, kind
         // A deleted account is never offered (2026-10-13), nor an agent that is not yours (2026-11-09): Harbor refuses the add.
         return roster.filter((m) => !inSpace.has(m.id) && (!kind || (kind === 'agents' ? m.kind === 'agent' : m.kind !== 'agent')) && !isDeparted(m) && (m.kind !== 'agent' || isOwnAgent(m, org.memberId)) && (!q || m.displayName.toLowerCase().includes(q)))
     }, [roster, inSpace, query, org.memberId, kind])
-    // BAARALI: a picked baarasseur ('b:<id>') is an agent too, and gets the seat choice.
+    // DJAZZI: a picked baarasseur ('b:<id>') is an agent too, and gets the seat choice.
     const pickedAgents = useMemo(() => roster.filter((m) => picked.has(m.id) && m.kind === 'agent').length + [...picked].filter((id) => id.startsWith('b:')).length, [roster, picked])
 
     useEffect(() => {

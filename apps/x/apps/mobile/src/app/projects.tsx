@@ -2,11 +2,11 @@ import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { ActivityIndicator, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 
-import { Empty, Row, Separator, when } from '@/components/baarali-ui';
+import { Empty, Row, Separator, when } from '@/components/djazzi-ui';
 import { useConnection } from '@/lib/connection';
 import { useColors } from '@/theme/colors';
 
-// BAARALI(06/10/2026): the projects on the phone (validated mockup, under the
+// DJAZZI(06/10/2026): the projects on the phone (validated mockup, under the
 // Library): each project's chats, a tap to open one, « New chat » to start one
 // in that project (projects:createChat).
 
@@ -41,7 +41,7 @@ export default function ProjectsScreen() {
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={async () => { setRefreshing(true); await load(); setRefreshing(false); }} />}
     >
       {projects === null ? <ActivityIndicator style={{ marginTop: 32 }} />
-        : projects.length === 0 ? <Empty title="No project yet" text="Create one in Baarali on your computer: its files and chats show up here." />
+        : projects.length === 0 ? <Empty title="No project yet" text="Create one in Djazzi on your computer: its files and chats show up here." />
         : projects.map((p) => (
           <View key={p.id} style={{ marginBottom: 18 }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 8 }}>

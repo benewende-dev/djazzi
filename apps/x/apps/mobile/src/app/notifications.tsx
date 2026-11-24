@@ -10,8 +10,8 @@ import { useConnection } from '@/lib/connection';
 import { useSpacesAccount } from '@/lib/spaces/account';
 import { PUSH_LEVELS, getPushLevel, getPushToken, registerWithHarbor, registerWithMac, setPushLevel, type PushLevel } from '@/lib/push';
 import { useColors } from '@/theme/colors';
-// BAARALI(07/11/2026): the agent's pace and quiet hours (baarali-agent-notifications.tsx).
-import { AgentNotifications } from '@/components/baarali-agent-notifications';
+// DJAZZI(07/11/2026): the agent's pace and quiet hours (djazzi-agent-notifications.tsx).
+import { AgentNotifications } from '@/components/djazzi-agent-notifications';
 
 // Notification preferences: one level per member, sent with the device token
 // to the server (Harbor's push.ts gates on it). Pausing and working hours live

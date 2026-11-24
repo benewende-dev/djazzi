@@ -129,7 +129,7 @@ describe('listing resync', () => {
         expect(invoke).toHaveBeenCalledWith('spaces:subscribeSpace', { orgId: 'org', spaceId: 's2' })
     })
 
-    // A cloud instance (Baarali, 02/10/2026): its subscriptions live in its
+    // A cloud instance (Djazzi, 02/10/2026): its subscriptions live in its
     // memory, and while it wakes it answers 503.
     it('asks again for a subscribe refused while the server woke, at the next focus', async () => {
         let refuse = true

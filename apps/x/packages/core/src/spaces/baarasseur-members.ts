@@ -6,7 +6,7 @@ import { findBaarasseur } from '../baarasseurs/repo.js';
 import { SpacesClient, SpacesLive } from '@x/spaces-client';
 import { getClient, getOrg, listOrgs, type DerivedMcpServer } from './orgs.js';
 
-// BAARALI(07/10/2026): a baarasseur in a work group, as a member in its own
+// DJAZZI(07/10/2026): a baarasseur in a work group, as a member in its own
 // right (founder's call, mockup artboard 18; harbor CONTRACT.md « An agent
 // member has an owner and its own keys »). Ticked in a group from the phone
 // or the computer, it is added to the org once as an agent the person owns;

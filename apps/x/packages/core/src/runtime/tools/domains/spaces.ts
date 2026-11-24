@@ -99,7 +99,7 @@ interface McpCallResult {
 export async function callOrgTool(org: OrgRecord, toolName: string, args: Record<string, unknown>, sessionId?: string | null): Promise<unknown> {
     const orgs = await import("../../../spaces/orgs.js");
     const { executeTool } = await import("../../../mcp/mcp.js");
-    // BAARALI(07/10/2026): in a baarasseur's thread session, it acts with its own key.
+    // DJAZZI(07/10/2026): in a baarasseur's thread session, it acts with its own key.
     const { actingBaarasseur, baarasseurMcpServerName } = await import("../../../spaces/baarasseur-members.js");
     const acting = actingBaarasseur(sessionId, org.id);
     const serverName = acting ? baarasseurMcpServerName(acting) : orgs.spacesMcpServerNameFor(org.id);

@@ -4,7 +4,7 @@ import * as SecureStore from 'expo-secure-store';
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 
 import { danceForTokens, discoverIssuer, refreshTokens, type SpacesTokens } from './oauth';
-import { spacesTokenForSession } from '@/lib/baarali-sign-in';
+import { spacesTokenForSession } from '@/lib/djazzi-sign-in';
 import { registerWithHarbor, unregisterFromHarbor } from '@/lib/push';
 import { SpacesClient } from './client';
 
@@ -39,7 +39,7 @@ interface StoredAccount {
   clientId: string;
   tokens: SpacesTokens;
   /**
-   * Signed in with the app's own screens (Baarali, 07/10/2026): the
+   * Signed in with the app's own screens (Djazzi, 07/10/2026): the
    * session token renews the Spaces token, in place of an OAuth refresh.
    */
   session?: string;
@@ -65,7 +65,7 @@ interface SpacesAccount {
   refreshOrgs: () => Promise<void>;
   /** Fresh bearer for Harbor calls (auto-refreshes near expiry). */
   getAccessToken: (opts?: { forceRefresh?: boolean }) => Promise<string>;
-  /** BAARALI(07/11/2026): the app's own sign-in session, for the continuous voice (lib/baarali-conversation.ts); null otherwise. */
+  /** DJAZZI(07/11/2026): the app's own sign-in session, for the continuous voice (lib/djazzi-conversation.ts); null otherwise. */
   voiceSession: () => string | null;
 }
 
@@ -76,7 +76,7 @@ export function SpacesAccountProvider({ children }: { children: ReactNode }) {
   const [orgs, setOrgs] = useState<SpacesOrg[] | null>(null);
   const [orgsError, setOrgsError] = useState<string | null>(null);
   const accountRef = useRef<StoredAccount | null>(null);
-  // One refresh at a time (Baarali, 2026-10-02): the authorization server
+  // One refresh at a time (Djazzi, 2026-10-02): the authorization server
   // rotates the refresh token on use, so two callers refreshing together —
   // the org list, each org's client, the live socket, all at launch — spend
   // the same token twice, and every one after the first fails "invalid

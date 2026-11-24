@@ -14,7 +14,7 @@ import { API_URL } from "../../../config/env.js";
 import { authedFetch } from "../../../models/gateway.js";
 import { fastRun, type DecisionAnswer } from "../../../application/browser-control/fast-run.js";
 
-// BAARALI(06/10/2026): the fast browser mode's two calls, through the
+// DJAZZI(06/10/2026): the fast browser mode's two calls, through the
 // control plane like every model call (the OpenRouter key never reaches the
 // app), and counted in the plan's usage.
 async function gatewayPost(path: string, body: Record<string, unknown>, signal?: AbortSignal): Promise<Record<string, unknown>> {
@@ -145,7 +145,7 @@ export const browserTools: z.infer<typeof BuiltinToolsSchema> = {
     },
 
     // ============================================================================
-    // Fast browser mode (BAARALI 06/10/2026)
+    // Fast browser mode (DJAZZI 06/10/2026)
     // ============================================================================,
 
     'browser-run': {

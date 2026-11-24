@@ -1,6 +1,6 @@
 import { billing as billingShared } from '@x/shared';
 
-// BAARALI(08/10/2026): a creator's partner code on the phone (mockup v2): the
+// DJAZZI(08/10/2026): a creator's partner code on the phone (mockup v2): the
 // card on the More tab, its own screen, and the offered days in Settings.
 
 export type PartnerState = billingShared.PartnerCodeState;

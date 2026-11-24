@@ -5,7 +5,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { openPlans } from '@/lib/plans-window'
 import { sessionCountdown, weekResetText } from '@/lib/usage-reset'
 
-// The usage, as a ring at the bottom of the sidebar (Baarali, 03/10/2026):
+// The usage, as a ring at the bottom of the sidebar (Djazzi, 03/10/2026):
 // the block that sat there took room the founder wanted back. The ring shows
 // the session spent; a click opens what the block said, and a little more:
 // the plan's limits, the session and the week with when they start over,

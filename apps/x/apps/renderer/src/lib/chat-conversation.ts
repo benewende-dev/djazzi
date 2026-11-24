@@ -861,9 +861,9 @@ export const getToolRowSummary = (tool: ToolCall): ToolRowSummary => {
     case 'executeMcpTool': {
       const server = asString(input?.serverName) ?? asString(input?.server)
       const toolName = asString(input?.toolName) ?? asString(input?.tool)
-      // BAARALI(05/10/2026): Baarali's media server in words, not its tool names.
-      if (server === 'baarali-media' && toolName === 'generate') return { verb: done ? 'Creation started' : 'Starting the creation' }
-      if (server === 'baarali-media' && toolName === 'check') return { verb: done ? 'Checked the creation' : 'Checking the creation' }
+      // DJAZZI(05/10/2026): Djazzi's media server in words, not its tool names.
+      if (server === 'djazzi-media' && toolName === 'generate') return { verb: done ? 'Creation started' : 'Starting the creation' }
+      if (server === 'djazzi-media' && toolName === 'check') return { verb: done ? 'Checked the creation' : 'Checking the creation' }
       return { verb: server ?? 'MCP', detail: toolName, detailMono: true }
     }
     case 'web-search': {
@@ -879,7 +879,7 @@ export const getToolRowSummary = (tool: ToolCall): ToolRowSummary => {
     case 'generate-image': {
       const failed = done && asRecord(tool.result)?.success === false
       return {
-        // BAARALI(05/10/2026): what it is doing, then what it did.
+        // DJAZZI(05/10/2026): what it is doing, then what it did.
         verb: failed ? 'Generate image' : done ? 'Image created' : 'Creating the image',
         detail: asString(input?.prompt)?.slice(0, 64),
         stat: failed ? 'failed' : undefined,

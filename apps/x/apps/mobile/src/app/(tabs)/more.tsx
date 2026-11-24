@@ -10,7 +10,7 @@ import { useConnection } from '@/lib/connection';
 import { daysLeft, type PartnerState } from '@/lib/partner-code';
 import { useColors } from '@/theme/colors';
 
-// BAARALI(07/10/2026): the More tab (mockup artboard 16,
+// DJAZZI(07/10/2026): the More tab (mockup artboard 16,
 // claude.ai/artifact/5hiVQMibobFRRitE7ictcw): the account and its week on
 // top, then what is not used every day, each one push away.
 
@@ -31,7 +31,7 @@ export default function MoreScreen() {
   }, [rpc]));
 
   const plan = info ? billingShared.getBillingPlanData(info.catalog, info.subscriptionPlanId) : null;
-  // Baarali's week rides the « monthly » bucket, as on the desktop's gauge.
+  // Djazzi's week rides the « monthly » bucket, as on the desktop's gauge.
   const bucket = info?.monthly;
   const used = bucket && bucket.sanctionedCredits > 0 ? Math.min(1, bucket.usedCredits / bucket.sanctionedCredits) : 0;
   const paired = Boolean(pairing);

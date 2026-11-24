@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { GENRES, LEVELS, LIBRARY, PROMPT_CATEGORIES, architectSystem, parseArchitect, planRank, readStore } from './prompt-library'
 
-// The Prompts page's content and rules (Baarali, 03/10/2026).
+// The Prompts page's content and rules (Djazzi, 03/10/2026).
 
 describe('the prompt library', () => {
   it('puts every prompt in a known category, in both languages', () => {

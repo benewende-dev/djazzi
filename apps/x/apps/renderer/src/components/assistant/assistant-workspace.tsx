@@ -17,7 +17,7 @@ interface AssistantWorkspaceProps extends ChatServices {
   /** The Assistant page's top bar, where its chat puts its header. */
   pageHeaderHost?: HTMLElement | null
   pageVisible: boolean
-  /** The Baarasseurs page's chat host, and whether that page shows (Baarali). */
+  /** The Baarasseurs page's chat host, and whether that page shows (Djazzi). */
   baarasseurHost?: HTMLElement | null
   baarasseurVisible?: boolean
   legacyPane: boolean

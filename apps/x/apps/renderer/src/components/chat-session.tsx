@@ -119,7 +119,7 @@ export function ChatSessionPane({
   //   it receives (`activeIsProcessing`) is active-tab-gated, so background
   //   tabs report `undefined` and App's `isChatTabProcessing` fallback keeps
   //   driving their busy state.
-  // BAARALI(08/11/2026): a message just sent, before the run says it started:
+  // DJAZZI(08/11/2026): a message just sent, before the run says it started:
   // the status line shows at once (there was a blank second), for 20 s at most.
   const lastItem = tabState.conversation[tabState.conversation.length - 1]
   const sentAt = lastItem && 'role' in lastItem && lastItem.role === 'user' ? lastItem.timestamp : 0
@@ -186,7 +186,7 @@ export function ChatSessionPane({
       data-chat-tab-panel={tab.id}
       aria-hidden={!isActive}
     >
-      {/* Baarali (07/10/2026): the admin console's banner, on chats only. */}
+      {/* Djazzi (07/10/2026): the admin console's banner, on chats only. */}
       {isActive && !isCodeSession ? <AnnouncementBanner className="mt-3 px-6" /> : null}
       <Conversation
         scrollMode={isCodeSession ? 'code' : 'chat'}
@@ -205,7 +205,7 @@ export function ChatSessionPane({
               {baarasseur.mission && <p className="line-clamp-3 max-w-2xl text-[15px] text-muted-foreground" data-no-translate>{baarasseur.mission}</p>}
             </div>
           ) : !tabHasConversation && !(isActive && activeIsProcessing) ? (
-            // BAARALI(08/11/2026): not while the first message's run starts (« How can I help? » flashed back).
+            // DJAZZI(08/11/2026): not while the first message's run starts (« How can I help? » flashed back).
             <ChatEmptyState
               wide
               variant={emptyStateVariant}
@@ -265,7 +265,7 @@ export function ChatSessionPane({
                   shimmer while thought text is streaming — only fall back to
                   the bare indicator when there is nothing to show (working, or
                   reasoning with no visible text, e.g. encrypted-only). */}
-              {/* BAARALI(09/10/2026): the work block shows its own spinner (lib/work-steps.ts). */}
+              {/* DJAZZI(09/10/2026): the work block shows its own spinner (lib/work-steps.ts). */}
               {((isActive && activeIsProcessing) || justSent) && !(activeIsReasoning && tabState.currentReasoning) && !hasActiveWork(shownSteps(tabState.conversation), true) && (
                 <Message from="assistant">
                   <MessageContent>

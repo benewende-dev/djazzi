@@ -356,7 +356,7 @@ export default function SpaceChatScreen() {
   const send = async (typed: string): Promise<boolean> => {
     if (sending) return false;
     setSending(true);
-    // BAARALI(07/10/2026): « @Name » typed without the menu names the member for real.
+    // DJAZZI(07/10/2026): « @Name » typed without the menu names the member for real.
     const body = tokenizeMentions(typed, members.values());
     // Show it now, not when the POST returns (2026-11-13): a pending copy,
     // faded, settled by the server's message or removed on failure.
@@ -376,7 +376,7 @@ export default function SpaceChatScreen() {
       const { message, invocations: started } = await postMessageReliably(client, space, { body }, me);
       setMessages((prev) => (prev ? settlePending(prev, pending.id, message) : prev));
       setInvocations((prev) => foldInvocations(prev, started));
-      // BAARALI(07/10/2026): a message that calls @rowboat asks the instance to answer, as the desktop does.
+      // DJAZZI(07/10/2026): a message that calls @rowboat asks the instance to answer, as the desktop does.
       void askRowboatIfCalled(rpc, { address: org, spaceId: space, spaceName: title ?? '', messageId: message.id, threadRootId: message.id, body: message.body }).catch(() => {});
       return true;
     } catch (err) {

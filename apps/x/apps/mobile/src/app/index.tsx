@@ -6,7 +6,7 @@ import { useConnection } from '@/lib/connection';
 import { ONBOARDED_KEY } from './onboarding';
 
 // First launch walks through onboarding once; after that the app opens on
-// the home tab once linked to an instance (Baarali, 07/10/2026), else on
+// the home tab once linked to an instance (Djazzi, 07/10/2026), else on
 // the sign-in screen (sign-in.tsx, 23/11/2026; it was on Spaces until then).
 export default function Home() {
   const [onboarded, setOnboarded] = useState<boolean | null>(null);

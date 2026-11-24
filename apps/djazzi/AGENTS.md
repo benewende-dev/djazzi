@@ -1,0 +1,197 @@
+# apps/djazzi
+
+Le code propre à Djazzi : les packages `@djazzi/*`. C'est un espace de travail pnpm à part, comme `apps/harbor`, pour ne jamais toucher les fichiers de l'upstream (`docs/djazzi/UPSTREAM.md` §2). La conception est dans `docs/djazzi/` ; ce guide ne dit que comment travailler ici.
+
+| Package | Rôle | Conception |
+|---|---|---|
+| `packages/control` | Le plan de contrôle : remplace le backend Rowboat Labs en servant les mêmes routes `/v1/*` | `TARGET_AGENTIC_ARCHITECTURE.md` §3.5 |
+| `packages/instance` | Le lanceur d'une instance : prépare le dossier de travail, démarre `rowboat-server` sur la boucle locale, ouvre le portier ; le serveur MCP `djazzi-media` (vidéo, voix, musique) | `TARGET_AGENTIC_ARCHITECTURE.md` §3.1 et §3.5 |
+| `packages/spaces` | Les espaces d'équipe, hébergés chez nous (décidé le 02/10/2026) : l'image de Harbor (`apps/harbor`, intact), ses pages dans la langue du visiteur (`src/pages.ts`) | « Les espaces » ci-dessous |
+| `packages/desktop` | L'app de bureau Djazzi : la marque appliquée au build (`scripts/brand.mjs`), l'icône, et le lien qui branche l'app sur l'instance du compte après la connexion (`src/cloud-link.ts`) | `TARGET_AGENTIC_ARCHITECTURE.md` §3.5 « Les instances », §3.13 |
+
+## Dépendre de l'upstream
+
+On importe les schémas de `@x/shared` par une dépendance **`link:`**, jamais `file:` (même raison qu'à la racine : `file:` copie et se périme). Il faut donc construire `@x/shared` avant d'installer ici :
+
+```sh
+cd apps/harbor && pnpm install && pnpm -r build
+cd ../x && pnpm install && (cd packages/shared && npm run build)
+cd ../djazzi && pnpm install && pnpm typecheck && pnpm test
+```
+
+**zod est épinglé à 4.2.1**, la version de `@x/shared` et de Harbor. Un écart casse l'identité des types à travers le lien.
+
+## Lancer le plan de contrôle
+
+```sh
+cd packages/control && pnpm build
+DJAZZI_PUBLIC_URL=http://127.0.0.1:8787 DJAZZI_INSTANCE_TOKEN=<jeton> \
+OPENROUTER_API_KEY=<clé> DJAZZI_PLAN_ID=essentiel PORT=8787 pnpm start
+```
+
+| Variable | Rôle |
+|---|---|
+| `DJAZZI_PUBLIC_URL` | URL publique du plan de contrôle, servie dans `/v1/config` |
+| `DJAZZI_INSTANCE_TOKEN` | Jeton porteur de l'instance (phase 0 : un seul propriétaire) ; gardé en empreinte SHA-256 |
+| `OPENROUTER_API_KEY` | Ne sort jamais du plan de contrôle |
+| `DJAZZI_PLAN_ID` | Forfait du propriétaire, pris dans `src/catalog.ts` (budgets calculés depuis les prix, archi §3.5). Défaut : `essentiel`. Avec Postgres, il ne sert qu'à la création du compte : ensuite, le forfait se change dans la console d'admin, et un redémarrage ne le défait pas |
+| `DJAZZI_ACCOUNT_ID`, `DJAZZI_ACCOUNT_EMAIL`, `DJAZZI_ACCOUNT_CREATED_AT` | Le compte du propriétaire ; la semaine est ancrée à sa date de création |
+| `PIXAZO_API_KEY` | Facultative : sans elle, `/v1/media` répond 503 et le texte marche quand même |
+| `DJAZZI_ADMIN_TOKEN` | Facultatif : le jeton de l'opérateur pour `/v1/admin/*` (recharges de crédits médias à la main). Absent : ces routes répondent 404 |
+| `DJAZZI_ADMIN_EMAILS` | Facultatif : les adresses, séparées par des virgules, qui ouvrent la console d'admin (`/admin`, archi §3.5 « La console d'admin »), une fois vérifiées et seulement avec `DJAZZI_AUTH_SECRET`. Absent : la console répond 404 |
+| `DJAZZI_OWNER_MEDIA_CREDITS` | Crédits médias offerts au propriétaire, une seule fois en Postgres (référence `owner-grant`) ; en mémoire, à chaque démarrage |
+| `DATABASE_URL` | Postgres (schéma `djazzi`, migrations au démarrage, `src/db.ts`). Absente : tout reste en mémoire et s'oublie à l'arrêt de la machine. Chez Neon (choisi le 01/10/2026), l'adresse **directe**, pas celle du pooler (`-pooler` dans l'hôte) : le pooler en mode transaction perd le `search_path` et les verrous de migration |
+| `RESEND_API_KEY`, `EMAIL_FROM` | Les codes par email, par Resend (choisi le 01/10/2026). `EMAIL_FROM` sur un domaine vérifié chez Resend, sinon l'envoi est refusé ou part en indésirable |
+| `DJAZZI_AUTH_SECRET` | Le serveur de connexion (`/auth/v1`, archi §3.5 « Comptes et connexion »), seulement avec `DATABASE_URL`. 32 octets aléatoires au moins. Absent : seul le jeton d'instance ouvre `/v1` |
+| `GOOGLE_CLIENT_ID` / `_SECRET`, `APPLE_…`, `GITHUB_…`, `MICROSOFT_…` | Un fournisseur n'apparaît sur la page de connexion que si ses deux valeurs sont là |
+| `DJAZZI_GATEWAY_SECRET` | La passerelle vers les instances (archi §3.5 « Les instances »). 32 octets aléatoires au moins ; les clés de chaque instance en dérivent, le changer les change toutes. Absent : aucun appareil ne se connecte |
+| `FLY_API_TOKEN`, `DJAZZI_INSTANCE_IMAGE` | Créer les instances : un jeton limité à l'app des instances (`fly tokens create deploy -a baarali-instances`) et l'image à y lancer. Absents : seule l'instance du propriétaire est joignable |
+| `DJAZZI_INSTANCES_APP`, `DJAZZI_INSTANCES_REGION`, `DJAZZI_MAX_INSTANCES` | Défauts : `baarali-instances`, `cdg`, `20` |
+| `DJAZZI_INSTANCE_DISK_GB`, `DJAZZI_INSTANCE_BACKUP_DAYS` | Le disque de chaque instance (10 Go par défaut) et les jours de garde de ses sauvegardes quotidiennes (14 par défaut, 60 au plus). Un disque plus petit s'agrandit à son prochain réveil ; aucun ne rétrécit |
+| `DJAZZI_OWNER_INSTANCE_APP` | L'app Fly de l'instance du propriétaire (phase 0, `warell-owner`), atteinte sans être modifiée. Retirée : le plan de contrôle oublie cette instance au démarrage et le propriétaire reçoit une instance gérée à sa prochaine connexion (`settleOwnerInstance`) ; l'app Fly se supprime ensuite à la main |
+| `DJAZZI_SPACES_URL` | Notre serveur des espaces (Harbor, `apps/harbor`), décidé le 02/10/2026 : nous les hébergeons nous-mêmes. Servi dans `/v1/config` (`spacesApexUrl`), et seulement avec `DJAZZI_AUTH_SECRET`. Absent : les apps n'affichent pas les espaces |
+| `DJAZZI_DEV_CODES` | `1` en développement seulement : les codes email et SMS s'écrivent dans le journal. Sans lui et sans vrai fournisseur, ni l'email ni le SMS ne sont proposés |
+| `PORT` | Défaut : 8080 |
+
+L'instance le trouve par `API_URL` : on ne modifie aucun fichier upstream qui l'appelle (archi §3.14).
+
+## Déployer sur Fly.io
+
+Deux apps, à Paris (`cdg`), construites sur les serveurs de Fly depuis la **racine du dépôt** (le contexte inclut `apps/harbor` et `apps/x`) :
+
+```sh
+fly deploy --config apps/djazzi/packages/control/fly.toml  --dockerfile apps/djazzi/packages/control/Dockerfile  --remote-only --ha=false .
+fly deploy --config apps/djazzi/packages/instance/fly.toml --dockerfile apps/djazzi/packages/instance/Dockerfile --remote-only --ha=false --no-public-ips .
+```
+
+| App | Exposition | Secrets (`fly secrets`) |
+|---|---|---|
+| `warell-control` | Publique, **`https://app.djazzi.com`** (aussi `https://warell-control.fly.dev`) | `OPENROUTER_API_KEY`, `DJAZZI_INSTANCE_TOKEN`, `PIXAZO_API_KEY`, `DJAZZI_ADMIN_TOKEN`, `DJAZZI_ADMIN_EMAILS`, `DJAZZI_GATEWAY_SECRET`, `FLY_API_TOKEN`, `DJAZZI_INSTANCE_IMAGE` |
+| `warell-owner` | **Privée** (Flycast), disque `data` monté sur `/data` | `DJAZZI_INSTANCE_TOKEN`, `DJAZZI_SERVER_KEY` |
+| `baarali-spaces` | Publique, **`https://spaces.djazzi.com`** (les adresses `https://<équipe>.spaces.djazzi.com` mènent au même serveur) | `DATABASE_URL` (Neon, sa propre base `baarali_spaces`), `AWS_ACCESS_KEY_ID` et `AWS_SECRET_ACCESS_KEY` (Tigris, posés par `fly storage create`) |
+| `baarali-instances` | **Privée** (Flycast). Une machine et un volume par compte, créés par le plan de contrôle, jamais par `fly deploy` | Aucun : chaque machine reçoit ses clés à sa création |
+
+Toutes se suspendent au repos et se réveillent à la requête suivante. Une instance n'a pas d'adresse publique : l'app l'atteint par la passerelle du plan de contrôle, `https://app.djazzi.com/instance`, avec sa clé d'appareil. Pour une vérification à la main : `fly proxy 3221:80 warell-owner.flycast -a warell-owner`, puis `http://localhost:3221` avec la clé de l'instance.
+
+**Publier une nouvelle image d'instance.** On la construit dans l'app des instances sans rien y déployer, puis le plan de contrôle la reçoit. Chaque machine y passe à son prochain réveil (elle dormait : personne n'est coupé), ou à la prochaine connexion d'un de ses appareils. Une machine allumée n'est jamais redémarrée pour ça :
+
+```sh
+fly deploy --config apps/djazzi/packages/instance/fly.toml --dockerfile apps/djazzi/packages/instance/Dockerfile \
+  -a baarali-instances --build-only --push --image-label vN --remote-only .
+fly secrets set DJAZZI_INSTANCE_IMAGE=registry.fly.io/baarali-instances:vN -a warell-control
+```
+
+**Le portier.** `rowboat-server` refuse tout `Host` qui n'est pas un nom de la machine (protection contre le *DNS rebinding*). Le portier (`packages/instance/src/gate.ts`) réécrit le `Host` vers la boucle locale ; la clé porteur du serveur reste exigée. Ainsi aucun fichier upstream ne change.
+
+**Les noms des apps Fly** gardent les anciens noms du produit (`warell-*` jusqu'au 01/10/2026, puis `baarali-*` jusqu'au 24/11/2026, où il est devenu Djazzi) : Fly ne renomme pas une app, et en recréer une ferait migrer le disque de l'instance. Il en va de même du seau Tigris `baarali-spaces-files` et de la base Neon `baarali_spaces`. Personne ne les voit : le public passe par `djazzi.com`. Les secrets encore nommés `BAARALI_*` chez Fly sont repris sous `DJAZZI_*` au démarrage (`former-env.ts`) jusqu'à ce qu'ils soient posés à nouveau ; le schéma `baarali` de la base est renommé `djazzi` à la première migration (`db.ts`). Le dépôt GitHub s'appelle `benewende-dev/djazzi` (ex-`benewende-dev/baarali`, avant `benewende-dev/warell`), et le clone `~/djazzi`.
+
+**DNS** : `djazzi.com` est chez Hostinger. `@` (A + AAAA de `warell-control`), `www` et `app` (CNAME vers `warell-control.fly.dev`), plus les lignes d'envoi Resend (`resend._domainkey`, `send`, `rsend`) et `_dmarc`. Les certificats sont émis par Fly (`fly certs list -a warell-control`).
+
+## Les espaces
+
+Harbor (`apps/harbor`) est le serveur des espaces : canaux, fils, fichiers partagés, et l'agent de chacun qui y agit en son nom. On l'héberge nous-mêmes, jamais chez l'upstream (décidé le 02/10/2026). Il ne connaît aucun mot de passe : il vérifie seul les jetons de notre serveur de connexion (« La connexion » ci-dessous), et une personne y est retrouvée par son identifiant de compte.
+
+- **L'image** (`packages/spaces/Dockerfile`) construit Harbor tel quel, après `brand.mjs --only harbor` : ses pages (lien d'invitation, liens ouverts dans un navigateur) viennent de `packages/spaces/src/pages.ts`, en français ou en anglais selon la langue du navigateur ; une app qui ne dit rien reçoit du français.
+- **Un seul serveur, sans équipes** (synchro du 23/11/2026, SPEC de Harbor §4 du 09/11/2026) : `HARBOR_ADDRESS=spaces.djazzi.com`. Une personne y a une seule identité et ne voit que les espaces où on l'a invitée, et les personnes avec qui elle en partage un : pas d'annuaire, rien au-dessus de l'espace. Deux entreprises sur le serveur ne se voient donc pas. La migration 061 de Harbor fond les anciennes équipes en ce serveur unique.
+- **Passage en production** (pas encore fait) : d'abord `scripts/flatten-blobs.ts` (dans `apps/harbor/packages/server`) une seule fois sur le seau Tigris, pour sortir les fichiers de leurs préfixes d'équipe ; puis le déploiement, qui joue la migration 061. Le certificat joker et la ligne `*.spaces` restent, pour que les anciens liens d'équipe aboutissent au même serveur.
+- **Accès Work** (17/10/2026) : les jetons de personnes signés pour Harbor portent `djazzi_work`, calculé depuis le forfait du compte lié et sa suspension. La copie de build Harbor refuse un jeton sans droit Work ; un ancien jeton sans ce champ reçoit 401 pour provoquer son renouvellement par le client, un droit refusé reçoit 403 ; les jetons déjà émis expirent au plus après 15 minutes, et un rafraîchissement recalcule le droit. Les clés d’agents gardent leur mécanisme propre de révocation. Les routes des apps et les transports IPC/HTTP vérifient aussi Work avant les opérations de collaboration ; les arrêts et déconnexions restent disponibles après une baisse de forfait.
+- **Les fichiers** vont chez Tigris (le stockage de Fly, compatible S3), seau `baarali-spaces-files`.
+- **Les apps** l'apprennent par `DJAZZI_SPACES_URL` sur le plan de contrôle (`/v1/config`) ; l'app mobile, par son build (`EXPO_PUBLIC_SPACES_APEX`).
+- **L'app Mac passe par l'instance**, dont le jeton n'est connu que du plan de contrôle. L'instance l'échange contre un jeton Espaces (JWT ES256, 15 min, même identifiant de compte que le téléphone) sur `POST /v1/spaces/token` : `DJAZZI_SPACES_TOKEN_URL`, posée par `packages/instance/src/main.ts`, lue par core (`auth/spaces-exchange.ts`).
+
+```sh
+fly deploy --config apps/djazzi/packages/spaces/fly.toml --dockerfile apps/djazzi/packages/spaces/Dockerfile --remote-only --ha=false .
+```
+
+## L'app de bureau
+
+Le dépôt garde les fichiers de l'upstream tels quels. **La marque s'applique à la copie d'un build**, jamais au dépôt (`packages/desktop/scripts/brand.mjs`) :
+
+- « Rowboat » devient « Djazzi » dans les textes de `main`, `renderer` et `core` ;
+- l'identifiant d'app macOS, les noms des installeurs, les icônes ;
+- les liens (site, dépôt des mises à jour, contact) ;
+- `API_URL` par défaut, `https://app.djazzi.com` ;
+- le lien vers l'instance : `src/cloud-link.ts`, copié dans `main` et démarré par une ligne.
+- la connexion au compte Djazzi reste sur l'appareil : `ipc.ts` ne la transmet pas à l'instance (`staysOnDevice` dans `src/cloud-link.ts`).
+
+Les icônes décoratives en étoiles (`Sparkles`, 14/10/2026) sont remplacées dans la copie du build par des symboles liés à leur fonction : rédaction, notes, tâches, réglages ou conversation. Les icônes mobiles SF suivent le même choix. Les favoris et les emojis choisis dans les messages gardent leur sens propre.
+
+Le script refuse d'écrire sans `--yes`. Chaque ancre doit se trouver exactement une fois : si l'upstream en change une, `test/brand.test.ts` casse sur la PR de synchro. L'image d'instance applique la même marque à `core` seulement (`--only core`), pour que l'agent se présente comme Djazzi.
+
+**Ce que fait l'app après la connexion.** L'accueil upstream connecte le compte, ce qui écrit `config/oauth.json`. Le lien voit la session, demande une clé d'appareil (`POST /v1/devices`), puis passe l'app en mode distant sur la passerelle et recharge les fenêtres. La première fois, l'instance est créée et démarre : le lien réessaie pendant environ une minute.
+
+**Se déconnecter détache l'app de l'instance** (03/10/2026). En mode distant, l'upstream transmet aussi la connexion à l'instance : se reconnecter y remplaçait la session de l'instance par celle de la personne, et l'app et son instance pouvaient agir pour deux comptes. La connexion Djazzi reste donc sur l'appareil ; quand elle disparaît de `config/oauth.json`, le lien quitte l'instance (`disconnectRemoteServer`), et la connexion suivante rejoint l'instance du compte connecté. Un fichier en cours de réécriture ne compte pas comme une déconnexion.
+
+**Une connexion avec un autre compte change d'instance** (04/10/2026). Le lien note dans `config/djazzi-link.json` le compte dont il a rejoint l'instance, et l'appareil de cet ordinateur pour chaque compte. Relié, il demande `/v1/me` à chaque nouvelle session (une session rafraîchie coûte un appel) : un autre compte, même sans déconnexion avant, le fait quitter l'instance et rejoindre celle du compte connecté. Un lien fait avant cette note est refait une fois. Avant de demander un appareil, le lien révoque celui que cet ordinateur avait pour ce compte : se reconnecter n'empile pas les appareils contre la limite de dix. Si le contrôle ne répond pas, l'app reste où elle est et regarde à la prochaine écriture du fichier.
+
+**Une discussion rouverte que le serveur n'a pas** (04/10/2026) : au démarrage, la fenêtre vérifie les discussions de ses onglets (`renderer/src/lib/missing-chats.ts`). Celle que le serveur dit ne pas avoir (« session not found », l'app a changé d'instance) s'ouvre comme une nouvelle discussion ; un serveur qui se réveille garde ses onglets.
+
+**La connexion se fait dans l'app** (05/10/2026). La page de connexion de Djazzi (l'autorisation du contrôle, `/auth/v1/oauth2/authorize`) s'ouvre dans une fenêtre de l'app, pas dans le navigateur : `src/sign-in-window.ts`, branché par `brand.mjs` sur les deux ouvreurs d'adresses (`main.ts` et `server-host.ts`). La fin de la danse OAuth, la redirection vers l'écouteur local de l'app, l'atteint depuis cette fenêtre comme depuis un navigateur. Chaque fenêtre part sans cookie. Toute autre adresse reste dans le navigateur ; une connexion qui part vers un autre site (Google, qui refuse les fenêtres intégrées) recommence dans le navigateur.
+
+**Les fichiers du Mac vont sur l'instance** (05/10/2026). Reliée à son instance, l'app n'a plus son cœur sur le Mac : un dossier choisi (un projet, le dossier de travail du chat) ou un fichier joint est d'abord copié sur l'instance par le canal `files:toInstance`, que `brand.mjs` branche sur `src/to-instance.ts`. Un dossier va dans `Projects/<nom>`, un fichier dans `Attachments/<jour>/<nom>`, sous un nom libre (« nom 2 »…). Les dossiers que les outils refont (`node_modules`, caches, sorties de build) restent sur le Mac, les liens ne sont pas suivis, `.git` part. Un dossier de plus de 3 000 fichiers ou 100 Mo est refusé en entier, avant tout envoi ; un fichier de plus de 25 Mo reste sur le Mac. Sans instance, les chemins sont rendus tels quels.
+
+**L'onboarding** (04/10/2026, maquette validée) : `apps/x/apps/renderer/src/components/djazzi-onboarding/`, en cinq étapes : bienvenue et connexion (le B ovale en boucle Chargement), l'espace qui se prépare, le profil (prénom, langue français ou anglais, activité, rôle), les outils (WhatsApp, Telegram, Google, Outlook ; Notion, Slack et GitHub « Bientôt »), une première demande. Le rattachement à l'instance et le choix de la langue rechargent la fenêtre : l'étape et les réponses sont gardées dans le stockage de la fenêtre (`djazzi-onboarding`). Une instance dit toujours l'onboarding fait (`instance/src/seed.ts`) : la fenêtre l'ouvre donc aussi sans session Djazzi, et tant que le sien est en cours ; « J'ai déjà un compte » entre dans l'app dès le rattachement. Le profil va dans `knowledge/Agent Notes/user.md`, entre des marqueurs, que l'agent lit à chaque discussion.
+
+**L’introduction mobile Déclic** (11/10/2026, maquette validée) : `apps/x/apps/mobile/src/components/djazzi-onboarding.tsx`, en quatre écrans avant la connexion. Le B ovale en boucle Chargement accompagne la présentation des agents, un exemple de proposition, le choix d’un avatar, puis la sélection. « Passer » reste disponible ; aucun agent n’est créé par cette introduction. Le choix devient la valeur par défaut du formulaire de recrutement. Le parcours reprend après fermeture ; la clé historique de fin d’onboarding est conservée.
+
+**Les animations du B ovale** (11/10/2026, répartition validée) : douze ovales composent le B. Depuis le choix du 12/10/2026, le texte Djazzi conserve sa typographie d’origine et son point bleu ; l’icône utilise le noir sur fond clair et le blanc sur fond sombre. La boucle « Chargement » anime le logo des pages du site et de l’app, accompagne les onboardings et l’attente dans les chats, sur mobile et bureau : le B reste compact et lisible sur les pages. La géométrie et les mouvements communs sont dans `control/src/oval-b.ts` ; les composants des apps sont dans `packages/desktop/assets/motion/`. `brand.mjs` les copie dans le build de chaque app. Le site utilise le même calcul dans `control/src/logo.ts`. Les autres animations restent dans les maquettes locales, sans usage sur les pages. Sur bureau, le mouvement s’arrête hors écran et en arrière-plan ; sur mobile, il utilise le pilote natif et s’arrête quand la route perd le focus ou que l’app passe en arrière-plan. La réduction des animations affiche un B fixe. Sur mobile, le B indique aussi l’envoi de la première demande et la récupération de l’état du chat ; les messages précédents restent visibles lorsqu’un nouveau tour commence. Le choix d’avatar des agents garde ses propres images.
+
+**La connexion mobile guidée** (11/10/2026) : `mobile/src/components/djazzi-sign-in-view.tsx` remplace les trois paragraphes d’accueil par une bulle courte et le B ovale monochrome en boucle Chargement. La route des Espaces garde les appels de connexion : email, code à six chiffres confirmé par le bouton, puis le rattachement à l’instance du compte. Les autres fournisseurs passent par la connexion existante ; « Connecter votre Mac » ouvre l’association existante.
+
+**Les avatars des agents** (11/10/2026) : dix choix partagés (`AVATAR_IDS` et `AGENT_AVATARS`, `shared/src/baarasseur.ts`), enregistrés dans le champ facultatif `avatar` du même `config/baarasseurs.json` sur téléphone et bureau. Les images sont livrées avec les apps, sans appel réseau. Un ancien profil ou un identifiant inconnu garde ses initiales ; les nouveaux agents commencent avec l’avatar B. Le recrutement et l’édition permettent de choisir un avatar ou de revenir aux initiales. Le français de l’interface conserve le vouvoiement (`desktop/src/i18n/fr.ts`).
+
+**Les parcours mobiles guidés** (12/10/2026, maquette validée) : les écrans propres à Djazzi sont dans `desktop/assets/mobile/`, copiés par `brand.mjs` dans le build. L’accueil garde la saisie disponible sous une liste limitée à trois discussions récentes et une salutation courte ; « Tout voir » déplie l’historique complet, le bouton Envoyer lance une demande après chargement du modèle enregistré. La navigation du 13/10/2026 remplace la barre du bas par deux accès supérieurs, Chat et Work. Work regroupe les projets et la création d’apps, y compris le code, avec le même agent et les mêmes modèles. Work et ses routes mobiles (projets, e-mail, réunions, espaces d’équipe, routines, agents, apps, Studio et conversations ouvertes en mode Work) vérifient le forfait auprès de `billing:getInfo` avant de monter leur contenu : catégorie `starter` ou `pro` active, ou essai de ce niveau encore valide. Un forfait gratuit propose les forfaits, une vérification indisponible propose de réessayer ; aucun abonnement inconnu n’est accepté. Les droits Work sont aussi vérifiés dans les transports HTTP / IPC, dans les outils Work du runtime, dans les agents personnalisés et avant les tâches planifiées. Les écritures dans les configurations, agents, apps, tâches et projets Motion restent protégées, tandis que les pièces jointes et documents de Chat restent disponibles. Les appels au MCP médias gardent leurs crédits séparés ; le MCP Motion nécessite Work. Les opérations d’arrêt ne sont pas bloquées par une baisse de forfait. La barre latérale animée se ferme avec son bouton, le fond ou le retour système ; elle regroupe les routes existantes, une recherche dans l’historique réel et les outils dans une section repliable. Le B monochrome et le texte d’origine identifient l’accueil et cette barre latérale. La création d’agent passe par Identité, Mission, Essai ; l’édition conserve le formulaire complet, les outils, le modèle, les horaires et la mémoire. Les documents déjà présents dans la Bibliothèque, les pièces jointes, les projets ou les dossiers d’agents peuvent être associés au profil : retirer une référence ne supprime pas le fichier partagé. Le Studio de la barre latérale liste les projets `motion/*/index.html` et ouvre le lecteur et les exports existants. Les espaces ont deux destinations explicites, Messages et Fichiers. Leur accueil affiche une équipe active, une recherche locale insensible aux accents, des onglets Groupes / Messages privés et les actions d’équipe dans un menu. Deux lectures par équipe active (espaces et annuaire) remplacent le chargement des membres de chaque espace de toutes les équipes ; une erreur d’une liste ne masque pas l’autre. Le lien Répondre dans le fil reste visible même sans réponse. La création d’un groupe passe par le choix des personnes et des agents, puis son nom ; le B identifie Djazzi parmi les participants. Une création partiellement échouée réutilise le groupe déjà créé. Les informations d’un groupe permettent d’ajouter des membres d’équipe et de préparer un lien d’invitation ; les messages privés gardent leurs membres fixes. Les composers de l’accueil, des chats, des agents, des espaces et des fils proposent des pièces jointes avec aperçu et retrait : 5 fichiers au plus, 15 Mo par fichier et 30 Mo au total. Les fichiers sont transférés à l’envoi, dans `Attachments/mobile/` sur l’instance ou comme assets de l’espace ; leurs références restent disponibles après un échec pour éviter une nouvelle copie. Le modèle occupe une pastille compacte. Les paramètres mobiles regroupent Compte, Utilisation et App. Les sessions de 5 heures, semaines, renouvellements, crédits médias et leur historique reprennent les helpers et les données du bureau. Leur actualisation ne tourne que lorsque cet écran est actif au premier plan. Les forfaits affichent le catalogue réel et ne simulent aucun paiement. Les réglages techniques des connexions et du code restent sur ordinateur. L’apparence propose Système, Clair et Sombre, mémorisés sur ce téléphone sans redémarrage, y compris la barre système ; les libellés des boutons bleus restent blancs en clair et noirs en sombre pour conserver leur contraste. Les options du chat gardent la recherche web, la lecture et la conversation vocale ; le microphone du composer dicte un brouillon à relire avant envoi (l’accueil ouvre la conversation vocale). Les réponses terminées proposent la copie et la lecture de leur introduction ; la dernière demande peut être relancée dans la même discussion, avec son agent, son entrée complète et le modèle sélectionné. Ces parcours utilisent les clients et protocoles communs au bureau ; les fichiers de l’upstream restent intacts hormis les dépendances génériques `expo-clipboard` et `expo-document-picker` documentées dans `DIVERGENCES.md`.
+
+**La navigation du téléphone** (23/11/2026, maquette validée, artboards Tel-Accueil, Tel-Groupes et Tel-Menu de claude.ai/artifact/MMrtTpNSjyPBNFvscbxm6F) : elle remplace l’accueil façon Grok Bot du 07/11/2026, sur le modèle de la nouvelle app Claude. Une barre en pilule en bas (`assets/mobile/pill-tab-bar.tsx`) mène à Djazzi, Groupes, Ma liste et Studio. Studio est un écran plein, payant, ouvert au-dessus des onglets. La barre n’apparaît que sur le premier écran d’un onglet, jamais dans les Groupes une fois connecté (les Espaces ont leur propre barre), ni dans le navigateur en grand écran. Le menu à gauche (`side-menu.tsx`) regroupe la recherche, Nouveau chat, Agents, Routines, Bibliothèque, E-mail, Réunions, Connecter des applications, les discussions récentes et le compte. Les pages payantes passent par la vérification du forfait, comme depuis les réglages. L’accueil (`home.tsx`) affiche une salutation avec le prénom donné à l’accueil animé (`djazzi.firstName.v1`), trois amorces, l’approbation en attente et la vraie zone de saisie : dictée, « Parler », envoi direct (`submit`). Ma liste est un onglet (`tab-todo.tsx`, route `todo`) qui reprend l’écran `/tasks`, conservé pour ses liens.
+
+**Publier une version** : Actions › `djazzi-desktop` › *Run workflow*, avec la version (`0.1.0`). Le workflow fait un brouillon de release `v0.1.0` : Mac arm64 et Intel, Windows. On le vérifie, puis on le publie. Le site pointe vers `releases/latest/download/` : `Djazzi-mac-arm64.dmg`, `Djazzi-mac-intel.dmg`, `Djazzi-windows-setup.exe`. Les mises à jour automatiques passent par update.electronjs.org, qui lit ces releases.
+
+**La navigation de bureau Chat / Work** (15/10/2026, maquette validée) : les deux accès supérieurs partagent une vérification du forfait avant le montage des pages Work. Les onglets sont rendus après les zones de déplacement natives de la fenêtre : sur Electron/macOS, leur `z-index` ne suffit pas à conserver le clic souris si une zone déplaçable est peinte ensuite. Depuis le 17/10/2026, Chat garde les tâches personnelles, la bibliothèque, les prompts et l’historique ; Work regroupe Code, e-mail, réunions, agents, routines, apps, espaces d’équipe et Studio, sur ordinateur et mobile. Les espaces s’ouvrent directement. Le rail existant des projets et sessions Code rejoint la barre latérale Work ; replier celle-ci le remet dans le contenu. Le profil, l’anneau de consommation, les paramètres et le statut de synchronisation gardent leur présentation. L’accueil Chat propose trois amorces qui remplissent un brouillon. Studio ouvre les projets `motion/*/index.html` déjà enregistrés et le modeleur existant, sans créer de projet fictif. Les composers gardent leurs outils et un sélecteur de modèle compact. L’accueil Work propose la dictée dans son brouillon et prépare une session Work avant de démarrer une conversation vocale. Celui de l’accueil Work reste visible avant les listes de sessions et de projets. Sans projet choisi, le premier envoi crée ou réutilise le dossier réel `Projects/Work` du compte et ouvre une session dans cet espace, sans exiger un moteur de code externe. Aucun dossier n’est créé en ouvrant simplement la page. Une lecture initiale ou une resynchronisation du chat dépassée par des événements en direct est relue avant application, pour conserver la première réponse et son état terminé. Les tâches personnelles peuvent être lues, organisées et archivées sans Work ; les demandes d’exécution, de délégation et de planification restent payantes, y compris un ajout contenant `@djazzi` ou un contexte Code. La couche de présentation est dans `desktop/assets/desktop/`, appliquée uniquement à la copie de build par `desktop-layout.mjs`.
+
+**Le modeleur 3D du Studio** (13/10/2026) partage sa page embarquée et son schéma de scène entre Mac et mobile, dans `desktop/assets/motion/` et `instance/src/cad-scene.ts`. Les calculs passent par le MCP Motion de l’instance ; les limites, variantes et exports sont décrits dans [CADQUERY.md](../../docs/djazzi/CADQUERY.md).
+
+**La rétro-ingénierie dans Work** (15/10/2026) passe par le MCP `djazzi-rea` de l’instance et le skill correspondant, également raccordé aux sessions Code. Le moteur a son installation verrouillée dans `engines/rea/`, hors des workspaces pnpm ; son Node et ses fournisseurs restent séparés des dépendances de Djazzi. Le périmètre, les prérequis, les limites et la procédure de mise à jour sont décrits dans [REA.md](../../docs/djazzi/REA.md).
+
+**Signature (🧑).** Sans certificat, l'app Mac est signée ad hoc : macOS la dit « non vérifiée », et il faut l'autoriser une fois dans *Réglages › Confidentialité et sécurité*. Pour une app signée et notarisée, il faut un compte Apple Developer (99 $/an) et les secrets `APPLE_CERTIFICATE`, `APPLE_CERTIFICATE_PASSWORD`, `APPLE_ID`, `APPLE_PASSWORD` et `APPLE_TEAM_ID`. Windows affiche un avertissement SmartScreen tant que l'app n'est pas signée.
+
+La couverture française des textes distribués est vérifiée par `i18n-extract.mjs --check` à la fabrication.
+
+## Changer un prix ou une devise
+
+Tout est dans `packages/control/src/catalog.ts` : un prix en euros par forfait, le F CFA s'en déduit à la parité fixe (655,957, au franc près), et un taux par devise. La remise à l'année (`ANNUAL_DISCOUNT`, 10 %) ne s'affiche que sur `/tarifs` tant que le paiement n'est pas ouvert. Le budget se recalcule ; `test/pricing.test.ts` casse si la marge de 55 % ne tient plus dans une devise.
+
+Les modèles se règlent dans la console d'admin, onglet Modèles (archi §3.5, « Les modèles par forfait ») : visibles ou masqués, le forfait qui les ouvre, « Conseillé », leur point fort, et la liste de Découverte. `DISCOVERY_MODELS` (`catalog.ts`) n'est que la liste de Découverte tant que la console n'en a pas enregistré une. Avant d'ajouter un modèle à Découverte, vérifier qu'il répond en français avec `reasoning: { enabled: false }`.
+
+Les médias sont dans `packages/control/src/media.ts` : un modèle = un chemin Pixazo, un corps et un prix. Pixazo ne publie pas la liste de ses modèles : on en ajoute un ici, puis on l'ouvre, le masque ou le conseille dans la console (Modèles › Médias · Pixazo). Un prix se relit sur `pixazo.ai/models/<famille>`, et on garde le prix normal quand une promotion court (archi §3.5, « Les médias »). Ils se paient en crédits médias, vendus en recharges (`MEDIA_PACKS` dans `catalog.ts`). `test/pricing.test.ts` casse si une recharge ne garde plus 55 %.
+
+Ajouter une recharge à la main, tant qu'aucun paiement n'est branché (la même référence deux fois n'ajoute qu'une fois) :
+
+```sh
+curl -X POST https://app.djazzi.com/v1/admin/media-credits \
+  -H "authorization: Bearer $DJAZZI_ADMIN_TOKEN" -H 'content-type: application/json' \
+  -d '{"account_id":"owner","pack":"medias-5","reference":"<reçu>"}'
+```
+
+## Postgres
+
+Une migration déployée ne se modifie jamais : on ajoute la suivante à `MIGRATIONS` (`src/db.ts`). Les tests du magasin (`test/store.contract.test.ts`) passent les **mêmes** règles au magasin en mémoire et à Postgres. Pour Postgres, ils tournent sur PGlite, dans le processus : ni serveur ni Docker. PGlite met une dizaine de secondes à démarrer : une base par fichier de test, vidée entre deux tests.
+
+## La connexion
+
+`test/auth.test.ts` joue la connexion **comme le cœur la joue** : même `openid-client`, découverte à la même adresse, enregistrement dynamique avec les mêmes métadonnées, PKCE, puis `/v1/me` avec le jeton. Si l'upstream change sa façon de se connecter, c'est ce test qui doit casser.
+
+Le serveur complète deux choses dans les requêtes de l'app (`asAppRequest`, `src/auth.ts`) : `offline_access`, sans quoi le cœur n'aurait pas de jeton de rafraîchissement, et `application_type: native`, sans quoi la redirection vers `http://localhost` (bureau) ou `com.djazzi.app.mobile:/oauth-callback` (téléphone, RFC 8252 §7.1) serait refusée.
+
+**Le mot de passe** est facultatif (02/10/2026) : la page de connexion propose code ou mot de passe, et un mot de passe ne se choisit qu'après un code, sur `POST /auth/v1/password/choose` (`passwordChoice`, `src/auth.ts`), avec une session de moins de 10 minutes. `/sign-up/email` reste fermé : pas de compte créé par mot de passe seul.
+
+**Les espaces.** Harbor vérifie un jeton seul, avec nos clés publiques (`apps/harbor/packages/server/src/auth-oidc.ts`) : il lui faut un JWT signé en ES256 ou RS256. Avec `DJAZZI_SPACES_URL`, chaque demande d'autorisation reçoit cette ressource (RFC 8707) : le jeton devient un JWT dont l'audience la nomme, signé par une clé ES256 ajoutée pour lui (Harbor ne lit pas l'EdDSA de la clé principale), et porte l'email seulement s'il est vérifié. `test/spaces-token.test.ts` joue le téléphone, puis lit le jeton comme Harbor.
+
+## Les tests de contrat
+
+Une réponse servie à l'instance est validée par le schéma zod de `@x/shared` lui-même, pas par une copie. Si l'upstream change un schéma, notre test casse à la synchro hebdomadaire, avant la production.
+
+## Règles
+
+- Les règles de la racine (`AGENTS.md`) s'appliquent : commentaires qui disent pourquoi, avec la date et la décision.
+- Aucun appel vers `rowboatlabs.com` ni PostHog (`UPSTREAM.md` §6).
+- Aucune chaîne visible par l'utilisateur écrite en dur : elles passeront par `@djazzi/i18n` (roadmap phase 1).

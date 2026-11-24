@@ -1,7 +1,7 @@
 import { useEffect, useSyncExternalStore } from 'react'
 import type { Announcement, AnnouncementEventKind } from '@x/shared/dist/billing.js'
 
-// The banner at the top of the Chat (Baarali, 07/10/2026), written in the
+// The banner at the top of the Chat (Djazzi, 07/10/2026), written in the
 // admin console. One shared state for every chat pane: closing it in one
 // closes it everywhere. Read again every 10 minutes and when the window
 // comes back, like the account's config (core config/rowboat.ts).
@@ -9,7 +9,7 @@ import type { Announcement, AnnouncementEventKind } from '@x/shared/dist/billing
 const REFRESH_MS = 10 * 60_000
 
 /** The usage page lives in the sidebar's settings: the sidebar opens it on this event. */
-export const OPEN_USAGE_EVENT = 'baarali:open-usage'
+export const OPEN_USAGE_EVENT = 'djazzi:open-usage'
 
 let current: Announcement | null = null
 let loading: Promise<void> | null = null

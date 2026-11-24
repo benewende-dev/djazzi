@@ -29,7 +29,7 @@ const CONFIG_FILE = path.join(WorkDir, 'config', 'composio.json');
 
 /**
  * Through the account's api, when signed in and the api serves Composio.
- * Baarali's does not in V1 (`composio: false` in /v1/config, 2026-10-02):
+ * Djazzi's does not in V1 (`composio: false` in /v1/config, 2026-10-02):
  * then only a key of the user's own reaches Composio, directly, and with
  * none Composio is simply not configured — never a call that answers 404.
  */

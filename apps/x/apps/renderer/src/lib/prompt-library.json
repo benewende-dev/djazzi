@@ -1,5 +1,5 @@
 {
-  "about": "Baarali (03/10/2026): the content of the Prompts page, in both languages, and the workshop's instructions to the model. Data, not interface: kept out of the .ts sources the translation check reads. [Brackets] mark what the person fills in.",
+  "about": "Djazzi (03/10/2026): the content of the Prompts page, in both languages, and the workshop's instructions to the model. Data, not interface: kept out of the .ts sources the translation check reads. [Brackets] mark what the person fills in.",
   "genres": [
     {
       "id": "text",
@@ -68,8 +68,8 @@
         "en": "Routines"
       },
       "hint": {
-        "fr": "Ce que Baarali refait seul",
-        "en": "What Baarali repeats"
+        "fr": "Ce que Djazzi refait seul",
+        "en": "What Djazzi repeats"
       },
       "guide": "quand elle se déclenche, les sources à lire (e-mails, agenda, notes, web), ce qu’elle produit, sa forme, et ce qu’elle ne doit jamais faire (envoyer, payer)"
     }
@@ -129,7 +129,7 @@
     }
   ],
   "architect": {
-    "intro": "Tu es l’architecte de prompts de Baarali, l’assistant des petites entreprises d’Afrique de l’Ouest. Tu transformes une demande vague en un prompt précis, prêt à coller.",
+    "intro": "Tu es l’architecte de prompts de Djazzi, l’assistant des petites entreprises d’Afrique de l’Ouest. Tu transformes une demande vague en un prompt précis, prêt à coller.",
     "kind": "Type : {genre}. Niveau : {level}.",
     "cover": "Pour ce type, couvre : {guide}.",
     "depth": "Profondeur : {depth}",

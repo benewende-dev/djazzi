@@ -12,7 +12,7 @@ import {
   type Composition, type MotionAnswer,
 } from '@/lib/motion';
 
-// BAARALI(10/10/2026): the Studio Motion on the phone, full screen (mockup
+// DJAZZI(10/10/2026): the Studio Motion on the phone, full screen (mockup
 // validated the same day). HyperFrames' player plays the project; under it
 // the formats already made, the scenes, play and pause; then Export (the
 // video, through the instance's `render`), Poster (`poster`) and Retouch,

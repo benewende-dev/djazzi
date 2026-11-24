@@ -1,4 +1,4 @@
-// BAARALI(06/10/2026): the one tool only a baarasseur gets — keeping a rule
+// DJAZZI(06/10/2026): the one tool only a baarasseur gets — keeping a rule
 // of its mission. Attached by loadAgent to baarasseur agents, never to the
 // copilot itself; it writes to the user's own workspace, hence no approval.
 
@@ -21,7 +21,7 @@ export const baarasseurTools: z.infer<typeof BuiltinToolsSchema> = {
                 : { success: false, error: "Unknown baarasseur or empty note." };
         },
     },
-    // BAARALI(07/11/2026): the user renames it in a conversation (« appelle-toi Awa »).
+    // DJAZZI(07/11/2026): the user renames it in a conversation (« appelle-toi Awa »).
     "baarasseur-update": {
         permission: "none",
         description: "Change your own name or role as a baarasseur, when the user asks for it (« Appelle-toi Awa », « tu es maintenant notre comptable »). The app shows the new name at once.",

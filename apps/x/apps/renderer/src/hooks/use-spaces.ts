@@ -320,7 +320,7 @@ function subscribeLive(orgId: string, spaceId: string): void {
     const head = liveHeads.get(key) ?? getSpaceReadState(orgId, spaceId)?.head
     void window.ipc.invoke('spaces:subscribeSpace', { orgId, spaceId, ...(head ? { afterOffset: head } : {}) }).catch(() => {
         // Org unreachable — REST fetches surface the error state. Not given
-        // up on (Baarali, 02/10/2026): a cloud instance still waking answers
+        // up on (Djazzi, 02/10/2026): a cloud instance still waking answers
         // 503 here, and the space would stay deaf until the app restarts.
         if (liveRefs.has(key)) liveFailed.add(key)
     })

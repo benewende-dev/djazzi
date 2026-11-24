@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { CatalogTab } from './catalog'
 import { FICHES, accessOf } from './fiches'
 
-// The catalog cards (Baarali, 02/10/2026): a plain name, what the app is for
+// The catalog cards (Djazzi, 02/10/2026): a plain name, what the app is for
 // and what it reaches; the apps without a fiche wait behind a link, and a
 // search finds every one.
 

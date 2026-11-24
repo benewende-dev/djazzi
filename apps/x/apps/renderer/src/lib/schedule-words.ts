@@ -1,6 +1,6 @@
 import type { BackgroundTaskSummary, Triggers } from '@x/shared/dist/background-task.js'
 
-// A scheduled task's timing in plain words (Baarali, 02/10/2026): « Every day
+// A scheduled task's timing in plain words (Djazzi, 02/10/2026): « Every day
 // at 07:00 GMT » instead of « 0 7 * * * ». The scheduler reads cron and time
 // windows on the instance's clock, which runs on UTC: GMT, West Africa's time.
 // English here like the rest of the interface; the French is in the

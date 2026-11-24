@@ -360,7 +360,7 @@ export const RPC_CHANNELS = [
   // records, which live in this process — not in a client's own.
   'spaces:renameSpace',
   'spaces:addMembers',
-  // BAARALI(07/10/2026): a baarasseur joins a group (the phone asks too).
+  // DJAZZI(07/10/2026): a baarasseur joins a group (the phone asks too).
   'spaces:enrollBaarasseur',
   'spaces:listAgents',
   'spaces:addAgent',

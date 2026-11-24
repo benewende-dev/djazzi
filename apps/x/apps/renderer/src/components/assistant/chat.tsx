@@ -55,7 +55,7 @@ export function Chat({ tab, location, visible, focused, services: p, onMove, onN
   }
   const reportError = (error: unknown) => toast.error(error instanceof Error ? error.message : String(error))
   const action = (fn: () => Promise<unknown>) => { void fn().catch(reportError) }
-  // A baarasseur's chat stays on its page (Baarali).
+  // A baarasseur's chat stays on its page (Djazzi).
   const moveTargets = destinations.filter((destination) => location !== 'baarasseur' && destination.location !== location)
     .map(({ location: target, label, Icon }) => ({ label, icon: <Icon className="size-4" />, onSelect: () => onMove(target) }))
   const headerContent = <>

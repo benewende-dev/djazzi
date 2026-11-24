@@ -4,13 +4,13 @@ import { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Alert, KeyboardAvoidingView, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { IconButton, senderName, when } from '@/components/baarali-ui';
+import { IconButton, senderName, when } from '@/components/djazzi-ui';
 import { useConnection } from '@/lib/connection';
 import { openThread } from '@/lib/email-thread';
 import { useColors } from '@/theme/colors';
 
-// BAARALI(06/10/2026): one thread: its messages, then the reply — the one
-// Baarali prepared when there is one — to edit and send. Sending is the
+// DJAZZI(06/10/2026): one thread: its messages, then the reply — the one
+// Djazzi prepared when there is one — to edit and send. Sending is the
 // person's own tap, never the agent's.
 
 const escape = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -88,7 +88,7 @@ export default function ThreadScreen() {
         ))}
       </ScrollView>
       <View style={{ borderTopWidth: 0.5, borderTopColor: colors.separator, padding: 12, paddingBottom: insets.bottom + 8, gap: 8, backgroundColor: colors.background }}>
-        {thread.draft_response ? <Text style={{ fontSize: 13, fontWeight: '600', color: colors.accent }}>Reply prepared by Baarali</Text> : null}
+        {thread.draft_response ? <Text style={{ fontSize: 13, fontWeight: '600', color: colors.accent }}>Reply prepared by Djazzi</Text> : null}
         <TextInput value={reply} onChangeText={setReply} multiline placeholder="Write your reply…" placeholderTextColor={colors.tertiaryLabel}
           style={{ maxHeight: 160, minHeight: 44, fontSize: 16, lineHeight: 22, color: colors.label, backgroundColor: colors.secondaryBackground, borderRadius: 14, paddingHorizontal: 12, paddingTop: 10, paddingBottom: 10 }} />
         <Pressable onPress={() => void send()} disabled={!reply.trim() || busy === 'send'}

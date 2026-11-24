@@ -6,7 +6,7 @@ import { DeckOutline, DeckOutlineSlide, EditSlideRequest, GenerateDeckOutlineReq
 import { RelPath, Encoding, Stat, DirEntry, ReaddirOptions, ReadFileResult, WorkspaceChangeEvent, WriteFileOptions, WriteFileResult, RemoveOptions } from './workspace.js';
 import { ListToolsResponse } from './mcp.js';
 import { AskHumanResponsePayload, CreateRunOptions, Run, ListRunsResponse, ToolPermissionAuthorizePayload } from './runs.js';
-import { BaaraliModelMeta, LlmProvider, ModelRef, ModelSelection, ReasoningEffort } from './models.js';
+import { DjazziModelMeta, LlmProvider, ModelRef, ModelSelection, ReasoningEffort } from './models.js';
 import { AgentScheduleConfig, AgentScheduleEntry } from './agent-schedule.js';
 import { AgentScheduleState } from './agent-schedule-state.js';
 import { ServiceEvent } from './service-events.js';
@@ -934,9 +934,9 @@ export const ipcSchemas = {
           // models.dev "supports reasoning/extended thinking" flag; absent =
           // unknown. Gates the composer's reasoning-effort control.
           reasoning: z.boolean().optional(),
-          // BAARALI(03/10/2026): what the picker shows beside the name, from
+          // DJAZZI(03/10/2026): what the picker shows beside the name, from
           // the control plane's catalog (vendor group, strength, padlock).
-          baarali: BaaraliModelMeta.optional(),
+          djazzi: DjazziModelMeta.optional(),
         })),
       })),
       // The effective runtime default (what runs when nothing is picked),
@@ -2634,9 +2634,9 @@ export const ipcSchemas = {
       paths: z.array(z.string()),
     }),
   },
-  // BAARALI(05/10/2026): files and folders picked on the computer, made
+  // DJAZZI(05/10/2026): files and folders picked on the computer, made
   // readable where the core runs (client-local, never forwarded). Joined to
-  // its instance, the Baarali build copies them there (Projects/,
+  // its instance, the Djazzi build copies them there (Projects/,
   // Attachments/) and answers the copies' paths; otherwise the same paths.
   'files:toInstance': {
     req: z.object({
@@ -2779,7 +2779,7 @@ export const ipcSchemas = {
       elevenlabs: z.object({ apiKey: z.string(), voiceId: z.string().optional() }).nullable(),
     }),
   },
-  // A whole recording to text (Baarali, 07/10/2026): the phone's push-to-talk.
+  // A whole recording to text (Djazzi, 07/10/2026): the phone's push-to-talk.
   'voice:transcribe': {
     req: z.object({
       audioBase64: z.string(),
@@ -3726,24 +3726,24 @@ export const ipcSchemas = {
     req: z.null(),
     res: BillingInfoSchema,
   },
-  // The plans, worded and priced, for the app's own window (Baarali,
+  // The plans, worded and priced, for the app's own window (Djazzi,
   // 02/10/2026); null when the API serves none.
   'billing:getPlans': {
     req: z.object({ lang: z.enum(['fr', 'en']) }),
     res: PlanOffersSchema.nullable(),
   },
-  // Media credits: balance, history, packs, costs (Baarali, 03/10/2026).
+  // Media credits: balance, history, packs, costs (Djazzi, 03/10/2026).
   'billing:getMedia': {
     req: z.null(),
     res: MediaCreditsSchema.nullable(),
   },
   // The banner at the top of the Chat, and what the person did with it
-  // (Baarali, 07/10/2026); null when there is none for this account.
+  // (Djazzi, 07/10/2026); null when there is none for this account.
   'billing:getAnnouncement': {
     req: z.null(),
     res: AnnouncementSchema.nullable(),
   },
-  // The sidebar the admin console published (Baarali, 09/10/2026): null when
+  // The sidebar the admin console published (Djazzi, 09/10/2026): null when
   // the API cannot be reached, { layout: null } when nothing is published.
   'billing:getSidebarLayout': {
     req: z.null(),
@@ -3754,7 +3754,7 @@ export const ipcSchemas = {
     // Whether it was counted: a person counts once per kind.
     res: z.boolean(),
   },
-  // The admin console's messages for this person (Baarali, 07/10/2026): the
+  // The admin console's messages for this person (Djazzi, 07/10/2026): the
   // bell's list and its unread count; null when the API serves none.
   'billing:getNotifications': {
     req: z.null(),
@@ -3770,7 +3770,7 @@ export const ipcSchemas = {
     // How many were marked read.
     res: z.number(),
   },
-  // A creator's partner code (Baarali, 08/10/2026): whether the field shows,
+  // A creator's partner code (Djazzi, 08/10/2026): whether the field shows,
   // then the code typed. Null state: the API serves none or is unreachable.
   'billing:getPartnerCode': {
     req: z.null(),
@@ -3796,7 +3796,7 @@ export const ipcSchemas = {
     req: CreditActivatedEventSchema,
     res: z.null(),
   },
-  // Main → renderer (Baarali, 02/10/2026): the link to the rowboat-server
+  // Main → renderer (Djazzi, 02/10/2026): the link to the rowboat-server
   // came back after a drop (a cloud instance waking or restarting, the
   // network). What was pushed meanwhile reached nobody, and a restarted
   // server forgot this window's live subscriptions: refetch, subscribe again.
@@ -4287,7 +4287,7 @@ export const ipcSchemas = {
     req: z.object({ orgId: z.string(), spaceId: z.string(), memberIds: z.array(z.string()).min(1), invocableBy: z.enum(['owner', 'members']).optional() }),
     res: z.object({ memberships: z.array(z.custom<SpacesTypes.Membership>()) }),
   },
-  // BAARALI(07/10/2026): a baarasseur as a member of the org, made once, for a
+  // DJAZZI(07/10/2026): a baarasseur as a member of the org, made once, for a
   // group's addMembers (core spaces/baarasseur-members.ts). The phone names
   // the org by its address: its org ids are not the instance's.
   'spaces:enrollBaarasseur': {

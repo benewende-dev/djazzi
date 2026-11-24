@@ -1,6 +1,6 @@
 import type { ChatTab } from '@/components/tab-bar'
 
-// BAARALI(04/10/2026): the chats a window reopens at start live on the
+// DJAZZI(04/10/2026): the chats a window reopens at start live on the
 // server the app was on when it closed. Joined since to another account's
 // instance, that server does not have them: the tab opens as a new chat
 // instead of « session not found ». Only that answer counts; a server still

@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { BillingInfo } from '@x/shared/dist/billing.js'
 import { UsageView } from './usage-settings'
 
-// Settings › Usage (Baarali, 03/10/2026): what is left, when it started and
+// Settings › Usage (Djazzi, 03/10/2026): what is left, when it started and
 // starts over, and at what pace the week can be spent.
 
 afterEach(() => { cleanup(); vi.useRealTimers() })

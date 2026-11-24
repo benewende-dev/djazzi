@@ -35,7 +35,7 @@ type SpacesHostChannel =
   | 'spaces:topicSession' | 'spaces:responseSession' | 'spaces:stopRowboat' | 'spaces:schedule'
   | 'spaces:listScheduled' | 'spaces:cancelScheduled' | 'spaces:bounceLive'
   | 'spaces:writeAgentInstructions' | 'spaces:localAgents' | 'spaces:addLocalAgent' | 'spaces:connectLocalAgent' | 'spaces:updateLocalAgent' | 'spaces:forgetLocalAgent'
-  // BAARALI(07/10/2026): a baarasseur as a member, for a group's addMembers.
+  // DJAZZI(07/10/2026): a baarasseur as a member, for a group's addMembers.
   | 'spaces:enrollBaarasseur';
 
 type SpacesHandlers = { [K in HarborChannel | SpacesHostChannel]: InvokeHandler<K> };
@@ -82,7 +82,7 @@ localAgents.onLocalAgentsChanged((agents) => {
   }
 });
 localAgents.startLocalAgents();
-// BAARALI(07/10/2026): the baarasseurs in groups listen for their name.
+// DJAZZI(07/10/2026): the baarasseurs in groups listen for their name.
 startBaarasseurListeners();
 // The per-response index ("which run posted this reply"): same bus, its own
 // consumer — see core/spaces/response-index.
@@ -121,11 +121,11 @@ const harborIpcHandlers = Object.fromEntries(
 export const spacesIpcHandlers: SpacesHandlers = {
   ...harborIpcHandlers,
 
-  // BAARALI(02/10/2026, #56): with a cloud instance the files are the
+  // DJAZZI(02/10/2026, #56): with a cloud instance the files are the
   // instance's, not this Mac's: the read goes through its RPC (reads.ts).
   'spaces:readAsset': async (_event, args) => readSpaceAsset(args.orgId, args.spaceId, args.assetId, args.version),
 
-  // BAARALI(07/10/2026): a baarasseur as a member, made once (core baarasseur-members.ts).
+  // DJAZZI(07/10/2026): a baarasseur as a member, made once (core baarasseur-members.ts).
   'spaces:enrollBaarasseur': async (_event, args) => {
     const orgId = args.orgId ?? (args.orgAddress ? orgIdForAddress(args.orgAddress) : null);
     if (!orgId) throw new Error('unknown org');

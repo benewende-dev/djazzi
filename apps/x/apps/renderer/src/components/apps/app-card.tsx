@@ -3,7 +3,7 @@ import type { LucideIcon } from 'lucide-react'
 import type { Access } from '@/components/apps/fiches'
 import type { CardTheme } from '@/components/apps/card-theme'
 
-// Baarali (02/10/2026): one card for the catalog and for « My apps ». A
+// Djazzi (02/10/2026): one card for the catalog and for « My apps ». A
 // tinted band with the app's icon, its name, who made it, what it is for,
 // what it reaches, then the action. The upstream card showed a package name,
 // the publisher's English sentence and a GitHub path.

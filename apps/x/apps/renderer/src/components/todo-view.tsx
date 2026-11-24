@@ -127,12 +127,12 @@ function openLink(link: TodoLink, onOpenNote: (path: string) => void) {
 // Render @rowboat mentions as chips, [label](target) links as buttons, and
 // light inline markdown (**bold**, `code`) inside a read-only text row.
 function TextWithMentions({ text, onOpenLink }: { text: string; onOpenLink?: (link: TodoLink) => void }) {
-  // Baarali: a line written before the rename still says the old handle.
-  const parts = text.split(/(@(?:rowboat|baarali)\b|\[[^\]]+\]\([^)]+\)|\*\*[^*\n]+\*\*|`[^`\n]+`)/i)
+  // Djazzi: a line written before the rename still says the old handle.
+  const parts = text.split(/(@(?:rowboat|djazzi)\b|\[[^\]]+\]\([^)]+\)|\*\*[^*\n]+\*\*|`[^`\n]+`)/i)
   return (
     <>
       {parts.map((part, i) => {
-        if (/^@(?:rowboat|baarali)$/i.test(part)) {
+        if (/^@(?:rowboat|djazzi)$/i.test(part)) {
           return (
             <span key={i} className="inline-flex items-center gap-0.5 rounded bg-primary/10 px-1 text-primary">
               <Bot className="size-3" />
@@ -568,7 +568,7 @@ function ItemRow({ item, isRunning, needsApproval = null, commentOpen, sessionId
           </div>
         ) : (
           <div
-            // Baarali: a line kept from before the translation (the first-run
+            // Djazzi: a line kept from before the translation (the first-run
             // examples) opens in the person's language, and is saved so.
             onClick={() => { if (!item.checked) { setDraft(say(item.text)); setEditing(true) } }}
             onKeyDown={(e) => {
@@ -1416,7 +1416,7 @@ export function TodoView({ onOpenNote, onOpenInChat, onFocusComposer, composer, 
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
               <h1 className="text-[32px] font-bold leading-tight tracking-[-0.02em]">Todos</h1>
-              {/* Baarali (validated mockup, 02/10/2026): what the list is for. */}
+              {/* Djazzi (validated mockup, 02/10/2026): what the list is for. */}
               <p className="mt-1 text-[14px] text-muted-foreground">Your list. Write @rowboat before a line to hand it to the assistant.</p>
             </div>
             <div className="flex shrink-0 items-center gap-2 pt-1.5">

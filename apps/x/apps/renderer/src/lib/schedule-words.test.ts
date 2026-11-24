@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { cronWords, isPlanner, scheduleWords } from './schedule-words'
 
-// A task's timing in plain words (Baarali, 02/10/2026), on the instance's
+// A task's timing in plain words (Djazzi, 02/10/2026), on the instance's
 // clock: GMT.
 
 describe('cronWords', () => {

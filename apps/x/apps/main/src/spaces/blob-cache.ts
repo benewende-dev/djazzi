@@ -25,7 +25,7 @@ export type CachedBlob = blobCache.CachedBlob;
 
 /**
  * The read-through: local cache first, the org (via the authed client) on a
- * miss. With a remote server (a Baarali cloud instance, 2026-10-02) the org
+ * miss. With a remote server (a Djazzi cloud instance, 2026-10-02) the org
  * registry is the server's, not this machine's: the bytes come from its
  * /spaces/blob route, and Chromium keeps them (content-addressed, immutable).
  */

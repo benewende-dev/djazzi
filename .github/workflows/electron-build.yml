@@ -7,7 +7,7 @@ on:
 permissions:
   contents: write  # Required to upload release assets
 
-# BAARALI(17/10/2026): Baarali publishes through baarali-desktop only;
+# DJAZZI(17/10/2026): Djazzi publishes through djazzi-desktop only;
 # an upstream publisher must not run against our releases or signing keys.
 jobs:
   build-macos:

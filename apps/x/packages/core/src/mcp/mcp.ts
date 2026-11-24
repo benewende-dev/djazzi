@@ -39,7 +39,7 @@ async function effectiveServers(): Promise<z.infer<typeof McpServerConfig>["mcpS
 }
 
 async function getClient(serverName: string): Promise<Client> {
-    // BAARALI(07/10/2026): a baarasseur in a group reaches the org with its own
+    // DJAZZI(07/10/2026): a baarasseur in a group reaches the org with its own
     // key. Resolved here only, so no listing (listServers) ever shows a key.
     const mcpServers = { ...(await effectiveServers()), ...baarasseurMcpServers() };
     const config = mcpServers[serverName];

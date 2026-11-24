@@ -25,9 +25,9 @@ export default function SpacesLayout() {
       <Stack.Screen
         name="(tabs)"
         options={() => ({
-          title: 'Groups', // BAARALI(23/11/2026): « Groupes » for everyone, not team spaces.
-          // BAARALI(23/11/2026): no drawer in Baarali; Spaces is a section of
-          // its own with its own tabs (the Baarali bar hides here, tab-bar.tsx),
+          title: 'Groups', // DJAZZI(23/11/2026): « Groupes » for everyone, not team spaces.
+          // DJAZZI(23/11/2026): no drawer in Djazzi; Spaces is a section of
+          // its own with its own tabs (the Djazzi bar hides here, tab-bar.tsx),
           // so the left button leads back to the home.
           headerLeft: () => (
             <Pressable
@@ -74,7 +74,7 @@ export default function SpacesLayout() {
       <Stack.Screen name="agent" options={{ title: '', headerBackButtonDisplayMode: 'minimal' }} />
       <Stack.Screen name="threads" options={{ title: 'Threads', headerBackButtonDisplayMode: 'minimal' }} />
       <Stack.Screen name="my-threads" options={{ title: 'Your threads', headerBackButtonDisplayMode: 'minimal' }} />
-      {/* BAARALI(07/10/2026): a new work group with baarasseurs, as a sheet. */}
+      {/* DJAZZI(07/10/2026): a new work group with baarasseurs, as a sheet. */}
       <Stack.Screen name="new" options={{ presentation: 'modal', title: 'New group' }} />
     </Stack>
   );

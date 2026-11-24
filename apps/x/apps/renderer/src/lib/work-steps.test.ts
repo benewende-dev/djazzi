@@ -18,7 +18,7 @@ describe('stepTitle', () => {
 })
 
 describe('segmentTurns', () => {
-  // BAARALI(07/11/2026): the usage line lands after the first model call.
+  // DJAZZI(07/11/2026): the usage line lands after the first model call.
   it('keeps a turn waiting for an approval at work, usage line or not', () => {
     const items = [user('Crée un portefeuille'), say('Pas de bibliothèque Solana installée.'), tool('executeCommand', 'running'), done()]
     const work = segmentTurns(items, true).find((s) => s.kind === 'work')
@@ -56,7 +56,7 @@ describe('segmentTurns', () => {
     expect(hasActiveWork(items, false)).toBe(false)
   })
 
-  // BAARALI(08/11/2026): words streaming mid-work no longer fold it (it flickered at each sentence).
+  // DJAZZI(08/11/2026): words streaming mid-work no longer fold it (it flickered at each sentence).
   it('lets the answer stream in the open, the work live until the turn ends', () => {
     const items = [user('Vas-y'), tool('executeMcpTool'), say('Voici', true)]
     const segs = segmentTurns(items, true)

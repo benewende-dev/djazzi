@@ -1,16 +1,16 @@
 import { useEffect, useSyncExternalStore } from 'react'
 import type { Notice, NoticeEventKind } from '@x/shared/dist/billing.js'
 
-// The bell's messages (Baarali, 07/10/2026), written in the admin console.
+// The bell's messages (Djazzi, 07/10/2026), written in the admin console.
 // One shared state for every bell; read again every 5 minutes, when the
 // window comes back, and when the bell opens. Main shows new ones on the
-// Mac's screen (main baarali-notifications.ts).
+// Mac's screen (main djazzi-notifications.ts).
 
 const REFRESH_MS = 5 * 60_000
 
-/** A click on a message's notification on the Mac's screen opens the bell (main baarali-notifications.ts). */
-export const NOTIFICATIONS_LINK = 'rowboat://baarali/notifications'
-export const OPEN_NOTIFICATIONS_EVENT = 'baarali:open-notifications'
+/** A click on a message's notification on the Mac's screen opens the bell (main djazzi-notifications.ts). */
+export const NOTIFICATIONS_LINK = 'rowboat://djazzi/notifications'
+export const OPEN_NOTIFICATIONS_EVENT = 'djazzi:open-notifications'
 
 export interface NoticeState {
   list: Notice[]

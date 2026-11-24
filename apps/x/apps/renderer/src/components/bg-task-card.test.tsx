@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { BackgroundTaskSummary } from '@x/shared/dist/background-task.js'
 import { BgTaskCard } from './bg-task-card'
 
-// A scheduled task as a card (Baarali, 02/10/2026).
+// A scheduled task as a card (Djazzi, 02/10/2026).
 
 afterEach(cleanup)
 

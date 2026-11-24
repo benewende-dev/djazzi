@@ -18,7 +18,7 @@ export async function getBillingInfo(): Promise<BillingInfo> {
       id: string;
       email: string;
     };
-    // BAARALI(03/10/2026): sent for an admin's account only.
+    // DJAZZI(03/10/2026): sent for an admin's account only.
     admin?: { url?: unknown };
     billing: {
       planId: BillingPlanId | null;
@@ -62,7 +62,7 @@ export async function getBillingInfo(): Promise<BillingInfo> {
 }
 
 /**
- * The plans as Baarali's pricing page words them (control GET /v1/plans),
+ * The plans as Djazzi's pricing page words them (control GET /v1/plans),
  * for the app's own window. Null when the API serves none (an upstream
  * deployment) or cannot be reached: the window says so.
  */
@@ -78,7 +78,7 @@ export async function getPlanOffers(lang: 'fr' | 'en'): Promise<PlanOffers | nul
 
 /**
  * The media credits as the usage page shows them (control /v1/media/*,
- * Baarali, 03/10/2026). Null when the API serves none (an upstream
+ * Djazzi, 03/10/2026). Null when the API serves none (an upstream
  * deployment) or cannot be reached: the page says so.
  */
 export async function getMediaCredits(): Promise<MediaCredits | null> {
@@ -105,7 +105,7 @@ export async function getMediaCredits(): Promise<MediaCredits | null> {
 }
 
 /**
- * The banner at the top of the Chat (control GET /v1/announcement, Baarali,
+ * The banner at the top of the Chat (control GET /v1/announcement, Djazzi,
  * 07/10/2026). Null when there is none, or the API serves none (an upstream
  * deployment) or cannot be reached: the Chat simply shows no banner.
  */
@@ -123,7 +123,7 @@ export async function getAnnouncement(): Promise<Announcement | null> {
 
 /**
  * The sidebar the admin console published (control GET /v1/sidebar,
- * Baarali, 09/10/2026): { layout: null } when none is, null when the API
+ * Djazzi, 09/10/2026): { layout: null } when none is, null when the API
  * cannot be reached, so the app keeps the last one it knew.
  */
 export async function getSidebarLayout(): Promise<{ layout: SidebarLayout | null } | null> {
@@ -159,7 +159,7 @@ export async function sendAnnouncementEvent(id: string, kind: AnnouncementEventK
 
 /**
  * The admin console's messages for this person (control GET
- * /v1/notifications, Baarali, 07/10/2026). Null when the API serves none (an
+ * /v1/notifications, Djazzi, 07/10/2026). Null when the API serves none (an
  * upstream deployment) or cannot be reached: the bell then stays quiet.
  */
 export async function getNotifications(): Promise<NoticeInbox | null> {
@@ -191,7 +191,7 @@ export async function sendNotificationEvent(id: string, kind: NoticeEventKind): 
 
 /**
  * Whether the app still offers the partner code field, and who recommended
- * Baarali once linked (control GET /v1/codes/partner, 08/10/2026). Null when
+ * Djazzi once linked (control GET /v1/codes/partner, 08/10/2026). Null when
  * the API serves none or cannot be reached: the field then stays hidden.
  */
 export async function getPartnerCode(): Promise<PartnerCodeState | null> {

@@ -1,6 +1,6 @@
-// A cloud instance (Baarali) holds no sign-in of its own: its session is a
+// A cloud instance (Djazzi) holds no sign-in of its own: its session is a
 // token the control plane issued, which a Spaces server cannot verify. Where
-// BAARALI_SPACES_TOKEN_URL is set, that token is traded there for a short
+// DJAZZI_SPACES_TOKEN_URL is set, that token is traded there for a short
 // Spaces token (a JWT the Spaces server checks alone), kept until a minute
 // before it ends. Unset — the desktop signed in itself — nothing changes.
 

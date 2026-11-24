@@ -1,6 +1,6 @@
 import type { turns } from '@x/shared';
 
-// BAARALI(09/10/2026): the phone's twin of the desktop chat's steps
+// DJAZZI(09/10/2026): the phone's twin of the desktop chat's steps
 // (renderer lib/work-steps.ts, mockup validated by the founder). Each model
 // call of the turn is a step, titled by the first sentence the agent said;
 // the last call that only speaks is the answer, in the open.

@@ -18,7 +18,7 @@ interface HtmlFileViewerProps {
   path: string
 }
 
-// BAARALI(2026-10-09): a motion project opens in the Studio Motion (motion-studio.tsx).
+// DJAZZI(2026-10-09): a motion project opens in the Studio Motion (motion-studio.tsx).
 export function HtmlFileViewer({ path }: HtmlFileViewerProps) {
   return motionProject(path) ? <MotionStudio key={path} path={path} /> : <HtmlPageViewer path={path} />
 }

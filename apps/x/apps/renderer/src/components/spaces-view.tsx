@@ -157,7 +157,7 @@ export function SpacesView({ selection, onSelect, onSwitchSpace, railSelection, 
     active?: boolean
     /** Your account row at the sidebar's foot, from the host (2026-11-09). */
     accountMenu?: ReactNode
-    /** BAARALI(23/11/2026): false when the host's own sidebar lists the groups; no second rail. */
+    /** DJAZZI(23/11/2026): false when the host's own sidebar lists the groups; no second rail. */
     withRail?: boolean
 }) {
     const { orgs, loading } = useSpacesOrgs()

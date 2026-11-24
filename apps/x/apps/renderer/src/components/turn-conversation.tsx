@@ -113,7 +113,7 @@ const EMPTY_AUTO_DECISIONS: ChatTabViewState['autoPermissionDecisions'] = new Ma
 
 export interface TurnConversationProps {
   items: ConversationItem[]
-  /** BAARALI(09/10/2026): the last turn is still running (lib/work-steps.ts). */
+  /** DJAZZI(09/10/2026): the last turn is still running (lib/work-steps.ts). */
   working?: boolean
   /**
    * Tool-row open state. Chat panes lift this to the tab store so it survives
@@ -496,8 +496,8 @@ export function TurnConversation({
         return rendered
       })
 
-  // BAARALI(05/10/2026): the agent's backstage stays out of the chat (lib/chat-steps.ts);
-  // BAARALI(09/10/2026): its work is folded into steps, the answer in the open (lib/work-steps.ts).
+  // DJAZZI(05/10/2026): the agent's backstage stays out of the chat (lib/chat-steps.ts);
+  // DJAZZI(09/10/2026): its work is folded into steps, the answer in the open (lib/work-steps.ts).
   const waitsForPerson = (list: ConversationItem[]) =>
     list.some((it) => isToolCall(it) && !!permissionRequests.get(it.id) && !permissionResponses.get(it.id))
   return (

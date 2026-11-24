@@ -2,8 +2,8 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { ArrowUp, ChevronLeft, FileText, Loader2, Plus, SquarePen, Trash2, X } from 'lucide-react'
 import { SHAPE_COLORS, SHAPE_IDS, baarasseurAgentId, DOCUMENTS_DIR, DOCUMENTS_LIMIT, nextRunAt } from '@x/shared/dist/baarasseur.js'
 import { AgentAvatarImage } from '@/components/agent-avatar'
-import { AgentShape, shapeFor } from '@/components/baarali-agent-shape'
-import { SHAPE_FILL } from '@/lib/baarali-b-mark'
+import { AgentShape, shapeFor } from '@/components/djazzi-agent-shape'
+import { SHAPE_FILL } from '@/lib/djazzi-d-mark'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -16,7 +16,7 @@ import {
   markBaarasseurSeen, scheduleLabel, useBaarasseurs, useBaarasseurUnread, type Baarasseur, type BaarasseurSchedule,
 } from '@/lib/baarasseurs'
 
-// The Baarasseurs page (Baarali, 06/10/2026; brought back to the validated
+// The Baarasseurs page (Djazzi, 06/10/2026; brought back to the validated
 // mockup on 08/10/2026, the founder's three screens): with none open, the
 // cards full width beside the app's sidebar, then the templates; one open,
 // its contacts take the sidebar's place, its conversation in the middle and
@@ -26,7 +26,7 @@ import {
 
 export interface BaarasseurRun { id: string; title?: string; modifiedAt: string; agentId: string }
 
-// BAARALI(07/11/2026): as on the phone (lib/baarasseurs.tsx BaarasseurAvatar):
+// DJAZZI(07/11/2026): as on the phone (lib/baarasseurs.tsx BaarasseurAvatar):
 // an agent made with a shape is that shape, no disc; one from before the
 // shapes, with no avatar either, gets one from its name; the old blue B with
 // feet ('original') is the B now. The other drawn avatars stay as they were.
@@ -437,7 +437,7 @@ function Recruit({ initial, isNew, onCancel, onSave, onRemove }: {
       setCustom(false)
       setTab('setup')
     } catch {
-      setError('Baarali could not prepare it. Try again, or set it up yourself.')
+      setError('Djazzi could not prepare it. Try again, or set it up yourself.')
     } finally {
       setBusy(null)
     }
@@ -555,7 +555,7 @@ function Recruit({ initial, isNew, onCancel, onSave, onRemove }: {
               <Textarea id="baarasseur-sentence" rows={4} value={sentence} onChange={(e) => setSentence(e.target.value)}
                 placeholder="E.g. Someone who follows up with my customers every Monday and prepares my quotes"
                 onKeyDown={(e) => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) void describe() }} />
-              <p className="text-xs text-muted-foreground">Baarali fills in the form; you check it before recruiting.</p>
+              <p className="text-xs text-muted-foreground">Djazzi fills in the form; you check it before recruiting.</p>
               <div><Button onClick={() => void describe()} disabled={!sentence.trim() || busy === 'describe'}>
                 {busy === 'describe' && <Loader2 className="size-4 animate-spin" />}<span>Prepare</span>
               </Button></div>

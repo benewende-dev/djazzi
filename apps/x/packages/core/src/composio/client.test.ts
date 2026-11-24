@@ -5,7 +5,7 @@ vi.mock("../config/config.js", () => ({ WorkDir: "/private/tmp/rowboat-composio-
 vi.mock("../config/env.js", () => ({ API_URL: "https://rowboat.example" }));
 vi.mock("../account/account.js", () => ({ isSignedIn: mocks.signedIn }));
 vi.mock("../auth/tokens.js", () => ({ getAccessToken: mocks.token }));
-// BAARALI(23/11/2026): the upstream's api serves Composio; ours says so in its config (client.ts viaAccount).
+// DJAZZI(23/11/2026): the upstream's api serves Composio; ours says so in its config (client.ts viaAccount).
 vi.mock("../config/remote-config.js", () => ({ getRemoteConfig: async () => ({ composio: true }) }));
 import { executeAction, getConnectedAccount, linkConnectedAccount, searchTools } from "./client.js";
 

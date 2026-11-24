@@ -249,7 +249,7 @@ export function ModelSelector({
     return option ? (option.short ?? option.label) : level
   }
   const { groups: catalogGroups, reasoningByKey, defaultModel: catalogDefault, catalogByProvider, refresh, namesByKey = {}, metaByKey = {} } = useModels()
-  // BAARALI(30/09/2026): the catalog's display name when it has one, else the id.
+  // DJAZZI(30/09/2026): the catalog's display name when it has one, else the id.
   const nameOf = (provider: string, model: string) => namesByKey[`${provider}/${model}`]
   const allGroups = groupsProp ?? catalogGroups
   // The chat default has no standing in a caller-supplied model space.
@@ -511,7 +511,7 @@ export function ModelSelector({
     // expiry still takes effect without needing to re-enter the row.
     const canEffort = effortSelectable && (staticOptions ? Boolean(effortLevels) : reasoningByKey[key] === true)
     const isSelected = selectedKey === key
-    // BAARALI(03/10/2026): a model a higher plan opens stays in sight, padlocked.
+    // DJAZZI(03/10/2026): a model a higher plan opens stays in sight, padlocked.
     const meta = metaByKey[key]
     const locked = Boolean(meta?.unlock)
     const onHover = canEffort
@@ -571,7 +571,7 @@ export function ModelSelector({
     )
   }
 
-  // BAARALI(03/10/2026): a provider's rows, under a heading per vendor when
+  // DJAZZI(03/10/2026): a provider's rows, under a heading per vendor when
   // the catalog describes them (the gateway); as they come otherwise.
   const renderModelRows = (providerId: string, models: string[]) => {
     const sections = vendorSections(models, (m) => metaByKey[`${providerId}/${m}`], (m) => nameOf(providerId, m) ?? m)

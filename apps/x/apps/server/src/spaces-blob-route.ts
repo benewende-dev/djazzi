@@ -2,7 +2,7 @@ import { Hono } from 'hono';
 
 // GET /spaces/blob/{orgId}/{spaceId}/{hash} — the network twin of Electron's
 // app://space-blob protocol (apps/main/src/main.ts). The org registry and its
-// credentials live with core, so a client whose core is remote (a Baarali
+// credentials live with core, so a client whose core is remote (a Djazzi
 // cloud instance, 2026-10-02) reads a space file's bytes here rather than
 // from an org it cannot reach. Authenticated like every other route.
 

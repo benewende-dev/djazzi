@@ -2,7 +2,7 @@ import type { MediaCredits, MediaHistoryEntry } from '@x/shared/dist/billing.js'
 import { say } from '@/lib/say'
 import { USAGE_TIME_ZONE } from '@/lib/usage-reset'
 
-// The words of the media credits on the usage page (Baarali, 03/10/2026).
+// The words of the media credits on the usage page (Djazzi, 03/10/2026).
 
 export const MEDIA: Record<string, string> = { image: 'Image', video: 'Video', speech: 'Voice', music: 'Music' }
 
