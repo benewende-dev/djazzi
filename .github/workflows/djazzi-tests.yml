@@ -92,6 +92,11 @@ jobs:
         run: npm run build
         working-directory: apps/x/packages/shared
 
+      # 24/11/2026: Rowboat's @x/spaces-client (23/11), imported by renderer files our checks read.
+      - name: Build @x/spaces-client
+        run: npm run build
+        working-directory: apps/x/packages/spaces-client
+
       - name: Install apps/djazzi
         run: pnpm install --frozen-lockfile
         working-directory: apps/djazzi
