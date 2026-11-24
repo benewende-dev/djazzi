@@ -48,8 +48,10 @@ COPY apps/djazzi/packages/desktop/assets/rea-config.ts apps/djazzi/packages/desk
 COPY apps/djazzi/packages/desktop/assets/rea-runtime.ts apps/djazzi/packages/desktop/assets/rea-runtime.ts
 COPY apps/djazzi/packages/desktop/assets/rea-scope.ts apps/djazzi/packages/desktop/assets/rea-scope.ts
 RUN node apps/djazzi/packages/desktop/scripts/brand.mjs --yes --only core
+# DJAZZI(24/11/2026): core and the server import @x/spaces-client (Rowboat, 23/11), built after shared.
 RUN cd apps/x && pnpm install --frozen-lockfile --filter "@x/server..." \
  && (cd packages/shared && npm run build) \
+ && (cd packages/spaces-client && npm run build) \
  && (cd packages/core && npm run build) \
  && (cd apps/server && npm run build && node scripts/build-headless.mjs) \
  && (cd apps/server/dist-headless && npm install --omit=dev)
