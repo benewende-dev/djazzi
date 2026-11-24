@@ -1,8 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { MODE_FRAMES } from '../assets/orbs/engine/registry';
-import { resolvePreset } from '../assets/orbs/presets';
-import { orbFor, orbForStep, orbForTool } from '../assets/orbs/orb-for';
-import type { OrbSize, OrbState } from '../assets/orbs/types';
+
+// DJAZZI(24/11/2026): the orbs' tests live beside the renderer's tracked copy, which
+// resolves imports as the engine is written; renderer-copies.test.ts keeps it equal to assets/orbs.
+import { MODE_FRAMES } from './engine/registry';
+import { resolvePreset } from './presets';
+import { orbFor, orbForStep, orbForTool } from './orb-for';
+import type { OrbSize, OrbState } from './types';
 
 const STATES: OrbState[] = ['working', 'searching', 'solving', 'listening', 'connecting', 'weaving', 'composing', 'breathing', 'shaping'];
 const SIZES: OrbSize[] = [64, 20];
