@@ -1320,6 +1320,9 @@ export const FR: Dictionary = {
     "Stop — cut the reply short (the session keeps going)": "Arrêter : couper la réponse (la session continue)",
     "Tap to send": "Touchez pour envoyer",
     "Thinking…": "Réflexion…",
+    // DJAZZI(24/11/2026): what the thinking orbs say to a screen reader (assets/orbs).
+    "Listening…": "Écoute…",
+    "Planning…": "Planification…",
     "Tuck down to just the mascot": "Réduire à la mascotte",
     "Tuck down to just the mascot — the call keeps going": "Réduire à la mascotte : l’appel continue",
     "Tuck the text away": "Ranger le texte",

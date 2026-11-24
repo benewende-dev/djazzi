@@ -448,6 +448,12 @@ export function corePlan() {
 }
 
 
+/** The thinking orbs (24/11/2026): thinking-orbs' engine, unchanged (assets/orbs/README.md), and Djazzi's drawing of it. */
+const ORB_FILES = [
+  ...['braid', 'core', 'index', 'lattice', 'morph', 'orbits', 'profiles', 'registry', 'ribbon', 'types', 'web'].map((f) => `engine/${f}.ts`),
+  'presets.ts', 'theme.ts', 'types.ts', 'orb-for.ts', 'thinking-orb.tsx',
+];
+
 export function desktopPlan() {
   const main = 'apps/x/apps/main';
   const renderer = 'apps/x/apps/renderer/src';
@@ -597,6 +603,7 @@ export function desktopPlan() {
       ['../instance/src/cad-scene.ts', `${renderer}/components/cad-scene.ts`],
       ['assets/motion/djazzi-logo.tsx', `${renderer}/components/djazzi-logo.tsx`],
       ['assets/motion/turn-activity-indicator.tsx', `${renderer}/components/turn-activity-indicator.tsx`],
+      ...ORB_FILES.map((f) => [`assets/orbs/${f}`, `${renderer}/components/djazzi-orbs/${f}`]),
       ['assets/motion/onboarding-duo.tsx', `${renderer}/components/djazzi-onboarding/duo.tsx`],
       ['assets/icon.icns', `${main}/icons/icon.icns`],
       ['assets/icon.ico', `${main}/icons/icon.ico`],
@@ -769,15 +776,17 @@ export function mobilePlan() {
       edit(`${mobile}/src/app/studio.tsx`, 'export default function StudioScreen() {', 'export default function StudioScreen() {\n  const { project } = useLocalSearchParams<{ project?: string }>();\n  return project ? <StudioProjectScreen /> : <StudioLibrary />;\n}\n\nfunction StudioProjectScreen() {'),
       edit(`${mobile}/src/app/studio.tsx`, "import { StudioLibrary } from '@/components/studio-library';", "import { StudioLibrary } from '@/components/studio-library';\nimport { WorkGate } from '@/components/work-gate';"),
       edit(`${mobile}/src/app/studio.tsx`, '  return project ? <StudioProjectScreen /> : <StudioLibrary />;', '  return <WorkGate>{project ? <StudioProjectScreen /> : <StudioLibrary />}</WorkGate>;'),
-      edit(`${mobile}/src/components/turn-view.tsx`, "import { useState } from 'react';", "import { useState } from 'react';\nimport { DjazziMark } from './djazzi-mark';\nimport { useColors } from '@/theme/colors';"),
+      edit(`${mobile}/src/components/turn-view.tsx`, "import { useState } from 'react';", "import { useState } from 'react';\nimport { DjazziMark } from './djazzi-mark';\nimport { ThinkingOrb } from './djazzi-orbs/thinking-orb';\nimport { orbForStep } from './djazzi-orbs/orb-for';\nimport { useColors } from '@/theme/colors';"),
       edit(`${mobile}/src/components/turn-view.tsx`, "import { ChatMarkdown } from './markdown';", "import { ChatMarkdown } from './markdown';\nimport { ReplyActions } from './reply-actions';"),
       edit(`${mobile}/src/components/turn-view.tsx`, '  onAskHuman?: (toolCallId: string, answer: string) => void;', '  onAskHuman?: (toolCallId: string, answer: string) => void;\n  onRetry?: () => void;'),
       edit(`${mobile}/src/components/turn-view.tsx`, 'export function TurnView({ state, liveText, streaming, onPermission, onAskHuman }: TurnViewProps)', 'export function TurnView({ state, liveText, streaming, onPermission, onAskHuman, onRetry }: TurnViewProps)'),
       edit(`${mobile}/src/components/turn-view.tsx`, '          {answerCall.error && <Text style={styles.error}>{answerCall.error}</Text>}', '          {answerCall.error && <Text style={styles.error}>{answerCall.error}</Text>}\n          {state.terminal && <ReplyActions text={assistantText(answerCall.response!)} onRetry={onRetry} />}'),
       edit(`${mobile}/src/components/turn-view.tsx`, "      {state.terminal?.type === 'turn_cancelled' && <Text style={styles.meta}>Stopped.</Text>}", "      {state.terminal?.type === 'turn_cancelled' && <Text style={styles.meta}>Stopped.</Text>}\n      {state.terminal && !answerCall && onRetry && <ReplyActions text=\"\" onRetry={onRetry} />}"),
-      edit(`${mobile}/src/components/turn-view.tsx`, 'function WorkBlock({ steps, active, started, ended }: { steps: PhoneStep[]; active: boolean; started: string; ended?: string }) {', 'function WorkBlock({ steps, active, started, ended, paused }: { steps: PhoneStep[]; active: boolean; started: string; ended?: string; paused: boolean }) {\n  const colors = useColors();'),
+      edit(`${mobile}/src/components/turn-view.tsx`, 'function WorkBlock({ steps, active, started, ended }: { steps: PhoneStep[]; active: boolean; started: string; ended?: string }) {', 'function WorkBlock({ steps, active, started, ended, paused }: { steps: PhoneStep[]; active: boolean; started: string; ended?: string; paused: boolean }) {\n  const colors = useColors();\n  const current = steps[steps.length - 1];'),
       edit(`${mobile}/src/components/turn-view.tsx`, '          active={!state.terminal && !!streaming}', '          active={!state.terminal && !!streaming}\n          paused={!!suspended}'),
-      edit(`${mobile}/src/components/turn-view.tsx`, '<Text style={styles.workNow}>Djazzi is working…</Text>', '<View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}><DjazziMark size={32} motion={paused ? "static" : "loading"} color={colors.label} /><Text style={[styles.workNow, { color: colors.accent }]}>Djazzi is working…</Text></View>'),
+      edit(`${mobile}/src/components/turn-view.tsx`, '<Text style={styles.workNow}>Djazzi is working…</Text>', '<View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}><DjazziMark size={32} motion={paused ? "static" : "loading"} color={colors.label} /><Text style={[styles.workNow, { color: colors.accent }]}>Djazzi is working…</Text>{current && !paused && <ThinkingOrb key={orbForStep(current)} state={orbForStep(current)} size={20} />}</View>'),
+      // DJAZZI(24/11/2026): before the first word, the orb that thinks (assets/orbs), not a bare grey line.
+      edit(`${mobile}/src/components/turn-view.tsx`, '<Text style={styles.thinking}>Thinking…</Text>', '<View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}><ThinkingOrb state="solving" size={20} /><Text style={styles.thinking}>Thinking…</Text></View>'),
       edit(`${mobile}/src/components/turn-view.tsx`, 'streaming && !liveText && !state.terminal && !suspended && (', 'streaming && !liveText && !state.terminal && !suspended && steps.length === 0 && ('),
       edit(`${mobile}/src/components/turn-view.tsx`, '<Text style={styles.thinking}>Thinking…</Text>', '<View style={styles.workHead} accessible accessibilityRole="text"><DjazziMark size={32} motion="loading" /><Text style={styles.thinking}>Thinking…</Text></View>'),
       // DJAZZI(12/10/2026): the real chat also waits for its first snapshot
@@ -993,6 +1002,7 @@ export function mobilePlan() {
       ['../control/src/d-mark.ts', `${mobile}/src/lib/djazzi-d-mark.ts`],
       ['assets/motion/djazzi-mark.native.tsx', `${mobile}/src/components/djazzi-mark.tsx`],
       ['assets/motion/djazzi-logo.native.tsx', `${mobile}/src/components/djazzi-logo.tsx`],
+      ...[...ORB_FILES, 'thinking-orb.native.tsx'].map((f) => [`assets/orbs/${f}`, `${mobile}/src/components/djazzi-orbs/${f}`]),
       ['assets/mobile/home.tsx', `${mobile}/src/app/(tabs)/home.tsx`],
       ['assets/mobile/tabs-layout.tsx', `${mobile}/src/app/(tabs)/_layout.tsx`],
       ['assets/mobile/work-home.tsx', `${mobile}/src/app/(tabs)/more.tsx`],

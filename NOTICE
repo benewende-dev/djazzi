@@ -7,3 +7,8 @@ licensed under the Apache License, Version 2.0 (see LICENSE).
 "Rowboat" is a name of its authors; the Apache License grants no rights to
 their trademarks (section 6). Files modified from the upstream project are
 listed with the reason for each change in docs/djazzi/DIVERGENCES.md.
+
+The thinking orbs (apps/djazzi/packages/desktop/assets/orbs/engine, presets.ts,
+theme.ts) are taken from thinking-orbs by Jakub Antalik
+(https://github.com/Jakubantalik/thinking-orbs), licensed under the MIT License
+(see apps/djazzi/packages/desktop/assets/orbs/LICENSE).
