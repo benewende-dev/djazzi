@@ -1,6 +1,9 @@
 import * as React from 'react'
 import { ChevronRight, ShieldAlert } from 'lucide-react'
 import { DjazziMark } from '@/components/djazzi-mark'
+import { ThinkingOrb } from '@/components/djazzi-orbs/thinking-orb'
+import { orbFor, orbForTool } from '@/components/djazzi-orbs/orb-for'
+import type { OrbState } from '@/components/djazzi-orbs/types'
 import { cn } from '@/lib/utils'
 import { getToolRowSummary, isToolCall, type ConversationItem } from '@/lib/chat-conversation'
 import type { WorkStep } from '@/lib/work-steps'
@@ -53,6 +56,13 @@ export function workEntries(steps: WorkStep[]): WorkEntry[] {
     for (const item of step.items) out.push({ kind: 'item', id: item.id, item })
   }
   return out
+}
+
+/** DJAZZI(24/11/2026): the orb for what Djazzi is doing now (assets/orbs/orb-for.ts); none while it gets ready. */
+function orbOf(entry: WorkEntry | undefined): OrbState | null {
+  if (!entry) return null
+  if (entry.kind === 'said') return orbFor({ kind: 'said' })
+  return isToolCall(entry.item) ? orbForTool(entry.item.name) : orbFor({ kind: 'thinking' })
 }
 
 /** What Djazzi is doing now, for the status line. */
@@ -118,6 +128,8 @@ export function WorkBlock({ steps, active, startedAt, endedAt, renderItems, forc
   const total = workDuration((active ? now : endedAt) - startedAt)
   const entries = React.useMemo(() => workEntries(steps), [steps])
   const actions = entries.filter((e) => e.kind === 'item' && isToolCall(e.item)).length
+  const current = entries[entries.length - 1]
+  const orb = orbOf(current)
 
   if (active) {
     return (
@@ -132,8 +144,9 @@ export function WorkBlock({ steps, active, startedAt, endedAt, renderItems, forc
             {waiting ? 'Waiting for your approval' : 'Working...'}
           </span>
           {!waiting && (
-            <span className="min-w-0 truncate text-muted-foreground">
-              <CurrentAction entry={entries[entries.length - 1]} />
+            <span className="flex min-w-0 items-center gap-1.5 text-muted-foreground">
+              {orb && <ThinkingOrb key={orb} state={orb} size={20} diameter={16} />}
+              <span className="min-w-0 truncate"><CurrentAction entry={current} /></span>
             </span>
           )}
           <span className="ml-auto shrink-0 pl-2 text-xs tabular-nums text-muted-foreground" data-no-translate>{total}</span>
