@@ -49,8 +49,12 @@ jobs:
       - name: Decide whether to push
         id: push
         # Pushing needs this repository's token; a fork's pull request has a read-only one.
+        # DJAZZI(24/11/2026): the image lives on Rowboat's registry; in Djazzi's repository it is
+        # built and tested, never pushed (ghcr.io/rowboatlabs refuses us). See electron-build.yml.
         run: |
-          if [ "${{ github.event_name }}" != "pull_request" ] || [ "${{ github.event.pull_request.head.repo.full_name }}" = "${{ github.repository }}" ]; then
+          if [ "${{ github.repository }}" != "rowboatlabs/rowboat" ]; then
+            echo "push=false" >> "$GITHUB_OUTPUT"
+          elif [ "${{ github.event_name }}" != "pull_request" ] || [ "${{ github.event.pull_request.head.repo.full_name }}" = "${{ github.repository }}" ]; then
             echo "push=true" >> "$GITHUB_OUTPUT"
           else
             echo "push=false" >> "$GITHUB_OUTPUT"

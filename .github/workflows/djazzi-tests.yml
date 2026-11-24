@@ -12,6 +12,8 @@ on:
       - 'apps/x/packages/core/**'
       - 'apps/x/apps/main/**'
       - 'apps/x/apps/renderer/**'
+      # The instance image installs from it: a lockfile alone can break the build (24/11/2026).
+      - 'apps/x/pnpm-lock.yaml'
       - '.github/workflows/djazzi-tests.yml'
   push:
     branches: [main]
@@ -21,6 +23,8 @@ on:
       - 'apps/x/packages/core/**'
       - 'apps/x/apps/main/**'
       - 'apps/x/apps/renderer/**'
+      # The instance image installs from it: a lockfile alone can break the build (24/11/2026).
+      - 'apps/x/pnpm-lock.yaml'
       - '.github/workflows/djazzi-tests.yml'
   workflow_dispatch:
 
@@ -87,6 +91,11 @@ jobs:
       - name: Build @x/shared
         run: npm run build
         working-directory: apps/x/packages/shared
+
+      # 24/11/2026: Rowboat's @x/spaces-client (23/11), imported by renderer files our checks read.
+      - name: Build @x/spaces-client
+        run: npm run build
+        working-directory: apps/x/packages/spaces-client
 
       - name: Install apps/djazzi
         run: pnpm install --frozen-lockfile
