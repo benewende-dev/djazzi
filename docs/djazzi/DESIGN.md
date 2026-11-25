@@ -156,12 +156,14 @@ Avant de dire qu'un écran est fini :
 
 Ce qui ne suit pas encore ces règles, à corriger dans l'ordre :
 
-1. **L'accent du bureau est encore bleu** (`#1a6dff`, choix du 02/10/2026, dans `src/djazzi-theme.css`), alors que le téléphone est passé au noir et blanc le 07/11/2026. **Question à trancher par le fondateur** : aligner le bureau sur le noir et blanc ?
-2. **La nuit du bureau est neutre** (`#171717` et `#262626`), alors que celle du téléphone est chaude (`#171614` et `#24221f`). Il faut l'aligner sur la section 4 si la réponse au point 1 est oui.
+1. ~~L'accent du bureau était bleu~~ (`#1a6dff`, 02/10/2026) : **corrigé le 24/11/2026**, sur décision du fondateur. Le bureau est en noir et blanc comme le téléphone, et les liens des messages, désormais de la couleur du texte, sont soulignés.
+2. ~~La nuit du bureau était neutre~~ (`#171717`, `#262626`) : **corrigé le 24/11/2026**. Elle utilise maintenant les gris chauds de la section 4.
 3. **Arrondis du téléphone hors échelle** dans `assets/mobile` : 23 (7 usages), 29 (5), 22 (12), 18 (11), 14 (10). Ils sont à ramener vers 20, 24, 16 ou 12.
 4. **Espacements hors échelle** dans `assets/mobile` : 14 (32 usages), 10 (32), 18 (14), 6 (10), 5 (5), 26 (4), 22 (4). Ils sont à ramener vers 12, 16 ou 8. Les boutons du bureau (`padding: 9px 12px`, arrondi 9) sont à ramener à 8/12 et 8.
 5. **Graisse 700** sur le téléphone (7 usages), à ramener à 600.
 6. **« Thinking… » en italique** sur le téléphone (`turn-view.tsx`), à remplacer par le texte scintillant à côté de l'orbe.
 7. **Texte anglais visible** sur le serveur d'essai : « No assistant model configured (connect a provider or sign in) ». Il est à traduire.
+8. **Le jour du bureau est blanc pur** (`#ffffff`, valeur de Rowboat), alors que le téléphone est sur papier chaud (`#faf9f6`). **Question à trancher** : passer aussi le jour du bureau au papier chaud ?
+9. **L'éditeur 3D (CAD) a son propre accent bleu** (`--accent: #4d8dff`, dans `assets/motion/cad-editor-page.ts`), à ramener à l'encre.
 
 Chaque correction suit la règle du dépôt : on modifie la source dans `apps/djazzi` (thème, assets ou `brand.mjs`), jamais la copie dans `apps/x`.
