@@ -1,4 +1,5 @@
 import { createHmac, timingSafeEqual } from 'node:crypto';
+import { CONTACT } from './legal-page.js';
 import { advance, budgetsForWeek } from './quota.js';
 import type { AccountSummary, ControlStore, Plan } from './store.js';
 
@@ -243,6 +244,8 @@ export interface Mail {
   text: string;
   html: string;
   headers: Record<string, string>;
+  /** Where a reply goes: the mail leaves from a no-reply address (26/11/2026). */
+  replyTo?: string;
 }
 
 /** One person's email: plain words, one button, the way out at the bottom. */
@@ -252,22 +255,22 @@ export function noticeEmail(n: Notice, to: string, links: NoticeLinks, accountId
   const click = links.click(token);
   const paragraphs = n.body.split(/\n{2,}/).map((p) => `<p style="margin:0 0 14px;font-size:15px;line-height:1.55;color:#1f2937">${esc(p).replace(/\n/g, '<br>')}</p>`);
   const button = n.button
-    ? `<p style="margin:20px 0 4px"><a href="${esc(click)}" style="display:inline-block;background:#0062C4;color:#ffffff;text-decoration:none;font-weight:600;font-size:14px;padding:10px 18px;border-radius:8px">${esc(n.button)}</a></p>`
+    ? `<p style="margin:20px 0 4px"><a href="${esc(click)}" style="display:inline-block;background:#000000;color:#ffffff;text-decoration:none;font-weight:600;font-size:14px;padding:10px 18px;border-radius:8px">${esc(n.button)}</a></p>`
     : '';
   const html = [
     '<!doctype html><html lang="fr"><body style="margin:0;background:#f4f6f9;font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif">',
     '<table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:28px 16px">',
     '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;background:#ffffff;border-radius:12px;border:1px solid #e5e7eb"><tr><td style="padding:26px 28px">',
-    '<div style="display:inline-block;width:30px;height:30px;line-height:30px;text-align:center;border-radius:8px;background:#0062C4;color:#fff;font-weight:700;font-size:16px;margin-bottom:16px">B</div>',
+    '<div style="display:inline-block;width:30px;height:30px;line-height:30px;text-align:center;border-radius:8px;background:#000000;color:#fff;font-weight:600;font-size:16px;margin-bottom:16px">D</div>',
     `<h1 style="margin:0 0 12px;font-size:19px;line-height:1.3;color:#111827">${esc(n.title)}</h1>`,
     ...paragraphs,
     button,
     '</td></tr></table>',
-    `<p style="margin:16px 0 0;font-size:12px;color:#6b7280">Djazzi · <a href="${esc(unsubscribe)}" style="color:#6b7280">Ne plus recevoir ces emails</a></p>`,
+    `<p style="margin:16px 0 0;font-size:12px;color:#6b7280">Djazzi · Une question ? Répondez à cet email ou écrivez à <a href="mailto:${CONTACT}" style="color:#6b7280">${CONTACT}</a> · <a href="${esc(unsubscribe)}" style="color:#6b7280">Ne plus recevoir ces emails</a></p>`,
     `<img src="${esc(links.open(token))}" width="1" height="1" alt="" style="display:block;border:0">`,
     '</td></tr></table></body></html>',
   ].join('');
-  const text = [n.title, '', n.body, ...(n.button ? ['', `${n.button} : ${click}`] : []), '', `Ne plus recevoir ces emails : ${unsubscribe}`].join('\n');
+  const text = [n.title, '', n.body, ...(n.button ? ['', `${n.button} : ${click}`] : []), '', `Une question ? Répondez à cet email ou écrivez à ${CONTACT}.`, `Ne plus recevoir ces emails : ${unsubscribe}`].join('\n');
   return {
     to,
     subject: n.title,
@@ -275,6 +278,8 @@ export function noticeEmail(n: Notice, to: string, links: NoticeLinks, accountId
     html,
     // One-click opt-out from the mail app itself (RFC 8058).
     headers: { 'List-Unsubscribe': `<${unsubscribe}>`, 'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click' },
+    // A reply reaches the team's mailbox, not the sending address.
+    replyTo: CONTACT,
   };
 }
 
@@ -300,7 +305,7 @@ export class ResendMailer implements Mailer {
       const res = await this.fetchFn('https://api.resend.com/emails/batch', {
         method: 'POST',
         headers: { authorization: `Bearer ${this.apiKey}`, 'content-type': 'application/json' },
-        body: JSON.stringify(chunk.map((m) => ({ from: this.from, to: [m.to], subject: m.subject, text: m.text, html: m.html, headers: m.headers }))),
+        body: JSON.stringify(chunk.map((m) => ({ from: this.from, to: [m.to], subject: m.subject, text: m.text, html: m.html, headers: m.headers, ...(m.replyTo ? { reply_to: m.replyTo } : {}) }))),
       });
       // Never the addresses in the log: the status says enough.
       if (res.ok) accepted.push(...chunk.map((_, j) => i + j));
