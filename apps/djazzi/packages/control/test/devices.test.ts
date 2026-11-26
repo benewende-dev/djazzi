@@ -37,6 +37,7 @@ const fly: FlyApi = {
 };
 
 function setup(maxInstances = 5) {
+  const clock = { now: T0 };
   const store = new MemoryStore(new Map([[hashToken('instance-token'), ME], [hashToken('other-token'), OTHER]]), [PLAN]);
   const instances = new Instances({
     store,
@@ -55,12 +56,12 @@ function setup(maxInstances = 5) {
     auth,
     instances,
     gateway: createGateway({ store, instances, now: () => T0, fetch: globalThis.fetch }),
-    now: () => T0,
+    now: () => clock.now,
     fetch: globalThis.fetch,
   });
   const call = (path: string, token: string | null, init: RequestInit = {}) =>
     app.request(path, { ...init, headers: { 'content-type': 'application/json', ...(token ? { authorization: `Bearer ${token}` } : {}) } });
-  return { store, call };
+  return { store, call, clock };
 }
 
 describe('/v1/devices', () => {
@@ -118,6 +119,25 @@ describe('/v1/devices', () => {
     const { call } = setup();
     for (let i = 0; i < 10; i++) expect((await call('/v1/devices', 'at-me', { method: 'POST' })).status).toBe(201);
     expect((await call('/v1/devices', 'at-me', { method: 'POST' })).status).toBe(409);
+  });
+
+  it('at the cap, gives the place of the device unused for a week or more (26/11/2026)', async () => {
+    const { store, call, clock } = setup();
+    const DAY = 24 * 60 * 60 * 1000;
+    for (let i = 0; i < 10; i++) {
+      clock.now = T0 + i * 60_000;
+      expect((await call('/v1/devices', 'at-me', { method: 'POST', body: JSON.stringify({ name: `Appareil ${i}` }) })).status).toBe(201);
+    }
+    const devices = await store.devices(ME.id);
+    // The first one is still in use; the second has not been seen since.
+    await store.touchDevice(devices.find((d) => d.name === 'Appareil 0')!.id, T0 + 8 * DAY);
+    clock.now = T0 + 8 * DAY;
+    const res = await call('/v1/devices', 'at-me', { method: 'POST', body: JSON.stringify({ name: 'MacBook-Pro' }) });
+    expect(res.status).toBe(201);
+    const after = await store.devices(ME.id);
+    expect(after.filter((d) => d.revokedAt === null)).toHaveLength(10);
+    expect(after.find((d) => d.name === 'Appareil 1')?.revokedAt).toBe(T0 + 8 * DAY);
+    expect(after.find((d) => d.name === 'Appareil 0')?.revokedAt).toBeNull();
   });
 
   it('says when early access is full', async () => {

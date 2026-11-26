@@ -3803,6 +3803,7 @@ export const FR: Dictionary = {
     // The @djazzi mention's label (composer-editor.ts, once branded): a name, the same in French.
     "djazzi": "djazzi",
     "Early access is full for now. You are signed in: your space opens as soon as a seat frees up.": "L’accès anticipé est complet pour le moment. Vous êtes connecté : votre espace s’ouvrira dès qu’une place se libère.",
+    "This account is already used on 10 devices this week, the most it can be. Write to contact@djazzi.com and we will free a place.": "Ce compte est déjà utilisé sur 10 appareils cette semaine, le maximum. Écrivez à contact@djazzi.com et nous libérerons une place.",
     "Your Djazzi space is not answering right now. Try again in a few minutes: sign out, then sign in again.": "Votre espace Djazzi ne répond pas pour le moment. Réessayez dans quelques minutes : déconnectez-vous puis reconnectez-vous.",
     // Activity's reason lines (renderer lib/spaces-activity.ts, out of the extractor's reach).
     "messaged you": "vous a écrit",
@@ -4098,6 +4099,8 @@ export const FR: Dictionary = {
     "Language of the app and of Djazzi": "Langue de l’app et de Djazzi",
     "Let’s get to know each other": "Faisons connaissance",
     // Djazzi's onboarding, one flow (26/11/2026).
+    "Open Djazzi now": "Ouvrir Djazzi maintenant",
+    "Your space is taking longer than usual to open. Try again, or open Djazzi now: it connects as soon as your space answers.": "Votre espace met plus de temps que d’habitude à s’ouvrir. Réessayez, ou ouvrez Djazzi maintenant : il se connecte dès que votre espace répond.",
     "Other": "Autre",
     "Bots that work for you: quotes, follow-ups, books, meetings. Nothing goes out without your approval.": "Des bots qui travaillent pour vous : devis, relances, comptes, rendez-vous. Rien ne part sans votre accord.",
     "On your computer, your phone and the web: the same conversation.": "Sur votre ordinateur, votre téléphone et le web : la même conversation.",

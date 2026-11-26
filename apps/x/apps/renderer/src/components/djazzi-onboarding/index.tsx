@@ -79,14 +79,42 @@ function WelcomeStep({ onStart }: { onStart: () => void }) {
 
 // ── 2. Account ────────────────────────────────────────────────────────────
 
-function AccountStep({ signedIn, connecting, returning, onSignIn, onBack }: {
-  signedIn: boolean; connecting: boolean; returning: boolean; onSignIn: (returning: boolean) => void; onBack: () => void
+/** Waiting for the space since `since`: past this, a way out (26/11/2026). */
+const OPENING_TOO_LONG_MS = 90_000
+
+function useLate(since: number | null, active: boolean, after: number): boolean {
+  const [now, setNow] = useState(() => Date.now())
+  useEffect(() => {
+    if (!active) return
+    const timer = window.setInterval(() => setNow(Date.now()), 3000)
+    return () => window.clearInterval(timer)
+  }, [active])
+  return active && since !== null && now - since > after
+}
+
+function AccountStep({ signedIn, connecting, returning, since, onSignIn, onOpenAnyway, onBack }: {
+  signedIn: boolean; connecting: boolean; returning: boolean; since: number | null
+  onSignIn: (returning: boolean) => void; onOpenAnyway: () => void; onBack: () => void
 }) {
+  // 26/11/2026: a space that never opens (a refused link: the app says why
+  // in a dialog) left this screen turning for good. Past a minute and a half,
+  // the person can try again or open the app as it is.
+  const late = useLate(since, signedIn && returning, OPENING_TOO_LONG_MS)
   if (signedIn && returning) {
     return (
       <div className="flex flex-1 flex-col justify-center gap-5">
         <h2 className="dj-rise m-0 font-serif text-[46px] font-normal leading-[50px]">Welcome back</h2>
-        <p role="status" className="dj-rise dj-d2 m-0 flex items-center gap-3 text-[16px] leading-[25px] text-[#B5B5B5]"><Spinner />Djazzi is opening your space and everything you left in it.</p>
+        {late ? (
+          <>
+            <p role="status" className="dj-rise m-0 max-w-[430px] text-[16px] leading-[25px] text-[#B5B5B5]">Your space is taking longer than usual to open. Try again, or open Djazzi now: it connects as soon as your space answers.</p>
+            <div className="dj-rise dj-d2 flex flex-wrap gap-2.5">
+              <button type="button" className={secondary} onClick={onOpenAnyway}>Open Djazzi now</button>
+              <button type="button" autoFocus className={primary} onClick={() => onSignIn(true)}>Try again</button>
+            </div>
+          </>
+        ) : (
+          <p role="status" className="dj-rise dj-d2 m-0 flex items-center gap-3 text-[16px] leading-[25px] text-[#B5B5B5]"><Spinner />Djazzi is opening your space and everything you left in it.</p>
+        )}
       </div>
     )
   }
@@ -485,7 +513,8 @@ export function DjazziOnboarding({ open, onComplete }: DjazziOnboardingProps) {
   }, [open, saved.returning, saved.step, signedIn, joined, onComplete])
 
   const signIn = async (returning: boolean) => {
-    update({ returning, spaceSince: saved.spaceSince ?? Date.now() })
+    // A new try counts its wait from now.
+    update({ returning, spaceSince: Date.now() })
     setConnecting(true)
     const result = await window.ipc.invoke('oauth:connect', { provider: 'rowboat' }).catch(() => ({ success: false }))
     if (!result.success) setConnecting(false)
@@ -564,7 +593,7 @@ export function DjazziOnboarding({ open, onComplete }: DjazziOnboardingProps) {
           {/* Keyed by the step: each screen comes in with its own motion. */}
           <div key={step} className="flex flex-1 flex-col">
             {step === 0 && <WelcomeStep onStart={forward} />}
-            {step === 1 && <AccountStep signedIn={signedIn} connecting={connecting} returning={saved.returning} onSignIn={(r) => void signIn(r)} onBack={back} />}
+            {step === 1 && <AccountStep signedIn={signedIn} connecting={connecting} returning={saved.returning} since={saved.spaceSince} onSignIn={(r) => void signIn(r)} onOpenAnyway={() => { clearSaved(); onComplete() }} onBack={back} />}
             {step === 2 && <YouStep profile={saved.profile} look={look} onProfile={(profile) => update({ profile })} onLook={changeLook} onBack={back} onNext={forward} />}
             {step === 3 && <ToolsStep tools={tools} onBack={back} onNext={forward} />}
             {step === 4 && (
