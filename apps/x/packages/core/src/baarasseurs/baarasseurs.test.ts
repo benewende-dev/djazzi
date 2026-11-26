@@ -113,7 +113,7 @@ describe('the baarasseurs (06/10/2026)', () => {
     // DJAZZI(26/11/2026): the Djazzi Bots page.
     it('puts what waits for the user on the « À valider » list, from the conversation it asked in', async () => {
         await fs.rm(path.join(workDir, 'config', 'baarasseurs-approvals.json'), { force: true });
-        expect(personaInstructions(mariama)).toContain('baarasseur-ask-approval');
+        expect(personaInstructions(mariama)).toContain('In a scheduled run (nobody is watching), call `baarasseur-ask-approval`');
         const tool = baarasseurTools['baarasseur-ask-approval'];
         const res = await tool.execute({ id: 'mariama', summary: '  Envoyer une relance\n à 3 prospects ', detail: 'Bonjour…' }, { sessionId: 's1', runId: 'r1' });
         expect(res.success).toBe(true);
@@ -131,8 +131,10 @@ describe('the baarasseurs (06/10/2026)', () => {
         expect(next).toHaveLength(200);
         expect(next.some((a) => a.id === 'p5')).toBe(false);
         expect(next.at(-1)?.id).toBe('new');
-        expect(approvalAnswer({ summary: 'Envoyer' }, true, 'fr')).toContain('Oui');
-        expect(approvalAnswer({ summary: 'Envoyer' }, false, 'en')).toContain('No');
+        expect(approvalAnswer({ summary: 'Envoyer', detail: '', sessionId: null }, true, 'fr')).toContain('Oui');
+        expect(approvalAnswer({ summary: 'Envoyer', detail: 'Bonjour…', sessionId: 's1' }, false, 'en')).toBe("No, don't do it: Envoyer. Keep it as a draft and tell me what you suggest instead.");
+        // From a scheduled run, the answer opens a new conversation: the draft goes with it.
+        expect(approvalAnswer({ summary: 'Envoyer', detail: 'Bonjour…', sessionId: null }, true, 'fr')).toContain('Ce que tu avais préparé :\nBonjour…');
     });
 
     it('counts each bot\'s tokens by month, and nothing for the assistant', async () => {
@@ -154,7 +156,8 @@ describe('the baarasseurs (06/10/2026)', () => {
         expect(copy.name).toBe('Mariama (copie)');
         expect(copy.id).not.toBe('mariama');
         expect(copy.memory).toEqual([]);
-        expect(copy.paused).toBe(false);
+        expect(copy.paused).toBe(true);
+        expect(duplicateOf({ ...mariama, schedule: null }, ['mariama'], 'fr').paused).toBe(false);
         expect(parseBaarasseurs(JSON.stringify({ baarasseurs: [{ ...mariama, paused: true }] }))[0].paused).toBe(true);
     });
 });

@@ -286,10 +286,12 @@ function Conversation({ b, chatHost, hasChat, runs, working, onEdit, onNew, onOp
         <Button variant="outline" disabled={busy === 'run' || working} onClick={() => void act('run', onRunNow)}>
           {busy === 'run' && <Loader2 className="size-4 animate-spin" />}<span>Run now</span>
         </Button>
-        <Button variant="outline" size="icon" aria-label={b.paused ? 'Resume' : 'Pause'} title={b.paused ? 'Resume' : 'Pause'}
-          disabled={busy === 'pause'} onClick={() => void act('pause', onTogglePause)}>
-          {b.paused ? <Play className="size-4" /> : <Pause className="size-4" />}
-        </Button>
+        {(b.schedule || b.paused) && (
+          <Button variant="outline" size="icon" aria-label={b.paused ? 'Resume' : 'Pause'} title={b.paused ? 'Resume' : 'Pause'}
+            disabled={busy === 'pause'} onClick={() => void act('pause', onTogglePause)}>
+            {b.paused ? <Play className="size-4" /> : <Pause className="size-4" />}
+          </Button>
+        )}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline" size="icon" aria-label="More"><MoreHorizontal className="size-4" /></Button>
@@ -564,10 +566,12 @@ function Overview({ team, runs, latest, unread, workingAgents, taken, approvals,
                         onClick={() => void act(`run-${b.id}`, () => onRunNow(b))}>
                         {busy === `run-${b.id}` && <Loader2 className="size-3.5 animate-spin" />}<span>Run now</span>
                       </Button>
-                      <Button variant="outline" size="icon" className="size-8" aria-label={b.paused ? 'Resume' : 'Pause'} title={b.paused ? 'Resume' : 'Pause'}
-                        disabled={busy === `pause-${b.id}`} onClick={() => void act(`pause-${b.id}`, () => onTogglePause(b))}>
-                        {b.paused ? <Play className="size-3.5" /> : <Pause className="size-3.5" />}
-                      </Button>
+                      {(b.schedule || b.paused) && (
+                        <Button variant="outline" size="icon" className="size-8" aria-label={b.paused ? 'Resume' : 'Pause'} title={b.paused ? 'Resume' : 'Pause'}
+                          disabled={busy === `pause-${b.id}`} onClick={() => void act(`pause-${b.id}`, () => onTogglePause(b))}>
+                          {b.paused ? <Play className="size-3.5" /> : <Pause className="size-3.5" />}
+                        </Button>
+                      )}
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button variant="outline" size="icon" className="size-8" aria-label="More"><MoreHorizontal className="size-4" /></Button>
@@ -590,7 +594,7 @@ function Overview({ team, runs, latest, unread, workingAgents, taken, approvals,
                       <li key={item.key}>
                         <button type="button" onClick={() => onOpenRun(item.agentId, item.runId)}
                           className="flex w-full items-start gap-2.5 border-b border-border/60 py-2 text-left text-[13px] last:border-b-0 hover:text-foreground">
-                          <span aria-hidden className="mt-1.5 size-1.5 shrink-0 rounded-full" style={{ background: SHAPE_FILL[item.b.color] ?? 'var(--foreground)' }} />
+                          <span aria-hidden className="mt-1.5 size-1.5 shrink-0 rounded-full" style={{ background: item.b.color === 'white' ? 'var(--foreground)' : SHAPE_FILL[item.b.color] ?? 'var(--foreground)' }} />
                           <span className="min-w-0 flex-1 truncate"><b className="font-medium" data-no-translate>{item.b.name}</b> <span data-no-translate>{item.text}</span></span>
                           <span className="shrink-0 tabular-nums text-muted-foreground" data-no-translate>{when(item.at)}</span>
                         </button>

@@ -228,7 +228,7 @@ export function personaInstructions(b: Baarasseur): string {
     lines.push(
         "",
         "## What needs the user's approval",
-        `Before you send, publish, post, pay, delete, or do anything your mission says needs the user's agreement, call \`baarasseur-ask-approval\` (id "${b.id}") with a one-line summary and the full draft, then stop and wait for their answer. It shows on their list of things to approve; their « yes » or « no » comes back to you in this conversation. Never do it before they say yes.`,
+        `Never send, publish, post, pay or delete, nor do anything your mission says needs the user's agreement, before they say yes. When they are talking with you, ask them right here. In a scheduled run (nobody is watching), call \`baarasseur-ask-approval\` (id "${b.id}") with a one-line summary and the full draft instead: it goes on their list of things to approve in Djazzi, and their « yes » or « no » comes back to you.`,
     );
     if (b.schedule) {
         lines.push(
@@ -723,15 +723,14 @@ export function withApproval(list: BaarasseurApproval[], next: BaarasseurApprova
 }
 
 /** The user's answer, said to the bot in its conversation. */
-export function approvalAnswer(a: Pick<BaarasseurApproval, "summary">, approved: boolean, lang: Lang): string {
-    if (lang === "fr") {
-        return approved
-            ? `Oui, c’est validé : ${a.summary}. Tu peux le faire maintenant.`
-            : `Non, ne le fais pas : ${a.summary}. Garde-le en brouillon et dis-moi ce que tu proposes à la place.`;
-    }
-    return approved
-        ? `Yes, approved: ${a.summary}. You can do it now.`
-        : `No, don't do it: ${a.summary}. Keep it as a draft and tell me what you suggest instead.`;
+export function approvalAnswer(a: Pick<BaarasseurApproval, "summary" | "detail" | "sessionId">, approved: boolean, lang: Lang): string {
+    const fr = lang === "fr";
+    const said = approved
+        ? (fr ? `Oui, c’est validé : ${a.summary}. Tu peux le faire maintenant.` : `Yes, approved: ${a.summary}. You can do it now.`)
+        : (fr ? `Non, ne le fais pas : ${a.summary}. Garde-le en brouillon et dis-moi ce que tu proposes à la place.` : `No, don't do it: ${a.summary}. Keep it as a draft and tell me what you suggest instead.`);
+    // Asked from a scheduled run, the answer opens a new conversation: the draft goes with it.
+    if (a.sessionId || !a.detail) return said;
+    return `${said}\n\n${fr ? "Ce que tu avais préparé :" : "What you had prepared:"}\n${a.detail}`;
 }
 
 /** How much each bot worked, by month (« 2026-11 »), counted by the core on this machine. */
@@ -768,5 +767,6 @@ export function addUsage(months: UsageByMonth, bot: string, at: Date, input: num
 /** A copy of one, under a free name, without its memory of the user. */
 export function duplicateOf(b: Baarasseur, taken: string[], lang: Lang): Baarasseur {
     const name = `${b.name} ${lang === "fr" ? "(copie)" : "(copy)"}`.slice(0, 40);
-    return { ...b, id: idFor(name, taken), name, memory: [], paused: false, createdAt: new Date().toISOString() };
+    // A copy with hours starts paused: two bots must not do the same work before it is changed.
+    return { ...b, id: idFor(name, taken), name, memory: [], paused: Boolean(b.schedule), createdAt: new Date().toISOString() };
 }
