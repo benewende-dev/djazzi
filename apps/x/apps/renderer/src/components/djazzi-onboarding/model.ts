@@ -1,17 +1,20 @@
-// DJAZZI(04/10/2026): Djazzi's onboarding, from the mockup the founder
-// validated: welcome, the space being prepared, who the person is, their
-// tools, then a first request. Its logic lives here, without React.
+import type { ShapeId } from '@/lib/djazzi-d-mark'
+
+// DJAZZI(04/10/2026): Djazzi's onboarding. Its logic lives here, without
+// React. 26/11/2026 (founder's mockup): one flow of five screens in place
+// of the intro and the steps that followed it: welcome, the account (the
+// space prepares meanwhile), who the person is, their tools, a first task.
 //
 // Joining the instance reloads every window (cloud-link), and so does a
 // change of language: the step and the answers are kept in this window's
 // storage so the onboarding picks up where it was.
 
+/** Welcome, account, you, tools, ready. */
 export type Step = 0 | 1 | 2 | 3 | 4
 
 export interface Profile {
   name: string
   sector: string | null
-  role: string | null
 }
 
 export interface Saved {
@@ -25,7 +28,7 @@ export interface Saved {
 
 export const STORAGE_KEY = 'djazzi-onboarding'
 
-export const EMPTY: Saved = { step: 0, profile: { name: '', sector: null, role: null }, spaceSince: null, returning: false }
+export const EMPTY: Saved = { step: 0, profile: { name: '', sector: null }, spaceSince: null, returning: false }
 
 const isStep = (v: unknown): v is Step => v === 0 || v === 1 || v === 2 || v === 3 || v === 4
 const text = (v: unknown, max: number): string | null => (typeof v === 'string' && v.trim() ? v.trim().slice(0, max) : null)
@@ -41,7 +44,6 @@ export function readSaved(raw: string | null): Saved {
       profile: {
         name: text(p.name, 60) ?? '',
         sector: SECTORS.includes(p.sector as string) ? (p.sector as string) : null,
-        role: ROLES.includes(p.role as string) ? (p.role as string) : null,
       },
       spaceSince: typeof parsed.spaceSince === 'number' ? parsed.spaceSince : null,
       returning: parsed.returning === true,
@@ -87,15 +89,58 @@ export function shouldShow({ upstream, signedIn, saved }: { upstream: boolean; s
 
 /** The activities offered, in English: the app's French layer translates them. */
 export const SECTORS = [
-  'Retail and distribution', 'Import-export', 'Services and consulting', 'Accounting and finance',
-  'Banking and microfinance', 'Legal', 'Real estate', 'Construction and crafts', 'Manufacturing',
-  'Mining and energy', 'Restaurants and hotels', 'Tourism and events', 'Transport and logistics',
-  'Farming and livestock', 'Health and pharmacy', 'Education and training', 'Tech and digital',
-  'Communication and marketing', 'Fashion and beauty', 'Media and culture', 'Nonprofit or NGO',
-  'Public administration', 'Other',
+  'Retail and distribution', 'Services and consulting', 'Accounting and finance', 'Construction and crafts',
+  'Transport and logistics', 'Farming and livestock', 'Health and pharmacy', 'Education and training', 'Other',
 ]
 
-export const ROLES = ['Business owner or manager', 'Employee', 'Self-employed', 'Student']
+/** Six shapes and six colours of the phone's twelve and eleven: enough to choose, quick to scan. */
+export const SHAPE_CHOICES = [
+  { id: 'b', label: 'D' },
+  { id: 'round', label: 'Round' },
+  { id: 'pebble', label: 'Pebble' },
+  { id: 'drop', label: 'Drop' },
+  { id: 'square', label: 'Square' },
+  { id: 'dome', label: 'Dome' },
+] as const satisfies ReadonlyArray<{ id: ShapeId; label: string }>
+
+export const COLOR_CHOICES = [
+  { id: 'white', label: 'White' },
+  { id: 'orange', label: 'Orange' },
+  { id: 'blue', label: 'Blue' },
+  { id: 'green', label: 'Green' },
+  { id: 'violet', label: 'Violet' },
+  { id: 'rose', label: 'Pink' },
+] as const
+
+/** The person's Djazzi, as the phone keeps it (agent-shape.tsx `djazzi.look.v1`). */
+export const LOOK_KEY = 'djazzi.look.v1'
+
+export interface Look {
+  shape: ShapeId
+  color: string
+}
+
+export const DEFAULT_LOOK: Look = { shape: 'b', color: 'white' }
+
+/** The look kept on this computer, read leniently. */
+export function loadLook(): Look {
+  try {
+    const raw = JSON.parse(localStorage.getItem(LOOK_KEY) ?? 'null') as Partial<Look> | null
+    const shape = SHAPE_CHOICES.find((c) => c.id === raw?.shape)?.id
+    const color = COLOR_CHOICES.find((c) => c.id === raw?.color)?.id
+    return { shape: shape ?? DEFAULT_LOOK.shape, color: color ?? DEFAULT_LOOK.color }
+  } catch {
+    return DEFAULT_LOOK
+  }
+}
+
+export function storeLook(look: Look): void {
+  try {
+    localStorage.setItem(LOOK_KEY, JSON.stringify(look))
+  } catch {
+    // A private window: the default look next time.
+  }
+}
 
 export interface Idea {
   title: string
@@ -124,11 +169,6 @@ const CARING: Idea[] = [
   { title: 'Write a clear notice', detail: 'For parents, patients or the team', prompt: 'Help me write a clear notice. Here is what it is about:' },
   { title: 'Summarize a document', detail: 'The essentials in a few lines', prompt: 'Summarize this document for me in a few lines:' },
 ]
-const PUBLIC: Idea[] = [
-  { title: 'Write an official letter', detail: 'The right tone, ready to sign', prompt: 'Help me write an official letter. Here is what it is about:' },
-  { title: 'Draft a report', detail: 'From your notes, structured', prompt: 'Help me draft a report from these notes:' },
-  { title: 'Prepare a meeting', detail: 'An agenda and the points to settle', prompt: 'Help me prepare a meeting: an agenda and the points to settle.' },
-]
 const ANYONE: Idea[] = [
   { title: 'Review my emails of the week', detail: 'What needs an answer, what can wait', prompt: 'Go through my emails of the week: what needs an answer from me, and what can wait?' },
   { title: 'Organize my week', detail: 'Appointments, priorities, reminders', prompt: 'Help me organize my week: appointments, priorities and reminders.' },
@@ -136,15 +176,10 @@ const ANYONE: Idea[] = [
 ]
 
 const IDEAS_BY_SECTOR: Record<string, Idea[]> = {
-  'Retail and distribution': SELLING, 'Import-export': SELLING, 'Restaurants and hotels': SELLING,
-  'Tourism and events': SELLING, 'Fashion and beauty': SELLING,
-  'Services and consulting': ADVISING, 'Accounting and finance': ADVISING, 'Banking and microfinance': ADVISING,
-  'Legal': ADVISING, 'Real estate': ADVISING, 'Tech and digital': ADVISING,
-  'Communication and marketing': ADVISING, 'Media and culture': ADVISING,
-  'Construction and crafts': FIELD, 'Manufacturing': FIELD, 'Mining and energy': FIELD,
-  'Transport and logistics': FIELD, 'Farming and livestock': FIELD,
+  'Retail and distribution': SELLING,
+  'Services and consulting': ADVISING, 'Accounting and finance': ADVISING,
+  'Construction and crafts': FIELD, 'Transport and logistics': FIELD, 'Farming and livestock': FIELD,
   'Health and pharmacy': CARING, 'Education and training': CARING,
-  'Nonprofit or NGO': PUBLIC, 'Public administration': PUBLIC,
 }
 
 /** Three first requests, picked for the activity chosen. */
@@ -164,7 +199,6 @@ export function profileBlock(profile: Profile, lang: string): string {
   const lines = [
     profile.name && `- First name: ${profile.name}`,
     profile.sector && `- Activity: ${profile.sector}`,
-    profile.role && `- Role: ${profile.role}`,
   ].filter(Boolean)
   if (!lines.length) return ''
   lines.push(`- Language of the app: ${LANGUAGE_NAMES[lang] ?? LANGUAGE_NAMES.en}`)
@@ -181,10 +215,5 @@ export function mergeProfile(existing: string, block: string): string {
   return rest ? `${block}\n\n${rest}\n` : `${block}\n`
 }
 
-/** The preparation's progress (0–100): estimated until joined, then full. */
-export function spaceProgress(since: number | null, now: number, joined: boolean): number {
-  if (joined) return 100
-  if (since === null) return 5
-  // About a minute for a new space: the bar runs to 90% over it, then waits.
-  return Math.round(Math.min(90, 5 + ((now - since) / 60_000) * 85))
-}
+/** The space takes about a minute; past this, the onboarding says it is slow. */
+export const SLOW_SPACE_MS = 150_000

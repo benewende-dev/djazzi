@@ -606,7 +606,6 @@ export function desktopPlan() {
       ['assets/motion/djazzi-logo.tsx', `${renderer}/components/djazzi-logo.tsx`],
       ['assets/motion/turn-activity-indicator.tsx', `${renderer}/components/turn-activity-indicator.tsx`],
       ...ORB_FILES.map((f) => [`assets/orbs/${f}`, `${renderer}/components/djazzi-orbs/${f}`]),
-      ['assets/motion/onboarding-duo.tsx', `${renderer}/components/djazzi-onboarding/duo.tsx`],
       ['assets/icon.icns', `${main}/icons/icon.icns`],
       ['assets/icon.ico', `${main}/icons/icon.ico`],
       ['assets/icon.png', `${main}/icons/icon.png`],

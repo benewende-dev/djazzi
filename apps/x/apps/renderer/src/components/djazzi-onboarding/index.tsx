@@ -1,271 +1,189 @@
 import { useCallback, useEffect, useState } from 'react'
-import { ArrowRight, Check, Inbox, Loader2, Lock, MessageCircle, Send, Sheet, Hand } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
+import { ArrowRight, ArrowUp, Check, Loader2, MessageCircle, Send } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { MobileChannelsSettings } from '@/components/settings/mobile-channels-settings'
-import { GitHubIcon, GmailIcon, OutlookIcon, SlackIcon } from '@/components/onboarding/provider-icons'
-import { Duo } from './duo'
-import { DjazziIntro, introDone } from './intro'
+import { GmailIcon, OutlookIcon } from '@/components/onboarding/provider-icons'
+import { fillOf, Shape } from './shape'
 import {
-  clearSaved, ideasFor, loadSaved, mergeProfile, profileBlock, PROFILE_FILE, ROLES, SECTORS,
-  spaceProgress, storeSaved, type Profile, type Saved, type Step,
+  clearSaved, COLOR_CHOICES, ideasFor, loadLook, loadSaved, mergeProfile, profileBlock, PROFILE_FILE, SECTORS,
+  SHAPE_CHOICES, SLOW_SPACE_MS, storeLook, storeSaved, type Look, type Profile, type Saved, type Step,
 } from './model'
 
-// DJAZZI(04/10/2026): Djazzi's onboarding (model.ts says why it keeps its
-// place across reloads). It replaces the upstream's in App.tsx only; the
-// upstream's files stay as they are.
+// DJAZZI(04/10/2026): Djazzi's onboarding, in place of the upstream's in
+// App.tsx only (the upstream's files stay as they are). model.ts says why
+// it keeps its place across reloads.
+//
+// 26/11/2026 (founder's mockup « Accueil Djazzi »): one full-window flow, one
+// style, five screens, where there were an intro and a dialog of steps
+// asking the same things twice. Welcome (the language at the top), the
+// account (the space prepares meanwhile, shown by a pill below), the person
+// (first name, their Djazzi, their activity), their tools (only those that
+// work today), and a first task to read before sending.
 
 interface DjazziOnboardingProps {
   open: boolean
   onComplete: (opts?: { prompt?: string }) => void
 }
 
-const STEPS = ['Welcome', 'Your space', 'You', 'Your tools', 'All set']
+const STEP_COUNT = 5
 
 /** For text put in a field, which the French layer does not see (desktop i18n/index.ts). */
 const say = (text: string) => (window as { __djazziText?: (t: string) => string }).__djazziText?.(text) ?? text
 
-function Stepper({ current }: { current: Step }) {
-  return (
-    <ol className="flex items-start justify-center" aria-label="Steps">
-      {STEPS.map((label, i) => {
-        const done = i < current
-        const active = i === current
-        const marker: 'step' | undefined = active ? 'step' : undefined
-        return (
-          <li key={label} className="flex items-start" aria-current={marker}>
-            {i > 0 && <div className={cn('mt-[15px] h-0.5 w-6', i <= current ? 'bg-primary' : 'bg-border')} aria-hidden="true" />}
-            <div className="flex w-[88px] flex-col items-center gap-2">
-              <div className={cn('flex size-8 items-center justify-center rounded-full text-xs font-semibold', done || active ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground')}>
-                {done ? <Check className="size-4" /> : i + 1}
-              </div>
-              <span className={cn('whitespace-nowrap text-xs', active ? 'text-foreground' : 'text-muted-foreground')}>{label}</span>
-            </div>
-          </li>
-        )
-      })}
-    </ol>
-  )
+const CSS = `
+@keyframes dj-rise{0%{opacity:0;transform:translateY(16px)}100%{opacity:1;transform:none}}
+@keyframes dj-pop{0%{opacity:0;transform:scale(.5) translateY(20px)}70%{opacity:1;transform:scale(1.06) translateY(-4px)}100%{opacity:1;transform:none}}
+@keyframes dj-bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+@keyframes dj-hop{0%,100%{transform:translateY(0)}30%{transform:translateY(-28px)}55%{transform:translateY(0)}70%{transform:translateY(-8px)}}
+@keyframes dj-drift{0%,100%{transform:translate(0,0)}50%{transform:translate(10px,-14px)}}
+@keyframes dj-blink{0%,44%,50%,100%{transform:scaleY(1)}47%{transform:scaleY(.1)}}
+@keyframes dj-pulse{0%,100%{box-shadow:0 0 0 0 rgba(255,255,255,.35)}50%{box-shadow:0 0 0 8px rgba(255,255,255,0)}}
+@keyframes dj-dim{0%,100%{opacity:.25}50%{opacity:1}}
+.dj-rise{animation:dj-rise .55s cubic-bezier(.2,.8,.2,1) both}
+.dj-pop{animation:dj-pop .7s cubic-bezier(.2,.9,.3,1.2) both}
+.dj-bob{animation:dj-bob 3.2s ease-in-out infinite}
+.dj-hop{animation:dj-hop 1.8s ease-in-out infinite}
+.dj-drift{animation:dj-drift 7s ease-in-out infinite}
+.dj-eye{animation:dj-blink 4.2s infinite;transform-box:fill-box;transform-origin:center}
+.dj-pulse{animation:dj-pulse 1.8s ease-out infinite}
+.dj-dim{animation:dj-dim 1.2s ease-in-out infinite}
+.dj-d2{animation-delay:.12s}.dj-d3{animation-delay:.24s}.dj-d4{animation-delay:.36s}.dj-d5{animation-delay:.5s}
+@media (prefers-reduced-motion: reduce){.dj-root *{animation:none !important}}
+`
+
+const ring = 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[#111111]'
+const primary = cn('h-12 rounded-[14px] bg-white px-7 text-[15px] font-semibold text-[#0A0A0A] transition-opacity hover:opacity-90 disabled:opacity-50', ring)
+const secondary = cn('h-12 rounded-[14px] border border-[#3A3A3C] px-5 text-[15px] font-medium text-white transition-colors hover:bg-white/5 disabled:opacity-50', ring)
+const label = 'text-[13px] text-[#A1A1A6]'
+
+function Spinner({ className }: { className?: string }) {
+  return <Loader2 className={cn('size-5 shrink-0 animate-spin text-white', className)} aria-hidden="true" />
 }
 
-function Heading({ title, children }: { title: string; children?: React.ReactNode }) {
-  return (
-    <div className="flex flex-col gap-2">
-      <h2 className="text-3xl font-semibold tracking-tight">{title}</h2>
-      {children && <p className="text-base leading-relaxed text-muted-foreground">{children}</p>}
-    </div>
-  )
-}
-
-function Chip({ label, selected, onClick }: { label: string; selected: boolean; onClick: () => void }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-pressed={selected}
-      className={cn(
-        'h-9 rounded-full border px-3.5 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-        selected ? 'border-primary bg-primary/15 text-foreground' : 'border-border bg-muted/40 text-muted-foreground hover:text-foreground',
-      )}
-    >
-      {label}
-    </button>
-  )
+function Tick() {
+  return <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-[#30D158]"><Check className="size-3 text-[#0A0A0A]" strokeWidth={3} aria-hidden="true" /></span>
 }
 
 // ── 1. Welcome ────────────────────────────────────────────────────────────
 
-function WelcomeStep({ signedIn, connecting, onSignIn, onContinue }: { signedIn: boolean; connecting: boolean; onSignIn: (returning: boolean) => void; onContinue: () => void }) {
-  const promises = [
-    { icon: Inbox, title: 'Your emails and calendar', text: 'Djazzi sorts what matters and drafts your replies.' },
-    { icon: Hand, title: 'The work you hand over', text: 'A reminder, a quote, some research: Djazzi takes care of it, even while you are away.' },
-    { icon: Lock, title: 'A space of your own', text: 'Your work is kept in your private, encrypted space, on all your devices.' },
-  ]
+function WelcomeStep({ onStart }: { onStart: () => void }) {
   return (
-    <div className="flex flex-col gap-6">
-      <Duo first="Welcome." second="Sign in to continue." motion="bob" />
-      <div className="flex flex-col items-center gap-2 text-center">
-        <h2 className="text-3xl font-semibold tracking-tight">Welcome to Djazzi</h2>
-        <p className="max-w-md text-base leading-relaxed text-muted-foreground">Your work assistant. It handles your emails, prepares your documents and does the tasks you hand over.</p>
-      </div>
-      <ul className="flex flex-col gap-4 rounded-xl bg-muted/40 p-5">
-        {promises.map(({ icon: Icon, title, text }) => (
-          <li key={title} className="flex items-start gap-3.5">
-            <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary"><Icon className="size-5" /></div>
-            <div className="flex flex-col gap-0.5">
-              <span className="text-sm font-semibold">{title}</span>
-              <span className="text-sm leading-snug text-muted-foreground">{text}</span>
-            </div>
-          </li>
-        ))}
-      </ul>
-      <div className="flex flex-col gap-2.5">
-        {signedIn ? (
-          <Button size="lg" className="h-12 text-base" onClick={onContinue}>Continue</Button>
-        ) : (
-          <>
-            {/* Enabled while signing in: a sign-in window closed by mistake opens again. */}
-            <Button size="lg" className="h-12 text-base" onClick={() => onSignIn(false)}>Create my account</Button>
-            <Button size="lg" variant="outline" className="h-12 text-base" onClick={() => onSignIn(true)}>I already have an account</Button>
-          </>
-        )}
-        <p role="status" className="flex items-center justify-center gap-2 text-center text-xs text-muted-foreground">
-          {connecting && <Loader2 className="size-3.5 animate-spin" aria-hidden="true" />}
-          {connecting ? 'Sign in in the window that opened. Closed it? Click again.' : 'Free to start.'}
-        </p>
-      </div>
+    <div className="flex flex-1 flex-col justify-center gap-5">
+      <h1 className="dj-rise m-0 font-serif text-[56px] font-normal leading-[60px]">Welcome to Djazzi</h1>
+      <p className="dj-rise dj-d2 m-0 max-w-[430px] text-[17px] leading-[27px] text-[#B5B5B5]">Bots that work for you: quotes, follow-ups, books, meetings. Nothing goes out without your approval.</p>
+      <div className="dj-rise dj-d3 mt-2"><button type="button" autoFocus className={primary} onClick={onStart}>Get started</button></div>
+      <p className="dj-rise dj-d4 m-0 text-[13px] text-[#8E8E93]">On your computer, your phone and the web: the same conversation.</p>
     </div>
   )
 }
 
-// ── 2. Your space ─────────────────────────────────────────────────────────
+// ── 2. Account ────────────────────────────────────────────────────────────
 
-type TaskState = 'done' | 'now' | 'todo'
-
-function Task({ state, label }: { state: TaskState; label: string }) {
-  return (
-    <li className="flex items-center gap-3.5">
-      {state === 'done' ? (
-        <span className="flex size-6 items-center justify-center rounded-full bg-[var(--rowboat-success)] text-white"><Check className="size-3.5" /></span>
-      ) : state === 'now' ? (
-        <Loader2 className="size-6 animate-spin text-primary" aria-hidden="true" />
-      ) : (
-        <span className="size-6 rounded-full border-2 border-border" aria-hidden="true" />
-      )}
-      <span className={cn('text-sm', state === 'todo' ? 'text-muted-foreground' : 'text-foreground', state === 'now' && 'font-semibold')}>{label}</span>
-    </li>
-  )
-}
-
-function SpaceStep({ since, joined, returning, onContinue }: { since: number | null; joined: boolean; returning: boolean; onContinue: () => void }) {
-  const [now, setNow] = useState(() => Date.now())
-  useEffect(() => {
-    if (joined) return
-    const timer = window.setInterval(() => setNow(Date.now()), 1000)
-    return () => window.clearInterval(timer)
-  }, [joined])
-  const progress = spaceProgress(since, now, joined)
-  const slow = !joined && since !== null && now - since > 150_000
-  const motion: 'hop' | 'bob' = joined ? 'hop' : 'bob'
-  const preparing: TaskState = joined ? 'done' : 'now'
-  const connectingApp: TaskState = joined ? 'done' : 'todo'
-  return (
-    <div className="flex flex-col gap-6">
-      <Duo first={joined ? 'It is ready!' : 'Preparing your space…'} second={joined ? 'Off we go' : null} motion={motion} />
-      <Heading title={joined ? 'Your space is ready' : 'Your space is being prepared'}>
-        {returning ? 'Djazzi is opening your space and everything you left in it.' : 'Djazzi is creating your private space in the cloud. It takes about a minute, the first time only.'}
-      </Heading>
-      <div className="flex flex-col gap-4 rounded-xl bg-muted/40 p-5">
-        <ul className="flex flex-col gap-4">
-          <Task state="done" label="Account verified" />
-          <Task state={preparing} label={returning ? 'Opening your space' : 'Creating and starting your space'} />
-          <Task state={connectingApp} label="Connecting this app" />
-        </ul>
-        <div className="h-1.5 overflow-hidden rounded-full bg-muted" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={progress}>
-          <div className="h-full rounded-full bg-primary transition-[width] duration-700" style={{ width: `${progress}%` }} />
-        </div>
+function AccountStep({ signedIn, connecting, returning, onSignIn, onBack }: {
+  signedIn: boolean; connecting: boolean; returning: boolean; onSignIn: (returning: boolean) => void; onBack: () => void
+}) {
+  if (signedIn && returning) {
+    return (
+      <div className="flex flex-1 flex-col justify-center gap-5">
+        <h2 className="dj-rise m-0 font-serif text-[46px] font-normal leading-[50px]">Welcome back</h2>
+        <p role="status" className="dj-rise dj-d2 m-0 flex items-center gap-3 text-[16px] leading-[25px] text-[#B5B5B5]"><Spinner />Djazzi is opening your space and everything you left in it.</p>
       </div>
-      <p className="text-sm text-muted-foreground">
-        {joined
-          ? 'Everything is connected.'
-          : slow
-            ? 'This is taking longer than usual. You can keep going: the app connects as soon as your space answers.'
-            : 'No need to wait: get to know each other meanwhile, the app connects by itself.'}
+    )
+  }
+  return (
+    <div className="flex flex-1 flex-col justify-center gap-[18px]">
+      <h2 className="dj-rise m-0 font-serif text-[46px] font-normal leading-[50px]">Your account</h2>
+      <p className="dj-rise dj-d2 m-0 max-w-[420px] text-[16px] leading-[25px] text-[#B5B5B5]">Sign in with your email: Djazzi sends you a code. No password to remember.</p>
+      {/* Enabled while signing in: a sign-in window closed by mistake opens again. */}
+      <div className="dj-rise dj-d3 mt-1.5 flex max-w-[380px] flex-col gap-2.5">
+        <button type="button" autoFocus className={primary} onClick={() => onSignIn(false)}>Create my account</button>
+        <button type="button" className={secondary} onClick={() => onSignIn(true)}>I already have an account</button>
+      </div>
+      <p role="status" className="dj-rise dj-d4 m-0 flex min-h-5 items-center gap-2.5 text-[13px] text-[#8E8E93]">
+        {connecting && <Spinner className="size-4" />}
+        {connecting ? 'Enter your email in the window that opened, then the code you receive. Closed it? Click again.' : 'Your private space gets ready while you carry on.'}
       </p>
-      {!returning && (
-        <Button size="lg" className="h-12 text-base" onClick={onContinue}>{joined ? 'Continue' : 'Continue while it gets ready'}</Button>
-      )}
+      <div className="dj-rise dj-d5"><button type="button" className={cn('h-10 rounded-md px-1 text-sm text-[#8E8E93] hover:text-white', ring)} onClick={onBack}>Back</button></div>
     </div>
   )
 }
 
 // ── 3. You ────────────────────────────────────────────────────────────────
 
-function AboutStep({ profile, lang, onChange, onLang, onContinue, onSkip }: {
-  profile: Profile; lang: string; onChange: (p: Profile) => void; onLang: (lang: 'fr' | 'en') => void; onContinue: () => void; onSkip: () => void
+function YouStep({ profile, look, onProfile, onLook, onBack, onNext }: {
+  profile: Profile; look: Look; onProfile: (p: Profile) => void; onLook: (l: Look) => void; onBack: () => void; onNext: () => void
 }) {
+  const chip = (on: boolean) => cn(
+    'h-[38px] rounded-full border px-3.5 text-sm transition-colors', ring,
+    on ? 'border-white bg-white text-[#0A0A0A]' : 'border-[#3A3A3C] text-[#D6D6D6] hover:text-white',
+  )
   return (
-    <div className="flex flex-col gap-6">
-      <Heading title="Let’s get to know each other">Djazzi adapts to you: its answers, its suggestions and its ideas for tasks.</Heading>
-      <div className="flex flex-col gap-2">
-        <label htmlFor="djazzi-onboarding-name" className="text-sm font-semibold">Your first name</label>
+    <div className="flex flex-1 flex-col justify-center gap-[18px]">
+      <h2 className="dj-rise m-0 text-[30px] font-semibold tracking-tight">Let’s get to know each other</h2>
+      <div className="dj-rise dj-d2 flex flex-col gap-2">
+        <label htmlFor="djazzi-onboarding-name" className={label}>Your first name</label>
         <input
           id="djazzi-onboarding-name"
+          autoFocus
           value={profile.name}
-          onChange={(e) => onChange({ ...profile, name: e.target.value.slice(0, 60) })}
+          onChange={(e) => onProfile({ ...profile, name: e.target.value.slice(0, 60) })}
+          onKeyDown={(e) => { if (e.key === 'Enter') onNext() }}
           autoComplete="given-name"
-          className="h-11 rounded-lg border border-input bg-background px-3.5 text-base outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          placeholder="Your first name"
+          className="h-12 rounded-xl border border-[#3A3A3C] bg-[#1C1C1E] px-3.5 text-base text-white outline-none placeholder:text-[#6E6E73] focus:border-[#8E8E93]"
         />
       </div>
-      <fieldset className="flex flex-col gap-2.5">
-        <legend className="mb-2.5 text-sm font-semibold">Language of the app and of Djazzi</legend>
-        <div className="flex flex-wrap gap-2">
-          <Chip label="Français" selected={lang === 'fr'} onClick={() => onLang('fr')} />
-          <Chip label="English" selected={lang !== 'fr'} onClick={() => onLang('en')} />
+      <fieldset className="dj-rise dj-d3 m-0 flex flex-col gap-2 border-0 p-0">
+        <legend className={cn(label, 'mb-2 p-0')}>The face of your Djazzi</legend>
+        <div className="flex flex-wrap items-center gap-2">
+          <div role="radiogroup" aria-label="Shape" className="flex gap-2">
+            {SHAPE_CHOICES.map((s) => (
+              <button
+                key={s.id} type="button" role="radio" aria-checked={look.shape === s.id} aria-label={s.label}
+                onClick={() => onLook({ ...look, shape: s.id })}
+                className={cn('flex size-12 items-center justify-center rounded-xl border-2 bg-[#1C1C1E]', ring, look.shape === s.id ? 'border-white' : 'border-transparent')}
+              >
+                <Shape shape={s.id} color={look.color} size={30} />
+              </button>
+            ))}
+          </div>
+          <span className="w-2" aria-hidden="true" />
+          <div role="radiogroup" aria-label="Colour" className="flex gap-1.5">
+            {COLOR_CHOICES.map((c) => (
+              <button
+                key={c.id} type="button" role="radio" aria-checked={look.color === c.id} aria-label={c.label}
+                onClick={() => onLook({ ...look, color: c.id })}
+                className={cn('size-[30px] rounded-full border-[3px] border-[#111111]', ring, look.color === c.id && 'shadow-[0_0_0_2px_#FFFFFF]')}
+                style={{ background: fillOf(c.id) }}
+              />
+            ))}
+          </div>
         </div>
-        <p className="text-xs text-muted-foreground">You can change it at any time in Settings.</p>
       </fieldset>
-      <fieldset className="flex flex-col gap-2.5">
-        <legend className="mb-2.5 text-sm font-semibold">Your activity</legend>
+      <fieldset className="dj-rise dj-d4 m-0 flex flex-col gap-2 border-0 p-0">
+        <legend className={cn(label, 'mb-2 p-0')}>Your activity</legend>
         <div className="flex flex-wrap gap-2">
-          {SECTORS.map((s) => <Chip key={s} label={s} selected={profile.sector === s} onClick={() => onChange({ ...profile, sector: profile.sector === s ? null : s })} />)}
+          {SECTORS.map((s) => (
+            <button key={s} type="button" aria-pressed={profile.sector === s} className={chip(profile.sector === s)} onClick={() => onProfile({ ...profile, sector: profile.sector === s ? null : s })}>{s}</button>
+          ))}
         </div>
       </fieldset>
-      <fieldset className="flex flex-col gap-2.5">
-        <legend className="mb-2.5 text-sm font-semibold">You are</legend>
-        <div className="flex flex-wrap gap-2">
-          {ROLES.map((r) => <Chip key={r} label={r} selected={profile.role === r} onClick={() => onChange({ ...profile, role: profile.role === r ? null : r })} />)}
-        </div>
-      </fieldset>
-      <div className="flex items-center justify-between">
-        <Button variant="ghost" onClick={onSkip}>Skip</Button>
-        <Button size="lg" className="h-12 px-7 text-base" onClick={onContinue}>Continue</Button>
+      <div className="dj-rise dj-d5 mt-1 flex gap-2.5">
+        <button type="button" className={secondary} onClick={onBack}>Back</button>
+        <button type="button" className={primary} onClick={onNext}>Continue</button>
       </div>
     </div>
   )
 }
 
-// ── 4. Your tools ─────────────────────────────────────────────────────────
+// ── 4. Tools ──────────────────────────────────────────────────────────────
 
-type ToolState = 'connected' | 'connecting' | 'idle' | 'soon' | 'blocked' | 'included'
+type Mail = 'google' | 'microsoft'
 
-function ToolRow({ icon, name, text, state, onConnect, blockedReason }: { icon: React.ReactNode; name: string; text: string; state: ToolState; onConnect?: () => void; blockedReason?: string }) {
-  return (
-    <li className="flex items-center gap-3.5 rounded-xl bg-muted/40 px-4 py-3.5">
-      <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-background">{icon}</div>
-      <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-        <span className="text-sm font-semibold">{name}</span>
-        <span className="text-xs leading-snug text-muted-foreground">{state === 'blocked' && blockedReason ? blockedReason : text}</span>
-      </div>
-      {state === 'connected' ? (
-        <span role="status" className="flex items-center gap-1.5 text-sm font-semibold text-[var(--rowboat-success)]"><Check className="size-4" />Connected</span>
-      ) : state === 'included' ? null : state === 'soon' ? (
-        <span className="rounded-full bg-muted px-3 py-1 text-xs font-semibold text-muted-foreground">Soon</span>
-      ) : (
-        <Button variant="outline" size="sm" disabled={state !== 'idle'} onClick={onConnect} aria-label={`Connect ${name}`}>
-          {state === 'connecting' ? <Loader2 className="size-4 animate-spin" /> : 'Connect'}
-        </Button>
-      )}
-    </li>
-  )
-}
-
-function Group({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <section className="flex flex-col gap-2">
-      <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{title}</h3>
-      <ul className="flex flex-col gap-2">{children}</ul>
-    </section>
-  )
-}
-
-function ToolsStep({ onContinue, onLater }: { onContinue: () => void; onLater: () => void }) {
+function useTools() {
   const [providers, setProviders] = useState<string[]>([])
-  const [connected, setConnected] = useState<Record<string, boolean>>({})
-  const [connecting, setConnecting] = useState<string | null>(null)
-  const [phoneOpen, setPhoneOpen] = useState(false)
-
+  const [connected, setConnected] = useState<Record<Mail, boolean>>({ google: false, microsoft: false })
+  const [connecting, setConnecting] = useState<Mail | null>(null)
   useEffect(() => {
     let live = true
     void Promise.all([
@@ -284,103 +202,241 @@ function ToolsStep({ onContinue, onLater }: { onContinue: () => void; onLater: (
     setConnecting(null)
     if (event.success) setConnected((prev) => ({ ...prev, [event.provider]: true }))
   }), [])
-
-  const connect = async (provider: 'google' | 'microsoft') => {
+  const connect = async (provider: Mail) => {
     setConnecting(provider)
     const result = await window.ipc.invoke('oauth:connect', { provider }).catch(() => ({ success: false }))
     if (!result.success) setConnecting(null)
   }
-  const sheets: ToolState = connected.google ? 'connected' : 'included'
-  const stateOf = (provider: 'google' | 'microsoft', other: 'google' | 'microsoft'): ToolState =>
-    connected[provider] ? 'connected' : connecting === provider ? 'connecting' : connected[other] ? 'blocked' : connecting ? 'blocked' : 'idle'
+  return { providers, connected, connecting, connect }
+}
 
+type ToolState = 'connected' | 'connecting' | 'idle' | 'blocked'
+
+function ToolRow({ icon, name, text, state, onConnect }: { icon: React.ReactNode; name: string; text: string; state: ToolState; onConnect: () => void }) {
   return (
-    <div className="flex flex-col gap-6">
-      <Heading title="Connect your tools">The more Djazzi sees, the more it helps. It prepares, you approve. Everything here is optional.</Heading>
-      <Group title="Messaging: talk to Djazzi from your phone">
-        <ToolRow icon={<MessageCircle className="size-5 text-[#25D366]" />} name="WhatsApp" text="Scan a code with your phone" state="idle" onConnect={() => setPhoneOpen(true)} />
+    <li className="flex items-center gap-3.5 rounded-[14px] bg-[#1C1C1E] px-3.5 py-3">
+      <div className="flex size-10 shrink-0 items-center justify-center rounded-[10px] bg-[#2C2C2E]">{icon}</div>
+      <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+        <span className="text-[15px] font-semibold">{name}</span>
+        <span className="text-[13px] text-[#A1A1A6]">{text}</span>
+      </div>
+      {state === 'connected' ? (
+        <span role="status" className="flex items-center gap-1.5 text-[13px] font-semibold text-[#30D158]"><Check className="size-4" aria-hidden="true" />Connected</span>
+      ) : (
+        <button
+          type="button" disabled={state !== 'idle'} onClick={onConnect} aria-label={`Connect ${name}`}
+          className={cn('h-9 rounded-[10px] border border-[#3A3A3C] px-3.5 text-[13px] font-semibold text-white transition-colors hover:bg-white/5 disabled:opacity-40', ring)}
+        >
+          {state === 'connecting' ? <Loader2 className="size-4 animate-spin" /> : 'Connect'}
+        </button>
+      )}
+    </li>
+  )
+}
+
+function ToolsStep({ tools, onBack, onNext }: { tools: ReturnType<typeof useTools>; onBack: () => void; onNext: () => void }) {
+  const [phoneOpen, setPhoneOpen] = useState(false)
+  const { providers, connected, connecting, connect } = tools
+  const mailState = (provider: Mail, other: Mail): ToolState =>
+    connected[provider] ? 'connected' : connecting === provider ? 'connecting' : connected[other] || connecting ? 'blocked' : 'idle'
+  const anything = connected.google || connected.microsoft || phoneOpen
+  return (
+    <div className="flex flex-1 flex-col justify-center gap-[18px]">
+      <h2 className="dj-rise m-0 text-[30px] font-semibold tracking-tight">Connect your tools</h2>
+      <p className="dj-rise dj-d2 m-0 text-[15px] leading-[23px] text-[#B5B5B5]">Your bots prepare, you approve. You can change everything later in Settings › Connections.</p>
+      <ul className="dj-rise dj-d3 m-0 flex list-none flex-col gap-2 p-0">
+        {providers.includes('google') && (
+          <ToolRow
+            icon={<GmailIcon className="size-5" />} name="Gmail and Google Calendar"
+            text={connected.microsoft ? 'One email account at a time' : 'Your Google email and calendar'}
+            state={mailState('google', 'microsoft')} onConnect={() => void connect('google')}
+          />
+        )}
+        {providers.includes('microsoft') && (
+          <ToolRow
+            icon={<OutlookIcon className="size-5" />} name="Outlook and calendar"
+            text={connected.google ? 'One email account at a time' : 'Microsoft 365 or Outlook.com'}
+            state={mailState('microsoft', 'google')} onConnect={() => void connect('microsoft')}
+          />
+        )}
+        <ToolRow icon={<MessageCircle className="size-5 text-[#25D366]" />} name="WhatsApp" text="Talk to your bots from your phone" state="idle" onConnect={() => setPhoneOpen(true)} />
         <ToolRow icon={<Send className="size-5 text-[#229ED9]" />} name="Telegram" text="Chat with Djazzi like with a contact" state="idle" onConnect={() => setPhoneOpen(true)} />
-      </Group>
+      </ul>
       {phoneOpen && (
-        <div className="rounded-xl border p-4">
+        <div className="dj-rise max-h-[260px] overflow-y-auto rounded-[14px] border border-[#2C2C2E] p-4">
           <MobileChannelsSettings dialogOpen />
         </div>
       )}
-      <Group title="Email and calendar">
-        {providers.includes('google') && (
-          <ToolRow icon={<GmailIcon className="size-5" />} name="Gmail and Google Calendar" text="A Google account" state={stateOf('google', 'microsoft')} onConnect={() => void connect('google')} blockedReason="Disconnect Outlook first, in Settings › Connections." />
-        )}
-        {providers.includes('microsoft') && (
-          <ToolRow icon={<OutlookIcon className="size-5" />} name="Outlook and calendar" text="Microsoft 365 or Outlook.com" state={stateOf('microsoft', 'google')} onConnect={() => void connect('microsoft')} blockedReason="Disconnect Google first, in Settings › Connections." />
-        )}
-      </Group>
-      <Group title="Documents and work">
-        <ToolRow
-          icon={<Sheet className="size-5 text-[#0F9D58]" />}
-          name="Google Sheets and Docs"
-          text={connected.google ? 'Included with your Google account: the files you open with Djazzi' : 'Comes with your Google account'}
-          state={sheets}
-        />
-        <ToolRow icon={<span className="text-sm font-bold">N</span>} name="Notion" text="Your pages and databases" state="soon" />
-        <ToolRow icon={<SlackIcon className="size-5" />} name="Slack" text="Your team’s messages" state="soon" />
-        <ToolRow icon={<GitHubIcon className="size-5" />} name="GitHub" text="Your repositories and issues" state="soon" />
-      </Group>
-      <p className="text-xs text-muted-foreground">You can add or remove them at any time in Settings › Connections.</p>
-      <div className="flex items-center justify-between">
-        <Button variant="ghost" onClick={onLater}>Later</Button>
-        <Button size="lg" className="h-12 px-7 text-base" onClick={onContinue}>Continue</Button>
+      <div className="dj-rise dj-d4 mt-1 flex gap-2.5">
+        <button type="button" className={secondary} onClick={onBack}>Back</button>
+        <button type="button" className={primary} onClick={onNext}>{anything ? 'Continue' : 'Skip'}</button>
       </div>
     </div>
   )
 }
 
-// ── 5. All set ────────────────────────────────────────────────────────────
+// ── 5. Ready ──────────────────────────────────────────────────────────────
 
-function DoneStep({ profile, onFinish, finishing }: { profile: Profile; onFinish: (prompt?: string) => void; finishing: boolean }) {
+function ReadyStep({ profile, picked, onPick, finishing, onBack, onFinish }: {
+  profile: Profile; picked: number | null; onPick: (i: number) => void; finishing: boolean; onBack: () => void; onFinish: () => void
+}) {
   const name = profile.name.trim()
   return (
-    <div className="flex flex-col gap-6">
-      <Duo first="It is ready!" second={name ? `Over to you, ${name}` : 'Over to you'} motion="hop" />
-      <div className="flex flex-col items-center gap-2 text-center">
-        <h2 className="text-3xl font-semibold tracking-tight">{name ? `All set, ${name}` : 'All set'}</h2>
-        <p className="max-w-md text-base leading-relaxed text-muted-foreground">To start, try one of these requests. You can also write your own.</p>
-      </div>
-      <ul className="flex flex-col gap-2.5">
-        {ideasFor(profile.sector).map((idea) => (
+    <div className="flex flex-1 flex-col justify-center gap-[18px]">
+      <h2 className="dj-rise m-0 font-serif text-[50px] font-normal leading-[54px]">{name ? `All set, ${name}` : 'All set'}</h2>
+      <p className="dj-rise dj-d2 m-0 text-[16px] leading-[25px] text-[#B5B5B5]">To start, hand it one of these tasks. Or write your own.</p>
+      <ul className="dj-rise dj-d3 m-0 flex list-none flex-col gap-2 p-0">
+        {ideasFor(profile.sector).map((idea, i) => (
           <li key={idea.title}>
             <button
-              type="button"
-              disabled={finishing}
-              onClick={() => onFinish(say(idea.prompt))}
-              className="flex w-full items-center gap-3.5 rounded-xl border bg-muted/30 px-5 py-4 text-left transition-colors hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              type="button" aria-pressed={picked === i} disabled={finishing} onClick={() => onPick(i)}
+              className={cn(
+                'flex w-full items-center gap-3.5 rounded-[14px] border px-4 py-3.5 text-left transition-colors', ring,
+                picked === i ? 'border-[#8E8E93] bg-[#2C2C2E]' : 'border-transparent bg-[#1C1C1E] hover:bg-[#242426]',
+              )}
             >
               <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-                <span className="text-sm font-semibold">{idea.title}</span>
-                <span className="text-xs text-muted-foreground">{idea.detail}</span>
+                <span className="text-[15px] font-semibold">{idea.title}</span>
+                <span className="text-[13px] text-[#A1A1A6]">{idea.detail}</span>
               </span>
-              <ArrowRight className="size-4 text-muted-foreground" />
+              {picked === i ? <Check className="size-4 text-white" aria-hidden="true" /> : <ArrowRight className="size-4 text-[#A1A1A6]" aria-hidden="true" />}
             </button>
           </li>
         ))}
       </ul>
-      <Button size="lg" className="h-12 text-base" disabled={finishing} onClick={() => onFinish()}>
-        {finishing ? <Loader2 className="size-4 animate-spin" /> : 'Open Djazzi'}
-      </Button>
+      <div className="dj-rise dj-d4 mt-1 flex gap-2.5">
+        <button type="button" className={secondary} disabled={finishing} onClick={onBack}>Back</button>
+        <button type="button" className={cn(primary, 'dj-pulse min-w-[160px]')} disabled={finishing} onClick={onFinish}>
+          {finishing ? <Loader2 className="mx-auto size-4 animate-spin" /> : 'Open Djazzi'}
+        </button>
+      </div>
     </div>
   )
 }
 
-// ── The dialog ────────────────────────────────────────────────────────────
+// ── The space, prepared meanwhile ─────────────────────────────────────────
+
+function SpacePill({ joined, since }: { joined: boolean; since: number | null }) {
+  const [now, setNow] = useState(() => Date.now())
+  useEffect(() => {
+    if (joined) return
+    const timer = window.setInterval(() => setNow(Date.now()), 5000)
+    return () => window.clearInterval(timer)
+  }, [joined])
+  const slow = !joined && since !== null && now - since > SLOW_SPACE_MS
+  return (
+    <div role="status" className="flex items-center gap-2.5 self-start rounded-full bg-[#1C1C1E] py-2 pl-2.5 pr-3.5 text-[13px] text-[#D6D6D6]">
+      {joined ? <Tick /> : <Spinner className="size-[18px]" />}
+      {joined
+        ? 'Your space is ready'
+        : slow
+          ? 'Taking longer than usual: the app connects as soon as your space answers.'
+          : 'Your space is being prepared… the app connects by itself.'}
+    </div>
+  )
+}
+
+// ── The stage, on the right ───────────────────────────────────────────────
+
+const FLOATERS = [
+  { shape: 'pebble', color: 'violet', left: '9%', top: '12%', size: 60 },
+  { shape: 'round', color: 'orange', left: '80%', top: '10%', size: 50 },
+  { shape: 'drop', color: 'blue', left: '12%', top: '72%', size: 56 },
+  { shape: 'square', color: 'green', left: '82%', top: '70%', size: 46 },
+  { shape: 'dome', color: 'rose', left: '50%', top: '86%', size: 42 },
+  { shape: 'round', color: 'white', left: '54%', top: '5%', size: 34 },
+] as const
+
+const ORBIT = [
+  { id: 'google', name: 'Gmail', left: '6%', top: '14%' },
+  { id: 'microsoft', name: 'Outlook', left: '62%', top: '8%' },
+  { id: 'whatsapp', name: 'WhatsApp', left: '4%', top: '74%' },
+  { id: 'telegram', name: 'Telegram', left: '64%', top: '78%' },
+] as const
+
+function Stage({ step, look, profile, connected, preview }: {
+  step: Step; look: Look; profile: Profile; connected: Partial<Record<string, boolean>>; preview: string
+}) {
+  const name = profile.name.trim()
+  return (
+    <div className="relative flex min-h-[520px] min-w-0 flex-[999_1_480px] items-center justify-center overflow-hidden border-l border-[#1E1E1E] bg-[#0A0A0A]" aria-hidden="true">
+      {FLOATERS.map((f, i) => (
+        <div key={i} className="dj-drift absolute opacity-85" style={{ left: f.left, top: f.top, animationDelay: `${i * 0.9}s` }}>
+          <div className="dj-pop" style={{ animationDelay: `${0.4 + i * 0.15}s` }}><Shape shape={f.shape} color={f.color} size={f.size} /></div>
+        </div>
+      ))}
+
+      {step === 0 && <div className="dj-pop"><div className="dj-bob"><Shape shape="b" color="white" size={230} /></div></div>}
+
+      {step === 1 && (
+        <div className="relative flex w-[400px] flex-col gap-3.5">
+          <div className="dj-rise flex flex-col gap-3 rounded-[20px] bg-[#1C1C1E] p-[18px]">
+            <span className="text-[13px] text-[#A1A1A6]">Your Djazzi code</span>
+            <div className="flex gap-2">
+              {[0, 1, 2, 3, 4, 5].map((i) => <span key={i} className="dj-dim h-[52px] flex-1 rounded-xl bg-[#2C2C2E]" style={{ animationDelay: `${i * 0.12}s` }} />)}
+            </div>
+            <span className="text-xs text-[#8E8E93]">Sent by no-reply@djazzi.com</span>
+          </div>
+          <div className="dj-rise dj-d3 ml-10 flex flex-col gap-3 rounded-[20px] bg-[#1C1C1E] p-[18px]">
+            <span className="text-[15px] font-semibold">Your private space</span>
+            <span className="flex items-center gap-2.5 text-sm text-[#D6D6D6]"><Tick />Encrypted, yours alone</span>
+            <span className="flex items-center gap-2.5 text-sm text-[#D6D6D6]"><Spinner />Ready on all your devices</span>
+          </div>
+        </div>
+      )}
+
+      {step === 2 && (
+        <div className="flex flex-col items-center gap-[26px]">
+          <div className="dj-rise dj-d2 max-w-[340px] rounded-[20px] rounded-bl-md bg-[#1C1C1E] px-[18px] py-3.5 text-base leading-6">
+            {name ? `Nice to meet you, ${name}! I’ll remember your name in all our conversations.` : 'Hi, I’m your Djazzi. What should I call you?'}
+          </div>
+          <div key={`${look.shape}-${look.color}`} className="dj-pop"><div className="dj-bob"><Shape shape={look.shape} color={look.color} size={210} /></div></div>
+          <span className="dj-rise dj-d3 text-[13px] text-[#8E8E93]">{profile.sector ?? 'You can change all of this later'}</span>
+        </div>
+      )}
+
+      {step === 3 && (
+        <div className="relative flex h-[460px] w-[520px] items-center justify-center">
+          <div className="dj-bob"><Shape shape={look.shape} color={look.color} size={150} /></div>
+          {ORBIT.map((o, i) => {
+            const on = !!connected[o.id]
+            return (
+              <div key={o.id} className={cn('dj-pop absolute flex items-center gap-2 rounded-full bg-[#1C1C1E] px-3.5 py-2.5 text-sm', on ? 'text-white' : 'text-[#8E8E93]')} style={{ left: o.left, top: o.top, animationDelay: `${0.15 * i}s` }}>
+                <span className={cn('size-2 rounded-full', on ? 'bg-[#30D158]' : 'bg-[#3A3A3C]')} />{o.name}
+              </div>
+            )
+          })}
+        </div>
+      )}
+
+      {step === 4 && (
+        <div className="flex w-[420px] flex-col items-center gap-7">
+          <div className="dj-hop"><Shape shape={look.shape} color={look.color} size={140} /></div>
+          <div className="dj-rise dj-d2 flex w-full flex-col gap-3 rounded-[20px] bg-[#1C1C1E] p-4">
+            <span className="min-h-[46px] text-[15px] leading-[23px] text-[#EDEDED]" data-no-translate>{preview || say('Your first request, in your own words.')}</span>
+            <div className="flex items-center gap-2">
+              <span className="flex-1 text-xs text-[#8E8E93]">You read it before sending</span>
+              <span className="flex size-[34px] items-center justify-center rounded-full bg-white"><ArrowUp className="size-4 text-[#0A0A0A]" strokeWidth={2.2} /></span>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ── The flow ──────────────────────────────────────────────────────────────
 
 export function DjazziOnboarding({ open, onComplete }: DjazziOnboardingProps) {
   const [saved, setSaved] = useState<Saved>(() => loadSaved())
+  const [look, setLook] = useState<Look>(() => loadLook())
   const [signedIn, setSignedIn] = useState(false)
   const [connecting, setConnecting] = useState(false)
   const [joined, setJoined] = useState(false)
   const [finishing, setFinishing] = useState(false)
+  const [picked, setPicked] = useState<number | null>(null)
   const lang = typeof document !== 'undefined' && document.documentElement.lang === 'fr' ? 'fr' : 'en'
-  // DJAZZI(12/11/2026): the animated intro first (intro.tsx), once; then these steps, the name already given.
-  const [intro, setIntro] = useState(() => !introDone())
+  const tools = useTools()
 
   const update = useCallback((next: Partial<Saved>) => {
     setSaved((prev) => {
@@ -399,14 +455,7 @@ export function DjazziOnboarding({ open, onComplete }: DjazziOnboardingProps) {
     return window.ipc.on('oauth:didConnect', (event) => {
       if (event.provider !== 'rowboat') return
       setConnecting(false)
-      if (!event.success) return
-      setSignedIn(true)
-      setSaved((prev) => {
-        if (prev.step !== 0) return prev
-        const next = { ...prev, step: 1 as Step, spaceSince: Date.now() }
-        storeSaved(next)
-        return next
-      })
+      if (event.success) setSignedIn(true)
     })
   }, [open])
 
@@ -421,6 +470,50 @@ export function DjazziOnboarding({ open, onComplete }: DjazziOnboardingProps) {
     const timer = window.setInterval(check, 2000)
     return () => { live = false; window.clearInterval(timer) }
   }, [open])
+
+  // Signed in on the account screen: a new account carries on while its
+  // space prepares; « I already have an account » waits there to be joined.
+  useEffect(() => {
+    if (open && signedIn && saved.step === 1 && !saved.returning) update({ step: 2, spaceSince: saved.spaceSince ?? Date.now() })
+  }, [open, signedIn, saved.step, saved.returning, saved.spaceSince, update])
+
+  useEffect(() => {
+    if (open && saved.returning && saved.step === 1 && signedIn && joined) {
+      clearSaved()
+      onComplete()
+    }
+  }, [open, saved.returning, saved.step, signedIn, joined, onComplete])
+
+  const signIn = async (returning: boolean) => {
+    update({ returning, spaceSince: saved.spaceSince ?? Date.now() })
+    setConnecting(true)
+    const result = await window.ipc.invoke('oauth:connect', { provider: 'rowboat' }).catch(() => ({ success: false }))
+    if (!result.success) setConnecting(false)
+  }
+
+  const chooseLang = (next: 'fr' | 'en') => {
+    if (next === lang) return
+    try {
+      localStorage.setItem('djazzi-lang', next)
+    } catch {
+      return
+    }
+    // The French layer starts with the page (desktop i18n/index.ts); the step is kept.
+    window.location.reload()
+  }
+
+  const changeLook = (next: Look) => {
+    setLook(next)
+    storeLook(next)
+  }
+
+  const step = saved.step
+  const go = (next: number) => update({ step: Math.max(0, Math.min(STEP_COUNT - 1, next)) as Step })
+  // Signed in already, the account screen has nothing to ask: it is stepped over.
+  const forward = () => go(step === 0 && signedIn ? 2 : step + 1)
+  const back = () => go(step === 2 && signedIn ? 0 : step - 1)
+  const ideas = ideasFor(saved.profile.sector)
+  const preview = picked === null ? '' : say(ideas[picked]?.prompt ?? '')
 
   const finish = useCallback(async (prompt?: string) => {
     setFinishing(true)
@@ -441,75 +534,50 @@ export function DjazziOnboarding({ open, onComplete }: DjazziOnboardingProps) {
     onComplete(prompt ? { prompt } : undefined)
   }, [saved.profile, lang, onComplete])
 
-  // « I already have an account »: once joined, the app as it was left.
-  useEffect(() => {
-    if (open && saved.returning && saved.step === 1 && joined) {
-      clearSaved()
-      onComplete()
-    }
-  }, [open, saved.returning, saved.step, joined, onComplete])
-
-  const signIn = async (returning: boolean) => {
-    update({ returning })
-    setConnecting(true)
-    const result = await window.ipc.invoke('oauth:connect', { provider: 'rowboat' }).catch(() => ({ success: false }))
-    if (!result.success) setConnecting(false)
-  }
-
-  const chooseLang = (next: 'fr' | 'en') => {
-    if (next === lang) return
-    try {
-      localStorage.setItem('djazzi-lang', next)
-    } catch {
-      return
-    }
-    // The French layer starts with the page (desktop i18n/index.ts).
-    window.location.reload()
-  }
-
-  const step = saved.step
-  if (open && intro) {
-    return <DjazziIntro onDone={({ name, returning }) => {
-      if (name) update({ profile: { ...saved.profile, name } })
-      setIntro(false)
-      // The intro's last choice opens the sign-in at once; the welcome step stays behind it, should it be closed.
-      if (!signedIn) void signIn(returning)
-    }} />
-  }
+  if (!open) return null
   return (
-    <Dialog open={open} onOpenChange={() => {}}>
-      <DialogContent
-        className="flex max-h-[88dvh] w-[92vw] max-w-2xl flex-col gap-0 overflow-hidden p-0"
-        showCloseButton={false}
-        onPointerDownOutside={(e) => e.preventDefault()}
-        onEscapeKeyDown={(e) => e.preventDefault()}
-      >
-        <DialogTitle className="sr-only">Get started with Djazzi</DialogTitle>
-        <div className="flex min-h-0 flex-1 flex-col gap-8 overflow-y-auto px-8 py-9 md:px-12">
-          <Stepper current={step} />
-          {step === 0 && (
-            <WelcomeStep
-              signedIn={signedIn}
-              connecting={connecting}
-              onSignIn={(returning) => void signIn(returning)}
-              onContinue={() => update({ step: 1, spaceSince: saved.spaceSince ?? Date.now() })}
-            />
-          )}
-          {step === 1 && <SpaceStep since={saved.spaceSince} joined={joined} returning={saved.returning} onContinue={() => update({ step: 2 })} />}
-          {step === 2 && (
-            <AboutStep
-              profile={saved.profile}
-              lang={lang}
-              onChange={(profile) => update({ profile })}
-              onLang={chooseLang}
-              onContinue={() => update({ step: 3 })}
-              onSkip={() => update({ step: 3 })}
-            />
-          )}
-          {step === 3 && <ToolsStep onContinue={() => update({ step: 4 })} onLater={() => update({ step: 4 })} />}
-          {step === 4 && <DoneStep profile={saved.profile} finishing={finishing} onFinish={(prompt) => void finish(prompt)} />}
+    <div className="dj-root dark fixed inset-0 z-[60] flex bg-[#111111] font-sans text-white" role="dialog" aria-modal="true" aria-label="Get started with Djazzi">
+      <style>{CSS}</style>
+      <div className="flex min-h-0 flex-1 flex-wrap">
+        <div className="flex min-w-0 flex-[1_1_560px] flex-col gap-7 overflow-y-auto px-14 py-10">
+          <div className="flex items-center gap-2.5">
+            <Shape shape="b" color="white" size={26} />
+            <span className="text-[17px] font-bold">Djazzi</span>
+            <span className="flex-1" />
+            <div role="group" aria-label="Language of the app and of Djazzi" className="flex gap-0.5 rounded-[10px] bg-[#1C1C1E] p-[3px]">
+              {(['fr', 'en'] as const).map((l) => (
+                <button
+                  key={l} type="button" aria-pressed={lang === l} onClick={() => chooseLang(l)}
+                  aria-label={l === 'fr' ? 'Français' : 'English'}
+                  className={cn('h-7 rounded-lg px-2.5 text-xs font-semibold transition-colors', ring, lang === l ? 'bg-[#3A3A3C] text-white' : 'text-[#8E8E93] hover:text-white')}
+                >
+                  <span data-no-translate>{l.toUpperCase()}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="flex gap-1.5" role="progressbar" aria-label="Steps" aria-valuemin={1} aria-valuemax={STEP_COUNT} aria-valuenow={step + 1}>
+            {Array.from({ length: STEP_COUNT }, (_, i) => (
+              <div key={i} className={cn('h-1 flex-1 rounded-sm transition-colors duration-500', i <= step ? 'bg-white' : 'bg-[#2C2C2E]')} />
+            ))}
+          </div>
+          {/* Keyed by the step: each screen comes in with its own motion. */}
+          <div key={step} className="flex flex-1 flex-col">
+            {step === 0 && <WelcomeStep onStart={forward} />}
+            {step === 1 && <AccountStep signedIn={signedIn} connecting={connecting} returning={saved.returning} onSignIn={(r) => void signIn(r)} onBack={back} />}
+            {step === 2 && <YouStep profile={saved.profile} look={look} onProfile={(profile) => update({ profile })} onLook={changeLook} onBack={back} onNext={forward} />}
+            {step === 3 && <ToolsStep tools={tools} onBack={back} onNext={forward} />}
+            {step === 4 && (
+              <ReadyStep
+                profile={saved.profile} picked={picked} onPick={setPicked} finishing={finishing} onBack={back}
+                onFinish={() => void finish(preview || undefined)}
+              />
+            )}
+          </div>
+          {step >= 2 && !saved.returning && <SpacePill joined={joined} since={saved.spaceSince} />}
         </div>
-      </DialogContent>
-    </Dialog>
+        <Stage step={step} look={look} profile={saved.profile} connected={tools.connected} preview={preview} />
+      </div>
+    </div>
   )
 }
