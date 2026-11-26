@@ -132,9 +132,9 @@ export default function SettingsScreen() {
         <Row label="Messages from Djazzi" detail="News and notices about your account" onPress={() => go('/inbox')} />
       </View>
 
-      <Text style={heading}>Agents</Text>
+      <Text style={heading}>Djazzi Bots</Text>
       <View style={card}>
-        <Row first label="Your agents" onPress={() => work('/baarasseurs')} />
+        <Row first label="Your bots" onPress={() => work('/baarasseurs')} />
         <Row label="Tasks" onPress={() => go('/tasks')} />
         <Row label="Routines" onPress={() => work('/routines')} />
         <Row label="Library" onPress={() => go('/notes')} />

@@ -5154,7 +5154,7 @@ function App() {
       case 'bg-tasks': return 'Background tasks'
       case 'apps': return 'Apps'
       case 'prompts': return 'Prompts'
-      case 'baarasseurs': return 'Coworkers'
+      case 'baarasseurs': return 'Djazzi Bots'
       case 'spaces': {
         const org = spacesOrgs.find((o) => o.id === currentViewState.orgId)
         if (org && currentViewState.view) return currentViewState.view === 'agents' ? 'Agents' : currentViewState.view === 'threads' ? 'Threads' : 'Activity'
@@ -8035,7 +8035,8 @@ function App() {
                 <KeepAliveSection visible={activeMiddle === 'baarasseurs'}>
                 <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
                   <BaarasseursView runs={runs} workingAgents={workingAgents} openAgent={openBaarasseur} onOpen={showBaarasseurChat}
-                    onClose={() => setOpenBaarasseur(null)} chatHost={setBaarasseurHost} hasChat={!!assistantLayout.baarasseur} />
+                    onClose={() => setOpenBaarasseur(null)} chatHost={setBaarasseurHost} hasChat={!!assistantLayout.baarasseur}
+                    onOpenGroups={() => void openSpaces()} />
                 </div>
                 </KeepAliveSection>
               )}

@@ -1,11 +1,20 @@
 import fs from "fs/promises";
 import path from "path";
 import { WorkDir } from "../config/config.js";
+import { randomUUID } from "crypto";
 import {
+    APPROVALS_PATH,
     BAARASSEURS_PATH,
+    BAARASSEUR_PREFIX,
     MEMORY_LIMIT,
+    USAGE_PATH,
+    addUsage,
+    parseApprovals,
     parseBaarasseurs,
+    parseUsage,
+    withApproval,
     type Baarasseur,
+    type BaarasseurApproval,
 } from "@x/shared/dist/baarasseur.js";
 
 // DJAZZI(06/10/2026): the baarasseurs file, read on every turn so an edit in
@@ -64,4 +73,61 @@ export async function updateFor(id: string, patch: { name?: string; role?: strin
     if (role !== undefined) entry.role = role;
     await fs.writeFile(filePath(), JSON.stringify(raw, null, 2));
     return { name: String(entry.name ?? ""), role: String(entry.role ?? "") };
+}
+
+// DJAZZI(26/11/2026): the « À valider » list of the Djazzi Bots page. The bot
+// adds what waits for the user; the app marks it approved or refused and says
+// so in the bot's conversation.
+const approvalsPath = () => path.join(WorkDir, APPROVALS_PATH);
+
+export async function askApproval(input: {
+    bot: string;
+    summary: string;
+    detail?: string;
+    sessionId?: string | null;
+    runId?: string;
+}): Promise<BaarasseurApproval | null> {
+    const summary = input.summary.replace(/\s+/g, " ").trim().slice(0, 300);
+    if (!summary || !(await findBaarasseur(input.bot))) return null;
+    let current: BaarasseurApproval[] = [];
+    try {
+        current = parseApprovals(await fs.readFile(approvalsPath(), "utf8"));
+    } catch {
+        // No list yet: the first one.
+    }
+    const approval: BaarasseurApproval = {
+        id: randomUUID(),
+        bot: input.bot,
+        sessionId: input.sessionId ?? null,
+        runId: input.runId ?? "",
+        summary,
+        detail: (input.detail ?? "").trim().slice(0, 8000),
+        createdAt: new Date().toISOString(),
+        status: "pending",
+    };
+    await fs.mkdir(path.dirname(approvalsPath()), { recursive: true });
+    await fs.writeFile(approvalsPath(), JSON.stringify({ approvals: withApproval(current, approval) }, null, 2));
+    return approval;
+}
+
+// DJAZZI(26/11/2026): how much each bot works, counted on this machine from
+// its model calls (tokens, not the server's credits).
+const usagePath = () => path.join(WorkDir, USAGE_PATH);
+let usageWrite: Promise<void> = Promise.resolve();
+
+export function tallyBaarasseurUsage(agentName: string | undefined, input: number, output: number): void {
+    if (!agentName?.startsWith(BAARASSEUR_PREFIX)) return;
+    const bot = agentName.slice(BAARASSEUR_PREFIX.length);
+    // One write at a time: model calls end close together.
+    usageWrite = usageWrite.then(async () => {
+        let months = {};
+        try {
+            months = parseUsage(await fs.readFile(usagePath(), "utf8"));
+        } catch {
+            // No count yet.
+        }
+        const next = addUsage(months, bot, new Date(), input, output);
+        await fs.mkdir(path.dirname(usagePath()), { recursive: true });
+        await fs.writeFile(usagePath(), JSON.stringify({ months: next }, null, 2));
+    }).catch((err) => console.error("[baarasseurs] usage count", err));
 }

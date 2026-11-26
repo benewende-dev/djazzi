@@ -1,4 +1,5 @@
 import { captureLlmUsage } from "../../../analytics/usage.js";
+import { tallyBaarasseurUsage } from "../../../baarasseurs/repo.js";
 import type { IUsageReporter, ModelUsageReport } from "../usage-reporter.js";
 
 export interface RealUsageReporterDependencies {
@@ -26,5 +27,7 @@ export class RealUsageReporter implements IUsageReporter {
             provider: report.model.provider,
             usage: report.usage,
         });
+        // DJAZZI(26/11/2026): each bot's own count, for the Djazzi Bots page.
+        tallyBaarasseurUsage(report.agentId, report.usage?.inputTokens ?? 0, report.usage?.outputTokens ?? 0);
     }
 }

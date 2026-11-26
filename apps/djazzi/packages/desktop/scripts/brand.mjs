@@ -561,8 +561,6 @@ export function desktopPlan() {
       // The assistant's mark is Djazzi's B, eyes cut out so they take the
       // colour behind (the blue tile of « Discuter avec Djazzi »).
       // Employés wears the mascot, the B on two feet (decided 09/10/2026).
-      edit(`${renderer}/components/djazzi-sidebar-content.tsx`, '  BriefcaseBusiness,\n', ''),
-      edit(`${renderer}/components/djazzi-sidebar-content.tsx`, '        <BriefcaseBusiness className="size-4 shrink-0" />', '        <svg viewBox="0 0 24 24" className="size-4 shrink-0" aria-hidden="true"><g transform="translate(12 12) scale(0.064) translate(-505 -422)" fill="currentColor" stroke="none"><path fillRule="evenodd" d="M450 250H502C574 250 612 280 612 322C612 345 602 360 590 368Q584 373 590 378C612 388 626 408 626 436C626 476 590 502 512 502H450C413 502 384 473 384 436V316C384 279 413 250 450 250ZM478 330a22 22 0 1 0 44 0a22 22 0 1 0 -44 0ZM534 330a22 22 0 1 0 44 0a22 22 0 1 0 -44 0Z" /><path d="M422 556a38 38 0 1 0 76 0a38 38 0 1 0 -76 0ZM514 556a38 38 0 1 0 76 0a38 38 0 1 0 -76 0Z" /></g></svg>'),
       edit(`${renderer}/components/talking-head.tsx`, '      <g transform="translate(12 12) scale(0.0245) translate(-497 -489)" strokeWidth="61">\n        <path d="M 158 487 C 330 330, 620 180, 837 148 C 820 480, 640 720, 498 830 Q 550 720, 569 623 C 560 540, 450 440, 352 413 Q 250 440, 158 487 Z" />\n      </g>', '      <g transform="translate(12 12) scale(0.064) translate(-505 -422)" fill="currentColor" stroke="none">\n        <path fillRule="evenodd" d="M450 250H502C574 250 612 280 612 322C612 345 602 360 590 368Q584 373 590 378C612 388 626 408 626 436C626 476 590 502 512 502H450C413 502 384 473 384 436V316C384 279 413 250 450 250ZM478 330a22 22 0 1 0 44 0a22 22 0 1 0 -44 0ZM534 330a22 22 0 1 0 44 0a22 22 0 1 0 -44 0Z" />\n        <path d="M422 556a38 38 0 1 0 76 0a38 38 0 1 0 -76 0ZM514 556a38 38 0 1 0 76 0a38 38 0 1 0 -76 0Z" />\n      </g>'),
       // The handle on a to-do handed to the assistant.
       // The recorder's notes land in Meetings/djazzi (corePlan adds the source).
@@ -888,7 +886,7 @@ export function mobilePlan() {
       edit(`${mobile}/src/components/djazzi-onboarding.tsx`, "picked: { borderColor: '#DCF6A3',", "picked: { borderColor: '#FFFFFF',"),
       edit(`${mobile}/src/components/djazzi-onboarding.tsx`, "  const [avatar, setAvatar] = useState<shared.AgentAvatarId>('original');", "  const [avatar, setAvatar] = useState<string>('b');"),
       edit(`${mobile}/src/components/djazzi-onboarding.tsx`, "backgroundColor: step === i ? '#1A6DFF' : colors.separator", "backgroundColor: step === i ? colors.label : colors.separator"),
-      edit(`${mobile}/src/app/baarasseurs/_layout.tsx`, "          title: 'Baarasseurs',", "          title: 'Your agents',"),
+      edit(`${mobile}/src/app/baarasseurs/_layout.tsx`, "          title: 'Baarasseurs',", "          title: 'Djazzi Bots',"),
       // DJAZZI(07/11/2026): a template hires in one tap (baarasseurs/index.tsx).
       edit(`${mobile}/src/app/baarasseurs/index.tsx`, "import { ActivityIndicator, FlatList, Pressable, ScrollView, Text, View, useWindowDimensions } from 'react-native';", "import { ActivityIndicator, Alert, FlatList, Pressable, ScrollView, Text, View, useWindowDimensions } from 'react-native';"),
       edit(`${mobile}/src/app/baarasseurs/index.tsx`, "  const { team, reload } = useBaarasseurs();", "  const { team, reload, upsert } = useBaarasseurs();"),
@@ -948,7 +946,7 @@ export function mobilePlan() {
       edit(`${mobile}/src/app/_layout.tsx`, "<Stack.Screen name=\"tasks\" options={{ title: 'Tasks' }} />", "<Stack.Screen name=\"tasks\" options={{ title: 'Tasks', headerShown: !webScreen }} />"),
       edit(`${mobile}/src/app/_layout.tsx`, "<Stack.Screen name=\"routines\" options={{ title: 'Routines' }} />", "<Stack.Screen name=\"routines\" options={{ title: 'Routines', headerShown: !webScreen }} />"),
       edit(`${mobile}/src/app/_layout.tsx`, "<Stack.Screen name=\"projects\" options={{ title: 'Projects' }} />", "<Stack.Screen name=\"projects\" options={{ title: 'Projects', headerShown: !webScreen }} />"),
-      edit(`${mobile}/src/app/baarasseurs/_layout.tsx`, "          title: 'Your agents',\n", "          title: 'Your agents',\n          headerShown: !webScreen,\n"),
+      edit(`${mobile}/src/app/baarasseurs/_layout.tsx`, "          title: 'Djazzi Bots',\n", "          title: 'Djazzi Bots',\n          headerShown: !webScreen,\n"),
       edit(`${mobile}/src/app/baarasseurs/_layout.tsx`, "  const colors = useColors();\n", "  const colors = useColors();\n  const webScreen = useWebScreen();\n"),
       edit(`${mobile}/src/app/baarasseurs/_layout.tsx`, "import { useColors } from '@/theme/colors';\n", "import { useColors } from '@/theme/colors';\nimport { useWebScreen } from '@/components/djazzi-web-pages';\n"),
       edit(`${mobile}/src/app/notes/_layout.tsx`, "options={{ title: 'Library', headerLeft: () => <BackButton /> }}", "options={{ title: 'Library', headerLeft: () => <BackButton />, headerShown: !webScreen }}"),
@@ -1010,6 +1008,7 @@ export function mobilePlan() {
       // DJAZZI(23/11/2026): the bar at the foot as a pill, the menu on the left, Tasks as a tab (the founder's call, after the new Claude app).
       ['assets/mobile/pill-tab-bar.tsx', `${mobile}/src/components/djazzi-pill-tab-bar.tsx`],
       ['assets/mobile/side-menu.tsx', `${mobile}/src/components/djazzi-side-menu.tsx`],
+      ['assets/mobile/djazzi-bots-glyph.tsx', `${mobile}/src/components/djazzi-bots-glyph.tsx`],
       ['assets/mobile/tab-todo.tsx', `${mobile}/src/app/(tabs)/todo.tsx`],
       ['assets/mobile/work-access.ts', `${mobile}/src/lib/work-access.ts`],
       ['assets/mobile/paid-pages.ts', `${mobile}/src/lib/paid-pages.ts`],

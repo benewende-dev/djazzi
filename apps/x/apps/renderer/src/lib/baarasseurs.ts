@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useSyncExternalStore } from 'react'
+import { useCallback, useEffect, useState, useSyncExternalStore } from 'react'
 import {
-  BAARASSEURS_PATH, baarasseurAgentId, baarasseurIdOf, parseBaarasseurs, saveTeam, upsertChange, templateToBaarasseur as fromTemplate,
-  type Baarasseur, type BaarasseurSchedule, type Template,
+  APPROVALS_PATH, BAARASSEURS_PATH, SCHEDULED_MESSAGES, USAGE_PATH, approvalAnswer, baarasseurAgentId, baarasseurIdOf, parseApprovals, parseBaarasseurs, parseUsage,
+  saveTeam, upsertChange, usageMonth, templateToBaarasseur as fromTemplate,
+  type Baarasseur, type BaarasseurApproval, type BaarasseurSchedule, type BotUsage, type Template,
 } from '@x/shared/dist/baarasseur.js'
 import { appLang } from '@/lib/prompt-library'
 
@@ -10,8 +11,8 @@ import { appLang } from '@/lib/prompt-library'
 // avatar tints. The recruiting kit (templates, tools, the sentence → form
 // step, the save) is shared with the phone: @x/shared/baarasseur.
 
-export type { Baarasseur, BaarasseurSchedule, Template }
-export { TEMPLATES, TOOLS, WEEKDAYS, TRYOUT_NOTE, describeSystem, idFor, parseDescribed, tryoutRequest } from '@x/shared/dist/baarasseur.js'
+export type { Baarasseur, BaarasseurApproval, BaarasseurSchedule, BotUsage, Template }
+export { BOT_CATEGORIES, BOT_IDEAS, DECIDED_WORDS, FEATURED_TEMPLATES, TEMPLATES, TOOLS, WEEKDAYS, TRYOUT_NOTE, describeSystem, duplicateOf, idFor, parseDescribed, templateCategory, tryoutRequest, type BotCategory } from '@x/shared/dist/baarasseur.js'
 
 let team: Baarasseur[] = []
 let loaded = false
@@ -168,3 +169,78 @@ export function scheduleLabel(s: BaarasseurSchedule): string {
 }
 
 const WEEKDAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+
+
+// ---------------------------------------------------------------------------
+// DJAZZI(26/11/2026): the Djazzi Bots page — what waits for the user, a word
+// to a bot from the page, and how much each one worked this month.
+
+/** Says something to a bot: in the conversation given, else in a new one. Returns that conversation. */
+export async function sayToBot(agentId: string, sessionId: string | null, text: string): Promise<string> {
+  const id = sessionId ?? (await window.ipc.invoke('sessions:create', {})).sessionId
+  noteChatAgent(id, agentId)
+  await window.ipc.invoke('sessions:sendOrQueueMessage', {
+    sessionId: id,
+    input: { role: 'user', content: text },
+    config: { agent: { agentId } },
+  })
+  return id
+}
+
+/** « Lancer maintenant »: its scheduled run, now, in a new conversation. */
+export function runBotNow(b: Pick<Baarasseur, 'id'>): Promise<string> {
+  return sayToBot(baarasseurAgentId(b.id), null, SCHEDULED_MESSAGES[appLang()])
+}
+
+async function readJson(path: string): Promise<string | null> {
+  try {
+    return (await window.ipc.invoke('workspace:readFile', { path, encoding: 'utf8' })).data ?? null
+  } catch {
+    return null
+  }
+}
+
+/** Read again on focus and every half minute: a bot adds to the list while the page is open. */
+function usePolled<T>(read: () => Promise<T>, initial: T): [T, () => Promise<void>] {
+  const [value, setValue] = useState<T>(initial)
+  const reload = useCallback(async () => { setValue(await read()) }, [read])
+  useEffect(() => {
+    void reload()
+    const timer = window.setInterval(() => void reload(), 30_000)
+    window.addEventListener('focus', reload)
+    return () => { window.clearInterval(timer); window.removeEventListener('focus', reload) }
+  }, [reload])
+  return [value, reload]
+}
+
+const readApprovals = async () => parseApprovals(await readJson(APPROVALS_PATH))
+
+export function useApprovals() {
+  const [list, reload] = usePolled(readApprovals, [] as BaarasseurApproval[])
+  /** Marks it, then gives the answer to the bot where it asked (or in a new conversation). */
+  const decide = useCallback(async (a: BaarasseurApproval, approved: boolean) => {
+    const current = await readApprovals()
+    const next = current.map((x) => (x.id === a.id ? { ...x, status: approved ? 'approved' as const : 'refused' as const, decidedAt: new Date().toISOString() } : x))
+    await window.ipc.invoke('workspace:writeFile', { path: APPROVALS_PATH, data: JSON.stringify({ approvals: next }, null, 2), opts: { mkdirp: true } })
+    await reload()
+    await sayToBot(baarasseurAgentId(a.bot), a.sessionId, approvalAnswer(a, approved, appLang()))
+  }, [reload])
+  return { approvals: list, pending: list.filter((a) => a.status === 'pending'), decide, reload }
+}
+
+const readUsage = async () => parseUsage(await readJson(USAGE_PATH))
+
+/** This month's tokens, by baarasseur id. */
+export function useBotUsage(): Record<string, BotUsage> {
+  const [months] = usePolled(readUsage, {})
+  return months[usageMonth(new Date())] ?? {}
+}
+
+/** A count of tokens, short: « 12 k », « 1,2 M ». */
+export function tokensWords(n: number): string {
+  const fr = appLang() === 'fr'
+  if (n < 1000) return String(n)
+  const [v, unit] = n < 1_000_000 ? [n / 1000, 'k'] : [n / 1_000_000, 'M']
+  const text = v >= 10 ? String(Math.round(v)) : v.toFixed(1)
+  return `${fr ? text.replace('.', ',') : text}\u00a0${unit}`
+}

@@ -11,6 +11,7 @@ import { useConnection } from '@/lib/connection';
 import { searchKey } from '@/lib/team-directory';
 import { useWebWide } from '@/components/djazzi-web-frame';
 import { useColors } from '@/theme/colors';
+import { DjazziBotsGlyph } from '@/components/djazzi-bots-glyph';
 import { __djazziT as translate } from '@/djazzi-i18n/mobile/runtime';
 
 // DJAZZI(23/11/2026): the menu on the left (the founder's call, after the new
@@ -105,7 +106,7 @@ function SideMenu({ open, onClose }: { open: boolean; onClose: () => void }) {
 
   const places: Array<{ label: string; icon: string; onPress: () => void }> = [
     { label: 'New chat', icon: 'sf:square.and.pencil', onPress: () => go({ pathname: '/chat', params: { id: '' } }) },
-    { label: 'Agents', icon: 'sf:person.2', onPress: () => work('/baarasseurs') },
+    { label: 'Djazzi Bots', icon: 'djazzi-d', onPress: () => work('/baarasseurs') },
     { label: 'Routines', icon: 'sf:clock', onPress: () => work('/routines') },
     { label: 'Library', icon: 'sf:books.vertical', onPress: () => go('/notes') },
     { label: 'Email', icon: 'sf:envelope', onPress: () => work('/(tabs)/email') },
@@ -141,7 +142,7 @@ function SideMenu({ open, onClose }: { open: boolean; onClose: () => void }) {
         ListHeaderComponent={<>
           {!needle && places.map(place => <Pressable key={place.label} accessibilityRole="button" onPress={place.onPress}
             style={({ pressed }) => ({ minHeight: 46, flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 10, borderRadius: 12, backgroundColor: pressed ? colors.background : 'transparent' })}>
-            <Image source={place.icon} style={{ width: 20, height: 20 }} tintColor={colors.label} />
+            {place.icon === 'djazzi-d' ? <DjazziBotsGlyph size={20} color={colors.label} /> : <Image source={place.icon} style={{ width: 20, height: 20 }} tintColor={colors.label} />}
             <Text style={{ flex: 1, fontSize: 16, color: colors.label }}>{translate(place.label)}</Text>
           </Pressable>)}
           {found.length > 0 && <Text style={{ paddingHorizontal: 10, paddingTop: needle ? 4 : 18, paddingBottom: 6, fontSize: 13, fontWeight: '600', color: colors.secondaryLabel }}>{needle ? translate('Conversations found') : translate('Recent chats')}</Text>}

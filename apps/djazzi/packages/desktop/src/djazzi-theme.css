@@ -233,6 +233,10 @@ html.dark [data-sidebar="sidebar"] {
 @keyframes djazzi-blink { 0%, 94%, 100% { transform:scaleY(1); } 97% { transform:scaleY(.1); } }
 .djazzi-agent-eyes { transform-box:fill-box; transform-origin:center; animation:djazzi-blink 5.5s ease-in-out infinite; }
 @media (prefers-reduced-motion: reduce) { .djazzi-agent-eyes { animation:none; } }
+/* DJAZZI(26/11/2026): the Djazzi Bots page — a featured bot floats gently. */
+@keyframes djazzi-bot-float { 0%, 100% { transform:translateY(0); } 50% { transform:translateY(-6px); } }
+.djazzi-bot-float { animation:djazzi-bot-float 4s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) { .djazzi-bot-float { animation:none; } }
 /* DJAZZI(07/11/2026): the work block (components/work-steps.tsx): a line that
    moves while Djazzi works, a timeline of steps, a clear waiting state. */
 .djazzi-work-bar { position:relative; height:2px; margin-top:-1px; overflow:hidden; border-radius:999px; background:color-mix(in oklab, var(--foreground) 8%, transparent); }

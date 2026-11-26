@@ -14,7 +14,6 @@ import {
   AppWindow,
   NotebookPen,
   MessagesSquare,
-  BriefcaseBusiness,
   ArrowUpRight,
   CalendarClock,
   Library,
@@ -109,6 +108,7 @@ import { openPlans } from '@/lib/plans-window'
 import { OPEN_USAGE_EVENT } from '@/lib/announcement'
 import { NotificationBell } from '@/components/notification-bell'
 import { UsagePopover } from '@/components/sidebar-session-gauge'
+import { DjazziBotsIcon } from '@/components/djazzi-bots-icon'
 
 interface TreeNode {
   path: string
@@ -871,8 +871,8 @@ export function SidebarContentPanel({
         return (
 <SidebarMenuItem key={row.id}>
       <SidebarMenuButton isActive={activeNav === 'baarasseurs'} onClick={() => onOpenBaarasseurs?.()}>
-        <BriefcaseBusiness className="size-4 shrink-0" />
-        <span className="flex-1 truncate font-medium">{pageLabel(row, 'Coworkers')}</span>
+        <DjazziBotsIcon className="size-4 shrink-0" />
+        <span className="flex-1 truncate font-medium">{pageLabel(row, 'Djazzi Bots')}</span>
         {baarasseursUnread > 0 && (
           <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1.5 text-[11px] font-semibold tabular-nums text-primary-foreground" data-no-translate>
             {baarasseursUnread > 99 ? '99+' : baarasseursUnread}

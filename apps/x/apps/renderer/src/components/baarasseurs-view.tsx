@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { ArrowUp, ChevronLeft, FileText, Loader2, Plus, SquarePen, Trash2, X } from 'lucide-react'
-import { SHAPE_COLORS, SHAPE_IDS, baarasseurAgentId, DOCUMENTS_DIR, DOCUMENTS_LIMIT, nextRunAt } from '@x/shared/dist/baarasseur.js'
+import { ArrowUp, ChevronLeft, Copy, FileText, Loader2, MoreHorizontal, Pause, Play, Plus, Search, SquarePen, Trash2, Users, X } from 'lucide-react'
+import { SHAPE_COLORS, SHAPE_IDS, baarasseurAgentId, baarasseurIdOf, DOCUMENTS_DIR, DOCUMENTS_LIMIT, nextRunAt } from '@x/shared/dist/baarasseur.js'
 import { AgentAvatarImage } from '@/components/agent-avatar'
 import { AgentShape, shapeFor } from '@/components/djazzi-agent-shape'
 import { SHAPE_FILL } from '@/lib/djazzi-d-mark'
 import { Button } from '@/components/ui/button'
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { ModelSelector, modelOverrideToRef, refToModelOverride } from '@/components/model-selector'
@@ -12,13 +13,14 @@ import { useModels } from '@/hooks/use-models'
 import { appLang } from '@/lib/prompt-library'
 import { cn } from '@/lib/utils'
 import {
-  HOURS, TEMPLATES, TOOLS, WEEKDAYS, describeSystem, tryoutRequest, idFor, parseDescribed, templateToBaarasseur, tint,
-  markBaarasseurSeen, scheduleLabel, useBaarasseurs, useBaarasseurUnread, type Baarasseur, type BaarasseurSchedule,
+  BOT_CATEGORIES, BOT_IDEAS, DECIDED_WORDS, FEATURED_TEMPLATES, HOURS, TEMPLATES, TOOLS, WEEKDAYS, describeSystem, duplicateOf, tryoutRequest, idFor, parseDescribed, templateCategory, templateToBaarasseur, tint,
+  markBaarasseurSeen, runBotNow, scheduleLabel, tokensWords, useApprovals, useBaarasseurs, useBaarasseurUnread, useBotUsage,
+  type Baarasseur, type BaarasseurApproval, type BaarasseurSchedule, type BotCategory,
 } from '@/lib/baarasseurs'
 
-// The Baarasseurs page (Djazzi, 06/10/2026; brought back to the validated
-// mockup on 08/10/2026, the founder's three screens): with none open, the
-// cards full width beside the app's sidebar, then the templates; one open,
+// The Djazzi Bots page (the Baarasseurs page of 06/10/2026, renamed and
+// redone on 26/11/2026 from the founder's mockup): with none open, what waits
+// for approval, the bots and what they did, then the catalogue; one open,
 // its contacts take the sidebar's place, its conversation in the middle and
 // its card on the right; recruiting, the form beside a try-out.
 // A baarasseur's conversations are chats whose agent is `baarasseur-<id>`.
@@ -91,7 +93,7 @@ function latestByAgent(runs: BaarasseurRun[]) {
 
 const fileName = (path: string) => path.split('/').pop() ?? path
 
-export function BaarasseursView({ runs, workingAgents, openAgent, onOpen, onClose, chatHost, hasChat }: {
+export function BaarasseursView({ runs, workingAgents, openAgent, onOpen, onClose, chatHost, hasChat, onOpenGroups }: {
   runs: BaarasseurRun[]
   /** The agents with a turn running now: a green dot on their avatar. */
   workingAgents: Set<string>
@@ -103,10 +105,13 @@ export function BaarasseursView({ runs, workingAgents, openAgent, onOpen, onClos
   /** Where the app mounts the open conversation. */
   chatHost: (element: HTMLDivElement | null) => void
   hasChat: boolean
+  /** The groups (Spaces), to add a bot to one. */
+  onOpenGroups?: () => void
 }) {
   const { team, upsert, remove } = useBaarasseurs()
   const unread = useBaarasseurUnread(runs)
-  const [editing, setEditing] = useState<{ draft: Baarasseur; isNew: boolean } | null>(null)
+  const { approvals, decide } = useApprovals()
+  const [editing, setEditing] = useState<{ draft: Baarasseur; isNew: boolean; sentence?: string } | null>(null)
   const latest = useMemo(() => latestByAgent(runs), [runs])
   const taken = team.map((b) => b.id)
   const open = team.find((b) => baarasseurAgentId(b.id) === openAgent) ?? null
@@ -123,11 +128,23 @@ export function BaarasseursView({ runs, workingAgents, openAgent, onOpen, onClos
     onOpen(agentId, latest.get(agentId)?.id ?? null)
   }
 
+  const runNow = async (b: Baarasseur) => {
+    const sessionId = await runBotNow(b)
+    onOpen(baarasseurAgentId(b.id), sessionId)
+  }
+  const togglePause = (b: Baarasseur) => upsert({ ...b, paused: !b.paused })
+  const duplicate = async (b: Baarasseur) => {
+    const copy = duplicateOf(b, taken, appLang())
+    await upsert(copy)
+    setEditing({ draft: copy, isNew: false })
+  }
+
   if (editing) {
     return (
       <Recruit
         initial={editing.draft}
         isNew={editing.isNew}
+        initialSentence={editing.sentence}
         onCancel={() => setEditing(null)}
         onSave={async (b, forgotten) => {
           const id = editing.isNew ? idFor(b.name, taken) : b.id
@@ -149,17 +166,23 @@ export function BaarasseursView({ runs, workingAgents, openAgent, onOpen, onClos
       <div className="flex min-h-0 flex-1">
         <Contacts team={team} latest={latest} unread={unread} workingAgents={workingAgents} openAgent={openAgent} onOpen={openOne} onBack={onClose} />
         <div className="flex min-h-0 min-w-0 flex-1 flex-col">
-          <Conversation b={open} chatHost={chatHost} hasChat={hasChat}
+          <Conversation b={open} chatHost={chatHost} hasChat={hasChat} runs={runs} working={workingAgents.has(baarasseurAgentId(open.id))}
             onEdit={() => setEditing({ draft: open, isNew: false })}
-            onNew={() => onOpen(baarasseurAgentId(open.id), null)} />
+            onNew={() => onOpen(baarasseurAgentId(open.id), null)}
+            onOpenRun={(runId) => onOpen(baarasseurAgentId(open.id), runId)}
+            onRunNow={() => runNow(open)} onTogglePause={() => togglePause(open)} onDuplicate={() => duplicate(open)} />
         </div>
       </div>
     )
   }
 
   return (
-    <Overview team={team} latest={latest} unread={unread} workingAgents={workingAgents} taken={taken} onOpen={openOne}
-      onRecruit={(draft) => setEditing({ draft, isNew: true })} />
+    <Overview team={team} runs={runs} latest={latest} unread={unread} workingAgents={workingAgents} taken={taken}
+      approvals={approvals} onDecide={decide} onOpen={openOne} onOpenRun={onOpen}
+      onRecruit={(draft) => setEditing({ draft, isNew: true })}
+      onDescribe={(sentence) => setEditing({ draft: blank(taken), isNew: true, sentence })}
+      onRunNow={runNow} onTogglePause={togglePause} onDuplicate={duplicate}
+      onEdit={(b) => setEditing({ draft: b, isNew: false })} onOpenGroups={onOpenGroups} />
   )
 }
 
@@ -180,10 +203,10 @@ function Contacts({ team, latest, unread, workingAgents, openAgent, onOpen, onBa
     .filter((b) => !q || `${b.name} ${b.role}`.toLowerCase().includes(q))
     .sort((a, b) => (latest.get(baarasseurAgentId(b.id))?.modifiedAt ?? b.createdAt).localeCompare(latest.get(baarasseurAgentId(a.id))?.modifiedAt ?? a.createdAt))
   return (
-    <aside aria-label="Baarasseurs" className="flex w-[280px] shrink-0 flex-col border-r border-border bg-muted/30">
+    <aside aria-label="Djazzi Bots" className="flex w-[280px] shrink-0 flex-col border-r border-border bg-muted/30">
       <button type="button" onClick={onBack}
         className="mx-2 mt-3 flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-left text-[15px] font-medium text-muted-foreground hover:bg-muted hover:text-foreground">
-        <ChevronLeft className="size-4" /><span>Your baarasseurs</span>
+        <ChevronLeft className="size-4" /><span>Djazzi Bots</span>
       </button>
       {team.length > 6 && (
         <div className="px-3 pb-1 pt-2">
@@ -216,17 +239,35 @@ function Contacts({ team, latest, unread, workingAgents, openAgent, onOpen, onBa
 }
 
 /** The open conversation: its header, the chat, and its card beside it. */
-function Conversation({ b, chatHost, hasChat, onEdit, onNew }: {
+function Conversation({ b, chatHost, hasChat, runs, working, onEdit, onNew, onOpenRun, onRunNow, onTogglePause, onDuplicate }: {
   b: Baarasseur
   chatHost: (element: HTMLDivElement | null) => void
   hasChat: boolean
+  runs: BaarasseurRun[]
+  working: boolean
   onEdit: () => void
   onNew: () => void
+  onOpenRun: (runId: string) => void
+  onRunNow: () => Promise<void>
+  onTogglePause: () => Promise<void>
+  onDuplicate: () => Promise<void>
 }) {
   const { namesByKey } = useModels()
+  const usage = useBotUsage()
+  const [busy, setBusy] = useState<string | null>(null)
   const modelName = b.model ? namesByKey[`${b.provider ?? ''}/${b.model}`] ?? b.model : null
-  const next = b.schedule ? nextRunAt(b.schedule, new Date()) : null
+  const next = b.schedule && !b.paused ? nextRunAt(b.schedule, new Date()) : null
   const documents = b.documents ?? []
+  const agentId = baarasseurAgentId(b.id)
+  const mine = runs.filter((r) => r.agentId === agentId).sort((x, y) => y.modifiedAt.localeCompare(x.modifiedAt))
+  const journal = mine.slice(0, 8)
+  const monthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString()
+  const thisMonth = mine.filter((r) => r.modifiedAt >= monthStart).length
+  const used = usage[b.id]
+  const act = async (key: string, run: () => Promise<void>) => {
+    setBusy(key)
+    try { await run() } finally { setBusy(null) }
+  }
   return (
     <>
       <header className="flex shrink-0 items-center gap-3 border-b border-border px-5 py-2.5">
@@ -238,10 +279,28 @@ function Conversation({ b, chatHost, hasChat, onEdit, onNew }: {
             {modelName ? <span data-no-translate>{modelName}</span> : <span>Automatic</span>}
           </div>
         </div>
+        <StatusPill status={botStatus(b, working)} />
         <Button size="icon" variant="ghost" onClick={onNew} aria-label="New conversation" title="New conversation">
           <SquarePen className="size-4" />
         </Button>
-        <Button variant="outline" onClick={onEdit}>Edit</Button>
+        <Button variant="outline" disabled={busy === 'run' || working} onClick={() => void act('run', onRunNow)}>
+          {busy === 'run' && <Loader2 className="size-4 animate-spin" />}<span>Run now</span>
+        </Button>
+        {(b.schedule || b.paused) && (
+          <Button variant="outline" size="icon" aria-label={b.paused ? 'Resume' : 'Pause'} title={b.paused ? 'Resume' : 'Pause'}
+            disabled={busy === 'pause'} onClick={() => void act('pause', onTogglePause)}>
+            {b.paused ? <Play className="size-4" /> : <Pause className="size-4" />}
+          </Button>
+        )}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" size="icon" aria-label="More"><MoreHorizontal className="size-4" /></Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onSelect={onEdit}><SquarePen className="size-4" /><span>Edit</span></DropdownMenuItem>
+            <DropdownMenuItem onSelect={() => void onDuplicate()}><Copy className="size-4" /><span>Duplicate</span></DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </header>
       <div className="flex min-h-0 flex-1">
         <div ref={chatHost} className="flex min-h-0 min-w-0 flex-1 flex-col">
@@ -255,6 +314,7 @@ function Conversation({ b, chatHost, hasChat, onEdit, onNew }: {
           <section>
             <h3 className="mb-1.5 text-[13px] font-semibold text-muted-foreground">Works on its own</h3>
             <p className="text-sm">{b.schedule ? scheduleLabel(b.schedule) : 'Only when I write'}</p>
+            {b.paused && <p className="text-sm text-muted-foreground">Paused: it does not run on its own until you resume it.</p>}
             {next && (
               <p className="text-sm text-muted-foreground">
                 {`Next run: ${next.toLocaleDateString(appLang() === 'fr' ? 'fr-FR' : 'en-GB', { weekday: 'long', day: 'numeric', month: 'long' })}`}
@@ -278,6 +338,26 @@ function Conversation({ b, chatHost, hasChat, onEdit, onNew }: {
             </section>
           )}
           <section>
+            <h3 className="mb-1.5 text-[13px] font-semibold text-muted-foreground">This month</h3>
+            <p className="text-sm">{used ? `${tokensWords(used.inputTokens + used.outputTokens)} tokens` : 'Nothing yet'}</p>
+            <p className="text-xs text-muted-foreground">{thisMonth === 1 ? 'One conversation' : `${thisMonth} conversations`}</p>
+          </section>
+          {journal.length > 0 && (
+            <section>
+              <h3 className="mb-1.5 text-[13px] font-semibold text-muted-foreground">Its journal</h3>
+              <ul className="flex flex-col">
+                {journal.map((r) => (
+                  <li key={r.id}>
+                    <button type="button" onClick={() => onOpenRun(r.id)} className="flex w-full items-baseline gap-2 py-1 text-left text-[13px] hover:underline">
+                      <span className="min-w-0 flex-1 truncate" data-no-translate>{r.title || '…'}</span>
+                      <span className="shrink-0 tabular-nums text-muted-foreground" data-no-translate>{when(r.modifiedAt)}</span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
+          <section>
             <h3 className="mb-1.5 text-[13px] font-semibold text-muted-foreground">What it remembers</h3>
             {b.memory.length > 0
               ? <ul className="list-disc space-y-1 pl-5 text-sm leading-relaxed">{b.memory.map((m) => <li key={m} data-no-translate>{m}</li>)}</ul>
@@ -289,88 +369,313 @@ function Conversation({ b, chatHost, hasChat, onEdit, onNew }: {
   )
 }
 
-/** With none open: every card, then the templates. */
-function Overview({ team, latest, unread, workingAgents, taken, onOpen, onRecruit }: {
+/** A bot's state on its card: working now, paused, on its hours, or when one writes. */
+function botStatus(b: Baarasseur, working: boolean): { text: string; tone: 'on' | 'off' | 'idle' } {
+  if (working) return { text: 'Working', tone: 'on' }
+  if (b.paused) return { text: 'Paused', tone: 'off' }
+  if (b.schedule) return { text: 'Active', tone: 'on' }
+  return { text: 'On demand', tone: 'idle' }
+}
+
+function StatusPill({ status }: { status: ReturnType<typeof botStatus> }) {
+  return (
+    <span className={cn('inline-flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-xs',
+      status.tone === 'on' ? 'bg-muted text-foreground' : 'border border-border text-muted-foreground')}>
+      {status.tone === 'on' && <span aria-hidden className="size-1.5 rounded-full bg-foreground" />}
+      <span>{status.text}</span>
+    </span>
+  )
+}
+
+
+/** With none open: what waits for you, your bots, what they did, then the catalogue. */
+function Overview({ team, runs, latest, unread, workingAgents, taken, approvals, onDecide, onOpen, onOpenRun, onRecruit, onDescribe, onRunNow, onTogglePause, onDuplicate, onEdit, onOpenGroups }: {
   team: Baarasseur[]
+  runs: BaarasseurRun[]
   latest: Map<string, BaarasseurRun>
   unread: Map<string, number>
   workingAgents: Set<string>
   taken: string[]
+  approvals: BaarasseurApproval[]
+  onDecide: (a: BaarasseurApproval, approved: boolean) => Promise<void>
   onOpen: (b: Baarasseur) => void
+  onOpenRun: (agentId: string, runId: string | null) => void
   onRecruit: (draft: Baarasseur) => void
+  onDescribe: (sentence: string) => void
+  onRunNow: (b: Baarasseur) => Promise<void>
+  onTogglePause: (b: Baarasseur) => Promise<void>
+  onDuplicate: (b: Baarasseur) => Promise<void>
+  onEdit: (b: Baarasseur) => void
+  onOpenGroups?: () => void
 }) {
   const { namesByKey } = useModels()
-  // Four, as the mockup shows them: one full row, none left alone.
-  const templates = TEMPLATES.filter((t) => !team.some((b) => b.name === t.name)).slice(0, 4)
+  const usage = useBotUsage()
   const lang = appLang()
+  const [query, setQuery] = useState('')
+  const [category, setCategory] = useState<BotCategory | 'all'>('all')
+  const [sentence, setSentence] = useState('')
+  const [busy, setBusy] = useState<string | null>(null)
+  const [shown, setShown] = useState<string | null>(null)
+  const q = query.trim().toLowerCase()
+  const byId = useMemo(() => new Map(team.map((b) => [b.id, b])), [team])
+  const mine = team.filter((b) => !q || `${b.name} ${b.role} ${b.mission}`.toLowerCase().includes(q))
+  const pending = approvals.filter((a) => a.status === 'pending' && byId.has(a.bot))
+  const available = TEMPLATES.filter((t) => !team.some((b) => b.name === t.name))
+  const featured = available.filter((t) => (FEATURED_TEMPLATES as readonly string[]).includes(t.id))
+  const catalogue = available
+    .filter((t) => category === 'all' || templateCategory(t) === category)
+    .filter((t) => !q || `${t.name} ${t.role[lang]} ${t.summary[lang]} ${t.tools.join(' ')}`.toLowerCase().includes(q))
+  // What they did: their latest conversations, and your latest answers.
+  const activity = useMemo(() => {
+    const items: Array<{ key: string; at: string; b: Baarasseur; text: string; agentId: string; runId: string | null }> = []
+    for (const r of runs) {
+      const id = baarasseurIdOf(r.agentId)
+      const b = id ? byId.get(id) : undefined
+      if (b) items.push({ key: `r-${r.id}`, at: r.modifiedAt, b, text: r.title || '', agentId: r.agentId, runId: r.id })
+    }
+    for (const a of approvals) {
+      const b = byId.get(a.bot)
+      if (b && a.status !== 'pending' && a.decidedAt) {
+        items.push({ key: `a-${a.id}`, at: a.decidedAt, b, text: `${DECIDED_WORDS[a.status === 'approved' ? 'approved' : 'refused'][lang]}${lang === 'fr' ? '\u00a0:' : ':'} ${a.summary}`, agentId: baarasseurAgentId(b.id), runId: a.sessionId })
+      }
+    }
+    return items.sort((x, y) => y.at.localeCompare(x.at)).slice(0, 8)
+  }, [runs, approvals, byId, lang])
+
+  const act = async (key: string, run: () => Promise<void>) => {
+    setBusy(key)
+    try { await run() } finally { setBusy(null) }
+  }
+  const startDescribe = () => { if (sentence.trim()) onDescribe(sentence.trim()) }
+
   return (
     <div className="min-h-0 flex-1 overflow-y-auto">
-      <div className="mx-auto flex max-w-6xl flex-col gap-7 px-8 py-9">
-        <div className="flex flex-wrap items-end gap-4">
-          <div className="min-w-0 flex-1">
-            <h1 className="font-serif text-[34px] font-semibold leading-tight tracking-tight">Your baarasseurs</h1>
-            <p className="mt-1.5 text-[15px] text-muted-foreground">Workers who work for you: each one has a name, a mission, its tools and its model.</p>
+      <div className="mx-auto flex max-w-6xl flex-col gap-9 px-8 py-9">
+        <header className="flex flex-wrap items-end gap-4">
+          <div className="min-w-0 flex-[1_1_420px]">
+            <h1 className="font-serif text-[36px] font-medium leading-tight tracking-tight">Djazzi Bots</h1>
+            <p className="mt-1.5 max-w-2xl text-[15px] leading-relaxed text-muted-foreground">Bots that work for you, even when the app is closed. Each one has a name, a mission, its tools and its pace.</p>
           </div>
-          <Button size="lg" onClick={() => onRecruit(blank(taken))}><Plus className="size-4" /><span>Recruit</span></Button>
-        </div>
+          <label className="flex h-11 w-72 items-center gap-2 rounded-xl border border-input bg-background px-3.5">
+            <Search className="size-4 shrink-0 text-muted-foreground" />
+            <span className="sr-only">Search for a bot</span>
+            <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search for a bot" className="min-w-0 flex-1 bg-transparent text-sm outline-none" />
+          </label>
+          <Button size="lg" onClick={() => onRecruit(blank(taken))}><Plus className="size-4" /><span>Create a bot</span></Button>
+        </header>
 
-        {team.length > 0 ? (
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-            {team.map((b) => {
-              const agentId = baarasseurAgentId(b.id)
-              const run = latest.get(agentId)
-              const count = unread.get(agentId) ?? 0
-              const modelName = b.model ? namesByKey[`${b.provider ?? ''}/${b.model}`] ?? b.model : null
-              return (
-                <button key={b.id} type="button" onClick={() => onOpen(b)}
-                  className="flex flex-col gap-3 rounded-2xl border border-border bg-background p-5 text-left transition-colors hover:border-primary/50">
-                  <span className="flex items-center gap-3">
-                    <Avatar b={b} working={workingAgents.has(agentId)} />
-                    <span className="min-w-0 flex-1">
-                      <span className="block truncate text-base font-semibold" data-no-translate>{b.name}</span>
-                      <span className="block truncate text-sm text-muted-foreground" data-no-translate>{b.role}</span>
-                    </span>
-                    <UnreadBadge count={count} />
-                  </span>
-                  <span className="line-clamp-2 text-[15px] leading-relaxed" data-no-translate>{b.mission}</span>
-                  {b.tools.length > 0 && (
-                    <span className="flex flex-wrap gap-1.5">
-                      {b.tools.map((t) => <span key={t} className="rounded-md bg-muted px-2.5 py-1 text-[13px]">{t}</span>)}
-                    </span>
-                  )}
-                  <span className="mt-auto flex items-center gap-3 border-t border-border pt-3 text-[13px]">
-                    <span className="min-w-0 flex-1 text-muted-foreground">
-                      {modelName ? <span data-no-translate>{modelName}</span> : <span>Automatic</span>}
-                      {b.schedule && <><span aria-hidden> · </span><span className="lowercase">{scheduleLabel(b.schedule)}</span></>}
-                    </span>
-                    {run?.title && (
-                      <span className={cn('max-w-[55%] truncate', count > 0 ? 'font-medium text-primary' : 'text-muted-foreground')} data-no-translate>{run.title}</span>
-                    )}
-                  </span>
-                </button>
-              )
-            })}
+        <section aria-labelledby="bots-create" className="flex flex-col gap-3 rounded-2xl border border-border bg-background p-5">
+          <h2 id="bots-create" className="text-[15px] font-semibold">Create a bot in one sentence</h2>
+          <div className="flex items-end gap-2.5">
+            <Textarea rows={2} value={sentence} onChange={(e) => setSentence(e.target.value)} aria-label="Its mission"
+              placeholder="E.g. Every Friday, sum up the week's sales and send it to my partner on WhatsApp."
+              onKeyDown={(e) => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) startDescribe() }}
+              className="min-h-0 flex-1 resize-none bg-muted/40 text-sm" />
+            <Button size="lg" onClick={startDescribe} disabled={!sentence.trim()}>Create</Button>
           </div>
-        ) : (
-          <div className="rounded-2xl border border-dashed border-border px-6 py-10 text-center">
-            <p className="text-base font-semibold">No baarasseur yet</p>
-            <p className="mt-1 text-sm text-muted-foreground">Recruit your first one: describe it in a sentence, or start from a template below.</p>
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-xs text-muted-foreground">Or start from:</span>
+            {BOT_IDEAS.map((idea) => (
+              <button key={idea.en} type="button" onClick={() => onDescribe(idea[lang])} data-no-translate
+                className="h-8 rounded-full border border-border px-3 text-xs hover:bg-muted">{idea[lang]}</button>
+            ))}
           </div>
+        </section>
+
+        {pending.length > 0 && (
+          <section aria-labelledby="bots-approve" className="flex flex-col gap-3">
+            <div className="flex items-center gap-2.5">
+              <h2 id="bots-approve" className="text-[17px] font-semibold">To approve</h2>
+              <span className="rounded-full bg-foreground px-2 py-0.5 text-xs font-semibold tabular-nums text-background" data-no-translate>{pending.length}</span>
+            </div>
+            <ul className="overflow-hidden rounded-2xl border border-foreground/80 bg-background">
+              {pending.map((a) => {
+                const b = byId.get(a.bot)!
+                const open = shown === a.id
+                return (
+                  <li key={a.id} className="flex flex-col gap-3 border-b border-border px-5 py-4 last:border-b-0">
+                    <div className="flex flex-wrap items-center gap-3.5">
+                      <Avatar b={b} size="sm" />
+                      <div className="min-w-0 flex-[1_1_320px]">
+                        <p className="text-sm"><b className="font-semibold" data-no-translate>{b.name}</b> <span data-no-translate>{a.summary}</span></p>
+                        <p className="mt-0.5 text-xs text-muted-foreground" data-no-translate>{when(a.createdAt)}</p>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        {a.detail && <Button variant="outline" size="sm" aria-expanded={open} onClick={() => setShown(open ? null : a.id)}>{open ? 'Hide' : 'See the details'}</Button>}
+                        <Button variant="outline" size="sm" onClick={() => onOpenRun(baarasseurAgentId(b.id), a.sessionId)}>Conversation</Button>
+                        <Button variant="outline" size="sm" disabled={busy === a.id} onClick={() => void act(a.id, () => onDecide(a, false))}>Refuse</Button>
+                        <Button size="sm" disabled={busy === a.id} onClick={() => void act(a.id, () => onDecide(a, true))}>
+                          {busy === a.id && <Loader2 className="size-3.5 animate-spin" />}<span>Approve</span>
+                        </Button>
+                      </div>
+                    </div>
+                    {open && <pre className="max-h-72 overflow-auto whitespace-pre-wrap rounded-xl bg-muted/60 px-4 py-3 font-sans text-[13px] leading-relaxed" data-no-translate>{a.detail}</pre>}
+                  </li>
+                )
+              })}
+            </ul>
+          </section>
         )}
 
-        {templates.length > 0 && (
-          <section aria-labelledby="baarasseur-templates" className="flex flex-col gap-3">
-            <h2 id="baarasseur-templates" className="text-base font-semibold">Start from a template</h2>
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
-              {templates.map((t) => (
-                <button key={t.id} type="button"
-                  className="flex flex-col gap-0.5 rounded-xl border border-dashed border-border px-4 py-3 text-left transition-colors hover:border-primary/60 hover:bg-primary/5"
-                  onClick={() => onRecruit(templateToBaarasseur(t, taken))}>
-                  <span className="truncate text-[15px] font-semibold" data-no-translate>{t.role[lang]}</span>
-                  <span className="truncate text-sm text-muted-foreground" data-no-translate>{t.summary[lang]}</span>
-                </button>
-              ))}
+        <section aria-labelledby="bots-mine" className="flex flex-col gap-4">
+          <h2 id="bots-mine" className="text-[17px] font-semibold">Your bots</h2>
+          {team.length > 0 ? (
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+              {mine.map((b) => {
+                const agentId = baarasseurAgentId(b.id)
+                const run = latest.get(agentId)
+                const count = unread.get(agentId) ?? 0
+                const working = workingAgents.has(agentId)
+                const modelName = b.model ? namesByKey[`${b.provider ?? ''}/${b.model}`] ?? b.model : null
+                const next = b.schedule && !b.paused ? nextRunAt(b.schedule, new Date()) : null
+                const used = usage[b.id]
+                const waiting = pending.filter((a) => a.bot === b.id).length
+                return (
+                  <article key={b.id} className={cn('flex flex-col gap-3 rounded-2xl border border-border bg-background p-5', b.paused && 'bg-muted/30')}>
+                    <button type="button" onClick={() => onOpen(b)} className="flex flex-col gap-3 text-left">
+                      <span className="flex items-center gap-3">
+                        <span className={cn(b.paused && 'opacity-55')}><Avatar b={b} working={working} /></span>
+                        <span className="min-w-0 flex-1">
+                          <span className="block truncate text-base font-semibold" data-no-translate>{b.name}</span>
+                          <span className="block truncate text-sm text-muted-foreground" data-no-translate>{b.role}</span>
+                        </span>
+                        <UnreadBadge count={count} />
+                        <StatusPill status={botStatus(b, working)} />
+                      </span>
+                      <span className="line-clamp-2 text-[15px] leading-relaxed" data-no-translate>{b.mission}</span>
+                      {b.tools.length > 0 && (
+                        <span className="flex flex-wrap gap-1.5">
+                          {b.tools.map((t) => <span key={t} className="rounded-full border border-border px-2.5 py-0.5 text-xs">{t}</span>)}
+                        </span>
+                      )}
+                    </button>
+                    <div className="mt-auto flex flex-col gap-1 border-t border-border pt-3 text-xs text-muted-foreground">
+                      <span>
+                        {modelName ? <span data-no-translate>{modelName}</span> : <span>Automatic</span>}
+                        <span aria-hidden> · </span>
+                        {b.schedule ? <span className="lowercase">{scheduleLabel(b.schedule)}</span> : <span>Only when I write</span>}
+                      </span>
+                      {next && <span>{`Next run: ${next.toLocaleDateString(lang === 'fr' ? 'fr-FR' : 'en-GB', { weekday: 'long', day: 'numeric', month: 'long' })}`}</span>}
+                      {run?.title && <span className="truncate" data-no-translate>{run.title}</span>}
+                      {used && <span>{`This month: ${tokensWords(used.inputTokens + used.outputTokens)} tokens`}</span>}
+                      {waiting > 0 && <span className="font-medium text-foreground">{waiting === 1 ? 'One thing to approve' : `${waiting} things to approve`}</span>}
+                    </div>
+                    <div className="flex gap-1.5">
+                      <Button variant="outline" size="sm" className="flex-1" onClick={() => onOpen(b)}>Talk</Button>
+                      <Button variant="outline" size="sm" className="flex-1" disabled={busy === `run-${b.id}` || working}
+                        onClick={() => void act(`run-${b.id}`, () => onRunNow(b))}>
+                        {busy === `run-${b.id}` && <Loader2 className="size-3.5 animate-spin" />}<span>Run now</span>
+                      </Button>
+                      {(b.schedule || b.paused) && (
+                        <Button variant="outline" size="icon" className="size-8" aria-label={b.paused ? 'Resume' : 'Pause'} title={b.paused ? 'Resume' : 'Pause'}
+                          disabled={busy === `pause-${b.id}`} onClick={() => void act(`pause-${b.id}`, () => onTogglePause(b))}>
+                          {b.paused ? <Play className="size-3.5" /> : <Pause className="size-3.5" />}
+                        </Button>
+                      )}
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="outline" size="icon" className="size-8" aria-label="More"><MoreHorizontal className="size-4" /></Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onSelect={() => onEdit(b)}><SquarePen className="size-4" /><span>Edit</span></DropdownMenuItem>
+                          <DropdownMenuItem onSelect={() => void onDuplicate(b)}><Copy className="size-4" /><span>Duplicate</span></DropdownMenuItem>
+                          {onOpenGroups && <DropdownMenuItem onSelect={onOpenGroups}><Users className="size-4" /><span>Add to a group</span></DropdownMenuItem>}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                  </article>
+                )
+              })}
+              {activity.length > 0 && !q && (
+                <section aria-labelledby="bots-activity" className="flex flex-col rounded-2xl border border-border bg-background p-5">
+                  <h3 id="bots-activity" className="mb-2 text-[15px] font-semibold">Recent activity</h3>
+                  <ul className="flex flex-col">
+                    {activity.map((item) => (
+                      <li key={item.key}>
+                        <button type="button" onClick={() => onOpenRun(item.agentId, item.runId)}
+                          className="flex w-full items-start gap-2.5 border-b border-border/60 py-2 text-left text-[13px] last:border-b-0 hover:text-foreground">
+                          <span aria-hidden className="mt-1.5 size-1.5 shrink-0 rounded-full" style={{ background: item.b.color === 'white' ? 'var(--foreground)' : SHAPE_FILL[item.b.color] ?? 'var(--foreground)' }} />
+                          <span className="min-w-0 flex-1 truncate"><b className="font-medium" data-no-translate>{item.b.name}</b> <span data-no-translate>{item.text}</span></span>
+                          <span className="shrink-0 tabular-nums text-muted-foreground" data-no-translate>{when(item.at)}</span>
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              )}
             </div>
+          ) : (
+            <div className="rounded-2xl border border-dashed border-border px-6 py-10 text-center">
+              <p className="text-base font-semibold">No bot yet</p>
+              <p className="mt-1 text-sm text-muted-foreground">Create your first one in a sentence above, or add one from the catalogue below.</p>
+            </div>
+          )}
+        </section>
+
+        {featured.length > 0 && !q && (
+          <section aria-labelledby="bots-featured" className="flex flex-col gap-4">
+            <h2 id="bots-featured" className="text-[17px] font-semibold">Picked by Djazzi</h2>
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              {featured.map((t, i) => {
+                const draft = templateToBaarasseur(t, taken)
+                return (
+                  <button key={t.id} type="button" onClick={() => onRecruit(draft)}
+                    className={cn('relative flex min-h-[220px] flex-col gap-4 overflow-hidden rounded-[20px] p-7 text-left',
+                      i === 0 ? 'bg-foreground text-background' : 'border border-border bg-background')}>
+                    <span aria-hidden className="absolute right-7 top-7 djazzi-bot-float"><Avatar b={draft} size="lg" /></span>
+                    <span className={cn('text-xs uppercase tracking-wide', i === 0 ? 'text-background/70' : 'text-muted-foreground')}>{BOT_CATEGORIES.find((c) => c.id === templateCategory(t))?.label[lang]}</span>
+                    <span className="max-w-[70%] font-serif text-[28px] font-medium leading-tight" data-no-translate>{t.role[lang]}</span>
+                    <span className={cn('max-w-[70%] text-sm leading-relaxed', i === 0 ? 'text-background/80' : 'text-muted-foreground')} data-no-translate>{t.mission[lang]}</span>
+                    <span className="mt-auto flex flex-wrap gap-1.5">
+                      {t.tools.map((tool) => <span key={tool} className={cn('rounded-full border px-2.5 py-0.5 text-xs', i === 0 ? 'border-background/30' : 'border-border')}>{tool}</span>)}
+                    </span>
+                  </button>
+                )
+              })}
+            </div>
+          </section>
+        )}
+
+        {available.length > 0 && (
+          <section aria-labelledby="bots-catalogue" className="flex flex-col gap-4">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <h2 id="bots-catalogue" className="text-[17px] font-semibold">All bots</h2>
+              <div role="group" aria-label="Categories" className="flex flex-wrap gap-1.5">
+                {[{ id: 'all' as const, label: { fr: 'Tous', en: 'All' } }, ...BOT_CATEGORIES].map((c) => (
+                  <button key={c.id} type="button" aria-pressed={category === c.id} onClick={() => setCategory(c.id)} data-no-translate
+                    className={cn('h-8 rounded-full border px-3.5 text-[13px]', category === c.id ? 'border-foreground bg-foreground font-medium text-background' : 'border-border hover:bg-muted')}>
+                    {c.label[lang]}
+                  </button>
+                ))}
+              </div>
+            </div>
+            {catalogue.length > 0 ? (
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                {catalogue.map((t) => {
+                  const draft = templateToBaarasseur(t, taken)
+                  return (
+                    <article key={t.id} className="flex flex-col gap-3 rounded-2xl border border-border bg-background p-5">
+                      <div className="flex items-center gap-3">
+                        <Avatar b={draft} />
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-[15px] font-semibold" data-no-translate>{t.role[lang]}</p>
+                          <p className="truncate text-xs text-muted-foreground" data-no-translate>{`${BOT_CATEGORIES.find((c) => c.id === templateCategory(t))?.label[lang]} · ${t.name}`}</p>
+                        </div>
+                      </div>
+                      <p className="line-clamp-3 text-sm leading-relaxed" data-no-translate>{t.mission[lang]}</p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {t.tools.map((tool) => <span key={tool} className="rounded-full border border-border px-2.5 py-0.5 text-xs">{tool}</span>)}
+                      </div>
+                      <div className="mt-auto pt-1">
+                        <Button variant="outline" size="sm" onClick={() => onRecruit(draft)}>Add</Button>
+                      </div>
+                    </article>
+                  )
+                })}
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground">No bot in this category yet.</p>
+            )}
           </section>
         )}
       </div>
@@ -403,9 +708,11 @@ function readBase64(file: File): Promise<string> {
   })
 }
 
-function Recruit({ initial, isNew, onCancel, onSave, onRemove }: {
+function Recruit({ initial, isNew, initialSentence, onCancel, onSave, onRemove }: {
   initial: Baarasseur
   isNew: boolean
+  /** A sentence typed on the page: Djazzi prepares the form from it at once. */
+  initialSentence?: string
   onCancel: () => void
   onSave: (b: Baarasseur, forgotten: string[]) => Promise<void>
   onRemove?: () => Promise<void>
@@ -413,7 +720,7 @@ function Recruit({ initial, isNew, onCancel, onSave, onRemove }: {
   const [confirming, setConfirming] = useState(false)
   const [b, setB] = useState<Baarasseur>({ ...initial, documents: initial.documents ?? [] })
   const [tab, setTab] = useState<'describe' | 'setup'>(isNew && !initial.mission ? 'describe' : 'setup')
-  const [sentence, setSentence] = useState('')
+  const [sentence, setSentence] = useState(initialSentence ?? '')
   const [busy, setBusy] = useState<'describe' | 'save' | 'try' | 'upload' | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [trial, setTrial] = useState<Turn[]>([])
@@ -442,6 +749,13 @@ function Recruit({ initial, isNew, onCancel, onSave, onRemove }: {
       setBusy(null)
     }
   }
+
+  // The sentence typed on the page is prepared at once, as if « Prepare » was pressed.
+  const prepared = useRef(false)
+  useEffect(() => {
+    if (initialSentence && !prepared.current) { prepared.current = true; void describe() }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const tryOut = async () => {
     const text = ask.trim()
@@ -521,7 +835,7 @@ function Recruit({ initial, isNew, onCancel, onSave, onRemove }: {
           <ChevronLeft className="size-4" />
         </button>
         <h1 className="flex-1 text-base font-semibold">
-          {isNew ? <span>Recruit a baarasseur</span> : <><span>Edit</span> <span data-no-translate>{initial.name}</span></>}
+          {isNew ? <span>Create a bot</span> : <><span>Edit</span> <span data-no-translate>{initial.name}</span></>}
         </h1>
         <div role="tablist" aria-label="How to set it up" className="flex gap-0.5 rounded-lg bg-muted p-1">
           {(['describe', 'setup'] as const).map((t) => (
@@ -533,7 +847,7 @@ function Recruit({ initial, isNew, onCancel, onSave, onRemove }: {
         </div>
         {onRemove && (confirming ? (
           <span className="flex items-center gap-2 rounded-lg bg-destructive/10 px-2.5 py-1 text-[13px]">
-            <span>Remove this baarasseur?</span>
+            <span>Remove this bot?</span>
             <Button size="sm" variant="destructive" onClick={() => void onRemove()}>Remove</Button>
             <Button size="sm" variant="ghost" onClick={() => setConfirming(false)}>Cancel</Button>
           </span>
@@ -542,7 +856,7 @@ function Recruit({ initial, isNew, onCancel, onSave, onRemove }: {
         ))}
         <Button size="lg" onClick={() => void save()} disabled={busy === 'save' || busy === 'upload'}>
           {busy === 'save' && <Loader2 className="size-4 animate-spin" />}
-          {!isNew ? <span>Save</span> : named ? <span>{`Recruit ${b.name.trim()}`}</span> : <span>Recruit</span>}
+          {!isNew ? <span>Save</span> : named ? <span>{`Create ${b.name.trim()}`}</span> : <span>Create</span>}
         </Button>
       </header>
 
@@ -555,7 +869,7 @@ function Recruit({ initial, isNew, onCancel, onSave, onRemove }: {
               <Textarea id="baarasseur-sentence" rows={4} value={sentence} onChange={(e) => setSentence(e.target.value)}
                 placeholder="E.g. Someone who follows up with my customers every Monday and prepares my quotes"
                 onKeyDown={(e) => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) void describe() }} />
-              <p className="text-xs text-muted-foreground">Djazzi fills in the form; you check it before recruiting.</p>
+              <p className="text-xs text-muted-foreground">Djazzi fills in the form; you check it before creating it.</p>
               <div><Button onClick={() => void describe()} disabled={!sentence.trim() || busy === 'describe'}>
                 {busy === 'describe' && <Loader2 className="size-4 animate-spin" />}<span>Prepare</span>
               </Button></div>
@@ -711,7 +1025,7 @@ function Recruit({ initial, isNew, onCancel, onSave, onRemove }: {
 
         <section aria-label="Try-out" className="flex min-h-[320px] min-w-0 flex-[1_1_480px] flex-col bg-muted/40">
           <div className="flex flex-wrap items-center gap-x-4 gap-y-1 px-6 py-4 text-sm">
-            <span className="flex-1 whitespace-nowrap font-medium text-muted-foreground">Try it before recruiting</span>
+            <span className="flex-1 whitespace-nowrap font-medium text-muted-foreground">Try it before creating it</span>
             <span className="text-[13px] text-muted-foreground">Nothing is sent during the try-out</span>
           </div>
           <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-6 pb-3">

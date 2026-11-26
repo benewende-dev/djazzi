@@ -14,6 +14,7 @@ import { useConnection } from '@/lib/connection';
 import { useModels } from '@/lib/use-models';
 import { useColors } from '@/theme/colors';
 import { __djazziT as translate } from '@/djazzi-i18n/mobile/runtime';
+import { DjazziBotsGlyph } from '@/components/djazzi-bots-glyph';
 
 type Project = { id: string; name: string; chats: Array<{ id: string; title?: string; modifiedAt: string }> };
 
@@ -49,7 +50,7 @@ function WorkHomeContent() {
       <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ padding: 24, paddingTop: 36, gap: 24 }}>
         <View style={{ gap: 14 }}><DjazziLogo /><Text style={{ fontSize: 28, lineHeight: 34, fontWeight: '600', color: colors.label }}>Let's build something.</Text><Text style={{ fontSize: 17, lineHeight: 24, color: colors.secondaryLabel }}>Describe a task, an app or a project.</Text></View>
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-          {[{ label: 'Projects', icon: 'sf:folder', path: '/projects' }, { label: 'Apps', icon: 'sf:chevron.left.forwardslash.chevron.right', path: '/apps' }, { label: 'Your agents', icon: 'sf:person.2', path: '/baarasseurs' }].map(item => <Pressable key={item.path} accessibilityRole="button" onPress={() => router.push(item.path as '/projects' | '/apps' | '/baarasseurs')} style={{ minHeight: 44, paddingHorizontal: 14, borderRadius: 22, backgroundColor: colors.secondaryBackground, flexDirection: 'row', gap: 8, alignItems: 'center' }}><Image source={item.icon} style={{ width: 16, height: 16 }} tintColor={colors.label} /><Text style={{ fontSize: 14, color: colors.label }}>{translate(item.label)}</Text></Pressable>)}
+          {[{ label: 'Projects', icon: 'sf:folder', path: '/projects' }, { label: 'Apps', icon: 'sf:chevron.left.forwardslash.chevron.right', path: '/apps' }, { label: 'Djazzi Bots', icon: 'djazzi-d', path: '/baarasseurs' }].map(item => <Pressable key={item.path} accessibilityRole="button" onPress={() => router.push(item.path as '/projects' | '/apps' | '/baarasseurs')} style={{ minHeight: 44, paddingHorizontal: 14, borderRadius: 22, backgroundColor: colors.secondaryBackground, flexDirection: 'row', gap: 8, alignItems: 'center' }}>{item.icon === 'djazzi-d' ? <DjazziBotsGlyph size={16} color={colors.label} /> : <Image source={item.icon} style={{ width: 16, height: 16 }} tintColor={colors.label} />}<Text style={{ fontSize: 14, color: colors.label }}>{translate(item.label)}</Text></Pressable>)}
         </View>
         {!pairing ? <Pressable accessibilityRole="button" onPress={() => router.push('/pairing')} style={{ paddingVertical: 16 }}><Text style={{ color: colors.accent, fontSize: 16 }}>Connect your computer</Text></Pressable> : <>
           <View style={{ flexDirection: 'row', alignItems: 'center' }}><Text style={{ flex: 1, fontSize: 14, color: colors.secondaryLabel }}>Your projects</Text><Pressable accessibilityRole="button" onPress={() => router.push('/projects')} style={{ minHeight: 44, justifyContent: 'center' }}><Text style={{ fontSize: 14, color: colors.accent }}>See all</Text></Pressable></View>

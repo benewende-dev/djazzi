@@ -51,3 +51,46 @@ describe('the shared save, desktop and phone alike (06/10/2026)', () => {
     expect((calls[3][1] as { entry: { startingMessage: string } }).entry.startingMessage).toMatch(/^C’est l’heure/)
   })
 })
+
+// DJAZZI(26/11/2026): the Djazzi Bots page.
+describe('the Djazzi Bots page (26/11/2026)', () => {
+  it('keeps a paused bot\'s hours but turns its routine off', async () => {
+    const { saveTeam, upsertChange } = await import('@x/shared/dist/baarasseur.js')
+    const b = { id: 'mariama', name: 'Mariama', role: '', mission: '', color: 'clay', tools: [], memory: [], createdAt: 'x', schedule: { every: 'week' as const, day: 1, hour: 8 }, paused: true }
+    const calls: Array<[string, unknown]> = []
+    const invoke = async (channel: string, args: unknown) => { calls.push([channel, args]); return {} }
+    await saveTeam(invoke, upsertChange(b), { id: 'mariama' }, 'fr')
+    const update = calls.find(([c]) => c === 'agent-schedule:updateAgent')?.[1] as { entry: { enabled: boolean; schedule: { expression: string } } }
+    expect(update.entry.enabled).toBe(false)
+    expect(update.entry.schedule.expression).toBe('0 8 * * 1')
+  })
+
+  it('sorts every template into a category, and puts forward two of them', async () => {
+    const { BOT_CATEGORIES, FEATURED_TEMPLATES, templateCategory } = await import('./baarasseurs')
+    const ids = BOT_CATEGORIES.map((c) => c.id)
+    for (const t of TEMPLATES) expect(ids).toContain(templateCategory(t))
+    for (const id of FEATURED_TEMPLATES) expect(TEMPLATES.some((t) => t.id === id)).toBe(true)
+  })
+
+  it('answers the bot where it asked, and starts a conversation to run it now', async () => {
+    const calls: Array<[string, any]> = []
+    ;(globalThis as any).window = { ...(globalThis as any).window, ipc: { invoke: async (channel: string, args: unknown) => {
+      calls.push([channel, args])
+      return channel === 'sessions:create' ? { sessionId: 'new-1' } : { queued: false, turnId: 't' }
+    } } }
+    const { runBotNow, sayToBot } = await import('./baarasseurs')
+    expect(await sayToBot('baarasseur-mariama', 's1', 'Oui')).toBe('s1')
+    expect(calls).toEqual([['sessions:sendOrQueueMessage', { sessionId: 's1', input: { role: 'user', content: 'Oui' }, config: { agent: { agentId: 'baarasseur-mariama' } } }]])
+    calls.length = 0
+    expect(await runBotNow({ id: 'mariama' })).toBe('new-1')
+    expect(calls.map(([c]) => c)).toEqual(['sessions:create', 'sessions:sendOrQueueMessage'])
+    expect(calls[1][1].config.agent.agentId).toBe('baarasseur-mariama')
+  })
+
+  it('writes token counts short', async () => {
+    const { tokensWords } = await import('./baarasseurs')
+    expect(tokensWords(950)).toBe('950')
+    expect(tokensWords(12_400)).toMatch(/^12 k$/)
+    expect(tokensWords(1_250_000)).toMatch(/^1[.,]3 M$/)
+  })
+})

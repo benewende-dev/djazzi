@@ -463,7 +463,7 @@ export function WebAgents() {
 
   return (
     <WebPage>
-      <WebPageHeader title={translate('Your agents')}
+      <WebPageHeader title={translate('Djazzi Bots')}
         subtitle={translate('Workers who work for you: each one has a name, a mission, its tools and its model.')}
         action={{ label: translate('Recruit'), icon: 'plus', onPress: () => router.push('/new-agent') }} />
       {team === null ? <ActivityIndicator style={{ marginTop: 32 }} /> : team.length === 0 ? (

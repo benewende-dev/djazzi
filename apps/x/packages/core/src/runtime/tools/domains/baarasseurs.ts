@@ -4,7 +4,8 @@
 
 import { z } from "zod";
 import { BuiltinToolsSchema } from "../types.js";
-import { rememberFor, updateFor } from "../../../baarasseurs/repo.js";
+import { askApproval, rememberFor, updateFor } from "../../../baarasseurs/repo.js";
+import type { ToolContext } from "../exec-tool.js";
 
 export const baarasseurTools: z.infer<typeof BuiltinToolsSchema> = {
     "baarasseur-remember": {
@@ -35,6 +36,22 @@ export const baarasseurTools: z.infer<typeof BuiltinToolsSchema> = {
             return updated
                 ? { success: true, ...updated }
                 : { success: false, error: "Unknown baarasseur or nothing to change." };
+        },
+    },
+    // DJAZZI(26/11/2026): what waits for the user, on the Djazzi Bots page.
+    "baarasseur-ask-approval": {
+        permission: "none",
+        description: "As a baarasseur, ask the user to approve something before you do it: sending, publishing, posting, paying, deleting, or anything your mission says needs their agreement. It goes on their « À valider » list in Djazzi; their answer comes back in this conversation. Call it once per action, then stop and wait.",
+        inputSchema: z.object({
+            id: z.string().describe("Your baarasseur id, as your instructions give it."),
+            summary: z.string().describe("What you want to do, in one short line in the user's language (« Envoyer une relance à 3 prospects »)."),
+            detail: z.string().optional().describe("The full draft or details the user needs to decide: the messages, the amounts, the recipients."),
+        }),
+        execute: async ({ id, summary, detail }: { id: string; summary: string; detail?: string }, ctx?: ToolContext) => {
+            const approval = await askApproval({ bot: id, summary, detail, sessionId: ctx?.sessionId ?? null, runId: ctx?.runId });
+            return approval
+                ? { success: true, waiting: approval.summary, note: "It is on the user's list. Do not do it until they say yes." }
+                : { success: false, error: "Unknown baarasseur or empty summary." };
         },
     },
 };
