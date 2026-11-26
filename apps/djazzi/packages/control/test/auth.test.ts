@@ -400,6 +400,8 @@ describe('ResendSender', () => {
     const body = JSON.parse(seen[0].init.body as string);
     expect(body).toMatchObject({ from: 'Djazzi <connexion@example.test>', to: ['awa@example.test'] });
     expect(body.subject.startsWith('123456')).toBe(true);
+    // Sent from a no-reply address: the mail says where to write instead.
+    expect(body.text).toContain('contact@djazzi.com');
     expect(sender.sms).toBe(false);
   });
 });

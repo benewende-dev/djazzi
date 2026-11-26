@@ -1,5 +1,6 @@
 import { createHash, randomInt, timingSafeEqual } from 'node:crypto';
 import type { Queryable } from './db.js';
+import { CONTACT } from './legal-page.js';
 
 // Sign-in codes by SMS and by email (security §4.1, decided 29/09 and
 // 01/10/2026). Who sends them is a seam: an SMS aggregator per country and an
@@ -36,7 +37,7 @@ export class ResendSender implements CodeSender {
   readonly sms = false;
   constructor(
     private readonly apiKey: string,
-    /** e.g. "Djazzi <connexion@domaine-verifie>" */
+    /** e.g. "Djazzi <no-reply@djazzi.com>" */
     private readonly from: string,
     private readonly fetchFn: typeof fetch = fetch,
   ) {}
@@ -56,6 +57,9 @@ export class ResendSender implements CodeSender {
           '',
           `Your Djazzi sign-in code: ${code}`,
           'It is valid for 5 minutes. If you did not ask for it, ignore this message.',
+          '',
+          // No reply goes anywhere (no-reply sender): where to write instead.
+          `Une question ? / A question? ${CONTACT}`,
         ].join('\n'),
       }),
     });

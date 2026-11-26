@@ -106,6 +106,21 @@ describe('the email', () => {
     expect(mail.text).toContain('Voir : https://app.test/n/c/');
   });
 
+  it('sends replies to the team, not to the no-reply sender', async () => {
+    const mail = noticeEmail(notice, 'a@x.test', links, 'acc_1');
+    expect(mail.replyTo).toBe('contact@djazzi.com');
+    expect(mail.html).toContain('mailto:contact@djazzi.com');
+    expect(mail.text).toContain('contact@djazzi.com');
+    let body: Array<Record<string, unknown>> = [];
+    const fetchFn = (async (_url: string, init: RequestInit) => {
+      body = JSON.parse(String(init.body));
+      return new Response('{}', { status: 200 });
+    }) as unknown as typeof fetch;
+    await new ResendMailer('k', 'Djazzi <no-reply@x.test>', fetchFn).send([mail, { ...mail, replyTo: undefined }]);
+    expect(body[0]).toMatchObject({ from: 'Djazzi <no-reply@x.test>', reply_to: 'contact@djazzi.com' });
+    expect(body[1]).not.toHaveProperty('reply_to');
+  });
+
   it('leads the button to the web page of what it names', () => {
     expect(emailTarget(notice, 'https://app.test', '/tarifs')).toBe('https://app.test/tarifs');
     expect(emailTarget({ target: 'link', link: 'https://x.test/' }, 'https://app.test', '/tarifs')).toBe('https://x.test/');
