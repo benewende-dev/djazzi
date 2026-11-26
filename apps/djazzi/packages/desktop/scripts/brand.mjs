@@ -168,6 +168,7 @@ import { startAppsRelay } from './djazzi-apps-relay.js';
 // (src/i18n/main.ts, FR_MAIN) translates them, and the release check reads them.
 const MESSAGES: Record<LinkProblem, string> = {
   instances_full: 'Early access is full for now. You are signed in: your space opens as soon as a seat frees up.',
+  too_many_devices: 'This account is already used on 10 devices this week, the most it can be. Write to contact@djazzi.com and we will free a place.',
   unavailable: 'Your Djazzi space is not answering right now. Try again in a few minutes: sign out, then sign in again.',
 };
 

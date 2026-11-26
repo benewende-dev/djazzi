@@ -87,6 +87,13 @@ function bearer(header: string | undefined): string | null {
 
 /** Each sign-in on an app adds one; old ones are revoked from the list. */
 const MAX_DEVICES = 10;
+/**
+ * 26/11/2026: at the limit, a new sign-in takes the place of the device
+ * unused for longest, when unused for this long. Signing out then in again,
+ * a reinstall or a second browser each add a device, and no app lists them
+ * yet: the founder's own account reached ten and could not sign in.
+ */
+const STALE_DEVICE_MS = 7 * 24 * 60 * 60 * 1000;
 
 const publicDevice = (d: { id: string; name: string; createdAt: number; lastSeenAt: number | null; revokedAt: number | null }) => ({
   id: d.id,
@@ -544,7 +551,13 @@ export function createApp(deps: ControlDeps) {
         return c.json({ error: { code: 'instance_unavailable' } }, 503);
       }
       const active = (await deps.store.devices(account.id)).filter((d) => d.revokedAt === null);
-      if (active.length >= MAX_DEVICES) return c.json({ error: { code: 'too_many_devices' } }, 409);
+      if (active.length >= MAX_DEVICES) {
+        const used = (d: (typeof active)[number]) => d.lastSeenAt ?? d.createdAt;
+        const oldest = active.reduce((a, b) => (used(b) < used(a) ? b : a));
+        if (deps.now() - used(oldest) < STALE_DEVICE_MS) return c.json({ error: { code: 'too_many_devices' } }, 409);
+        await deps.store.revokeDevice(account.id, oldest.id, deps.now());
+        console.log(`[control] device ${oldest.id} unused since ${new Date(used(oldest)).toISOString()} revoked for a new sign-in`);
+      }
       const key = `bdk_${randomBytes(32).toString('base64url')}`;
       const device = { id: `dev_${randomUUID()}`, accountId: account.id, name, createdAt: deps.now(), lastSeenAt: null, revokedAt: null };
       await deps.store.addDevice(device, hashToken(key));

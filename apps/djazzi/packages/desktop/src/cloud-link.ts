@@ -46,7 +46,7 @@ export interface CloudLinkDeps {
 }
 
 /** What the person is told, in their words (the app's strings, scripts/brand.mjs). */
-export type LinkProblem = 'instances_full' | 'unavailable';
+export type LinkProblem = 'instances_full' | 'too_many_devices' | 'unavailable';
 
 /**
  * A new instance boots for the first time when its first device connects:
@@ -171,7 +171,7 @@ export function startCloudLink(deps: CloudLinkDeps): () => void {
       const code = body?.error?.code ?? String(res.status);
       deps.log(`[djazzi] no device key: ${code}`);
       // 401: not one of our sessions (another provider's sign-in); nothing to say.
-      if (res.status !== 401) deps.notify(code === 'instances_full' ? 'instances_full' : 'unavailable');
+      if (res.status !== 401) deps.notify(code === 'instances_full' || code === 'too_many_devices' ? code : 'unavailable');
       return;
     }
     const { device, server } = (await res.json()) as { device?: { id?: unknown }; server: { url: string; key: string } };

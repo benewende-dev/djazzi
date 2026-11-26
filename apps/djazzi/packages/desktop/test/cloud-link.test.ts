@@ -189,6 +189,14 @@ describe('startCloudLink', () => {
     expect(t.calls.connect).toEqual([]);
   });
 
+  it('says the account has too many devices, not that the space is down (26/11/2026)', async () => {
+    const t = setup(() => new Response(JSON.stringify({ error: { code: 'too_many_devices' } }), { status: 409 }));
+    t.start();
+    await t.signIn('at-1');
+    expect(t.calls.problems).toEqual(['too_many_devices']);
+    expect(t.calls.connect).toEqual([]);
+  });
+
   it('stays silent on a session that is not ours', async () => {
     const unauthorized = () => new Response(JSON.stringify({ error: { code: 'unauthorized' } }), { status: 401 });
     const t = setup(unauthorized, [{ success: true }], [{ success: true }], { me: unauthorized });

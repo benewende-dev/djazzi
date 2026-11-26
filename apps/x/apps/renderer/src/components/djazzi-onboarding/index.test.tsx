@@ -133,6 +133,17 @@ describe('DjazziOnboarding', () => {
     await waitFor(() => expect(onComplete).toHaveBeenCalledWith())
   })
 
+  it('offers a way out when the space does not open (26/11/2026)', async () => {
+    saved({ step: 1, profile: {}, spaceSince: Date.now() - 120_000, returning: true })
+    state = { ...state, signedIn: true }
+    const onComplete = vi.fn()
+    render(<DjazziOnboarding open onComplete={onComplete} />)
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Try again' })).toBeTruthy())
+    fireEvent.click(screen.getByRole('button', { name: 'Open Djazzi now' }))
+    expect(onComplete).toHaveBeenCalledWith()
+    expect(store.has(STORAGE_KEY)).toBe(false)
+  })
+
   it('shows nothing when closed', () => {
     const { container } = render(<DjazziOnboarding open={false} onComplete={() => {}} />)
     expect(container.innerHTML).toBe('')
