@@ -480,6 +480,10 @@ export function desktopPlan() {
       edit(`${renderer}/components/settings/account-settings.tsx`, "setOffers(result?.plans ?? null)", "setOffers(result ? withPlanAccess(result).plans : null)"),
 
       edit(`${main}/forge.config.cjs`, "appBundleId: 'com.rowboat.app',", `appBundleId: '${BRAND.bundleId}',`),
+      // DJAZZI(26/11/2026): the name macOS shows (Dock, Activity Monitor, the
+      // app list). Without it the packager falls back to the executable's
+      // name, which stays `rowboat` (UPSTREAM.md §2).
+      edit(`${main}/forge.config.cjs`, "        extendInfo: {\n", `        extendInfo: {\n            CFBundleDisplayName: '${BRAND.name}',\n`),
       edit(`${main}/forge.config.cjs`, "authors: 'rowboatlabs',", `authors: '${BRAND.publisher}',`),
       edit(
         `${main}/forge.config.cjs`,
