@@ -481,9 +481,11 @@ export function desktopPlan() {
 
       edit(`${main}/forge.config.cjs`, "appBundleId: 'com.rowboat.app',", `appBundleId: '${BRAND.bundleId}',`),
       // DJAZZI(26/11/2026): the name macOS shows (Dock, Activity Monitor, the
-      // app list). Without it the packager falls back to the executable's
-      // name, which stays `rowboat` (UPSTREAM.md §2).
-      edit(`${main}/forge.config.cjs`, "        extendInfo: {\n", `        extendInfo: {\n            CFBundleDisplayName: '${BRAND.name}',\n`),
+      // app list). The packager writes the executable's name there, over
+      // extendInfo (@electron/packager mac.js updatePlist): on the Mac the
+      // executable is named Djazzi. Elsewhere it stays `rowboat`, which
+      // Windows' login item (main login_item.ts) and Squirrel rely on.
+      edit(`${main}/forge.config.cjs`, "        executableName: 'rowboat',\n        icon:", `        executableName: process.platform === 'darwin' ? '${BRAND.name}' : 'rowboat',\n        icon:`),
       edit(`${main}/forge.config.cjs`, "authors: 'rowboatlabs',", `authors: '${BRAND.publisher}',`),
       edit(
         `${main}/forge.config.cjs`,
