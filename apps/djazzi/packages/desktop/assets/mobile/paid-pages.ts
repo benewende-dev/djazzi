@@ -6,7 +6,7 @@
 export type PaidPage = { title: string; text: string };
 
 export const PAID_PAGES: Record<string, PaidPage> = {
-  baarasseurs: { title: 'Your agents', text: 'Agents with a name, a role and a face, who work on their own and wait for your approval before anything leaves.' },
+  baarasseurs: { title: 'Djazzi Bots', text: 'Bots with a name, a role and a face, who work on their own and wait for your approval before anything leaves.' },
   agents: { title: 'Routines', text: 'Your agents act at set times: the morning brief, a weekly follow-up, a report every month.' },
   code: { title: 'Code and projects', text: 'Open a folder, let an agent read, write and run code, and review each change.' },
   workspaces: { title: 'Code and projects', text: 'Open a folder, let an agent read, write and run code, and review each change.' },

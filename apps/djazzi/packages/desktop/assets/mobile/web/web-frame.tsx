@@ -14,6 +14,7 @@ import { sessionResetText, weekResetText } from '@/lib/usage-reset';
 import { useWorkAccess } from '@/lib/work-access-provider';
 import { useColors } from '@/theme/colors';
 import { __djazziT as translate, interfaceText } from '@/djazzi-i18n/mobile/runtime';
+import { DjazziBotsGlyph } from '@/components/djazzi-bots-glyph';
 
 // DJAZZI(08/11/2026): Djazzi in the browser, laid out as claude.ai (the
 // founder's call): on a wide screen, the conversations stay on the left and
@@ -42,7 +43,7 @@ type Place = { id: string; label: string; icon: string; path: string; paid?: boo
 
 /** The desktop's sidebar, in its order. */
 const PLACES: Place[] = [
-  { id: 'agents', label: 'Agents', icon: 'person.2', path: '/baarasseurs', paid: true },
+  { id: 'agents', label: 'Djazzi Bots', icon: 'djazzi-d', path: '/baarasseurs', paid: true },
   { id: 'routines', label: 'Routines', icon: 'clock', path: '/routines', paid: true },
   { id: 'code', label: 'Code', icon: 'chevron.left.forwardslash.chevron.right', path: '/projects', paid: true },
   { id: 'todo', label: 'To-do', icon: 'checklist', path: '/tasks' },
@@ -110,6 +111,8 @@ function go(href: Parameters<typeof router.replace>[0]) {
 }
 
 function Icon({ name, size = 16, color }: { name: string; size?: number; color: string }) {
+  // DJAZZI(26/11/2026): Djazzi Bots has the D, not a symbol.
+  if (name === 'djazzi-d') return <DjazziBotsGlyph size={size} color={color} />;
   return <Image source={`sf:${name}`} style={{ width: size, height: size }} tintColor={color} />;
 }
 

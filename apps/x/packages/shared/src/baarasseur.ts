@@ -60,6 +60,8 @@ export const BaarasseurSchema = z.object({
     memory: z.array(z.string().max(300)).max(MEMORY_LIMIT).default([]),
     /** Its documents (08/10/2026): workspace paths it reads when the mission needs them. */
     documents: z.array(z.string().max(300)).max(DOCUMENTS_LIMIT).default([]),
+    /** DJAZZI(26/11/2026): paused, it keeps its hours but does not run on its own. */
+    paused: z.boolean().optional().catch(undefined),
     createdAt: z.string(),
 });
 
@@ -84,6 +86,8 @@ export interface Baarasseur {
     schedule?: BaarasseurSchedule | null;
     memory: string[];
     documents?: string[];
+    /** Paused: its hours are kept, its scheduled runs do not start. */
+    paused?: boolean;
     createdAt: string;
 }
 
@@ -219,6 +223,13 @@ export function personaInstructions(b: Baarasseur): string {
             ...documents.map((d) => `- ${d}`),
         );
     }
+    // DJAZZI(26/11/2026): what waits for the user goes on the « À valider »
+    // list of the Djazzi Bots page, not only in the conversation.
+    lines.push(
+        "",
+        "## What needs the user's approval",
+        `Before you send, publish, post, pay, delete, or do anything your mission says needs the user's agreement, call \`baarasseur-ask-approval\` (id "${b.id}") with a one-line summary and the full draft, then stop and wait for their answer. It shows on their list of things to approve; their « yes » or « no » comes back to you in this conversation. Never do it before they say yes.`,
+    );
     if (b.schedule) {
         lines.push(
             "",
@@ -609,7 +620,8 @@ export async function saveTeam(
             agentName,
             entry: {
                 schedule: { type: "cron", expression: scheduleCron(b.schedule) },
-                enabled: true,
+                // DJAZZI(26/11/2026): paused, the entry stays with its hours, off.
+                enabled: !b.paused,
                 startingMessage: SCHEDULED_MESSAGES[lang],
                 description: `${b.name}${b.role ? ` · ${b.role}` : ""}`,
             },
@@ -626,4 +638,135 @@ export function upsertChange(b: Baarasseur, forgotten: string[] = []) {
         const memory = [...b.memory, ...stored.memory.filter((m) => !b.memory.includes(m) && !forgotten.includes(m))];
         return current.map((x) => (x.id === b.id ? { ...b, memory } : x));
     };
+}
+
+
+// ---------------------------------------------------------------------------
+// DJAZZI(26/11/2026): the Djazzi Bots page — the catalogue's categories, what
+// waits for the user's approval, and how much each bot works. Kept here so
+// the desktop and the phone read the same files the same way.
+
+export type BotCategory = "sales" | "finance" | "assistant" | "shop" | "hr" | "content" | "data";
+export const BOT_CATEGORIES: ReadonlyArray<{ id: BotCategory; label: Words }> = [
+    { id: "sales", label: { fr: "Ventes", en: "Sales" } },
+    { id: "finance", label: { fr: "Comptabilité", en: "Finance" } },
+    { id: "assistant", label: { fr: "Assistant", en: "Assistant" } },
+    { id: "shop", label: { fr: "Boutique", en: "Shop" } },
+    { id: "hr", label: { fr: "RH", en: "HR" } },
+    { id: "content", label: { fr: "Contenu", en: "Content" } },
+    { id: "data", label: { fr: "Données", en: "Data" } },
+];
+/** Each template's category; one not listed falls under the assistant. */
+export const TEMPLATE_CATEGORY: Record<string, BotCategory> = {
+    mariama: "sales", ibrahim: "finance", adjoua: "assistant", aminata: "shop", fatou: "hr",
+    moussa: "shop", zara: "content", kofi: "data", awa: "content",
+};
+export const templateCategory = (t: Pick<Template, "id">): BotCategory => TEMPLATE_CATEGORY[t.id] ?? "assistant";
+/** The page's ideas to start from: the one picked is also the sentence Djazzi prepares the bot from. */
+export const BOT_IDEAS: ReadonlyArray<Words> = [
+    { fr: "Relancer mes clients chaque lundi", en: "Follow up with my customers every Monday" },
+    { fr: "Trier ma boîte mail chaque matin", en: "Sort my inbox every morning" },
+    { fr: "Suivre mes stocks", en: "Keep track of my stock" },
+    { fr: "Résumer mes réunions", en: "Sum up my meetings" },
+];
+/** How a decided one reads in the activity. */
+export const DECIDED_WORDS: Record<"approved" | "refused", Words> = {
+    approved: { fr: "Validé", en: "Approved" },
+    refused: { fr: "Refusé", en: "Refused" },
+};
+/** The two the page puts forward, « Choisis par Djazzi ». */
+export const FEATURED_TEMPLATES = ["ibrahim", "aminata"] as const;
+
+/** What a bot asked the user to approve (written by the core, decided in the app). */
+export const APPROVALS_PATH = "config/baarasseurs-approvals.json";
+/** Kept: the pending ones, and the latest decisions for the activity. */
+export const APPROVALS_LIMIT = 200;
+
+export const BaarasseurApprovalSchema = z.object({
+    id: z.string(),
+    /** The baarasseur's id (not the agent id). */
+    bot: z.string(),
+    /** The chat session it asked from, to answer there; null for a headless run. */
+    sessionId: z.string().nullable().default(null),
+    runId: z.string().default(""),
+    summary: z.string().max(300),
+    detail: z.string().max(8000).default(""),
+    createdAt: z.string(),
+    status: z.enum(["pending", "approved", "refused"]).default("pending"),
+    decidedAt: z.string().optional(),
+});
+export type BaarasseurApproval = z.infer<typeof BaarasseurApprovalSchema>;
+
+/** Reads the list leniently: a broken entry is dropped, not the list. */
+export function parseApprovals(text: string | null | undefined): BaarasseurApproval[] {
+    if (!text) return [];
+    try {
+        const raw = JSON.parse(text) as { approvals?: unknown };
+        if (!Array.isArray(raw.approvals)) return [];
+        return raw.approvals.flatMap((entry) => {
+            const parsed = BaarasseurApprovalSchema.safeParse(entry);
+            return parsed.success ? [parsed.data] : [];
+        });
+    } catch {
+        return [];
+    }
+}
+
+/** The list once one is added: newest last, the oldest decided ones go first when full. */
+export function withApproval(list: BaarasseurApproval[], next: BaarasseurApproval): BaarasseurApproval[] {
+    const all = [...list, next];
+    while (all.length > APPROVALS_LIMIT) {
+        const i = all.findIndex((a) => a.status !== "pending");
+        all.splice(i >= 0 ? i : 0, 1);
+    }
+    return all;
+}
+
+/** The user's answer, said to the bot in its conversation. */
+export function approvalAnswer(a: Pick<BaarasseurApproval, "summary">, approved: boolean, lang: Lang): string {
+    if (lang === "fr") {
+        return approved
+            ? `Oui, c’est validé : ${a.summary}. Tu peux le faire maintenant.`
+            : `Non, ne le fais pas : ${a.summary}. Garde-le en brouillon et dis-moi ce que tu proposes à la place.`;
+    }
+    return approved
+        ? `Yes, approved: ${a.summary}. You can do it now.`
+        : `No, don't do it: ${a.summary}. Keep it as a draft and tell me what you suggest instead.`;
+}
+
+/** How much each bot worked, by month (« 2026-11 »), counted by the core on this machine. */
+export const USAGE_PATH = "config/baarasseurs-usage.json";
+export interface BotUsage { inputTokens: number; outputTokens: number }
+export type UsageByMonth = Record<string, Record<string, BotUsage>>;
+
+export function parseUsage(text: string | null | undefined): UsageByMonth {
+    if (!text) return {};
+    try {
+        const raw = JSON.parse(text) as { months?: unknown };
+        return raw.months && typeof raw.months === "object" ? (raw.months as UsageByMonth) : {};
+    } catch {
+        return {};
+    }
+}
+
+export const usageMonth = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+
+/** Adds one model call to its bot's month; keeps the last 12 months. */
+export function addUsage(months: UsageByMonth, bot: string, at: Date, input: number, output: number): UsageByMonth {
+    const key = usageMonth(at);
+    const month = { ...(months[key] ?? {}) };
+    const cur = month[bot] ?? { inputTokens: 0, outputTokens: 0 };
+    month[bot] = {
+        inputTokens: cur.inputTokens + Math.max(0, Math.round(input || 0)),
+        outputTokens: cur.outputTokens + Math.max(0, Math.round(output || 0)),
+    };
+    const next: UsageByMonth = { ...months, [key]: month };
+    for (const old of Object.keys(next).sort().slice(0, -12)) delete next[old];
+    return next;
+}
+
+/** A copy of one, under a free name, without its memory of the user. */
+export function duplicateOf(b: Baarasseur, taken: string[], lang: Lang): Baarasseur {
+    const name = `${b.name} ${lang === "fr" ? "(copie)" : "(copy)"}`.slice(0, 40);
+    return { ...b, id: idFor(name, taken), name, memory: [], paused: false, createdAt: new Date().toISOString() };
 }

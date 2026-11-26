@@ -12,8 +12,9 @@ vi.mock('../runtime/assembly/copilot/agent.js', () => ({
 }));
 import { loadAgent } from '../runtime/assembly/registry.js';
 import { carriesSkillsForward, hasWorkspaceContext } from '../runtime/assembly/traits.js';
-import { rememberFor, updateFor } from './repo.js';
-import { nextRunAt, personaInstructions, scheduleCron, parseBaarasseurs, type Baarasseur } from '@x/shared/dist/baarasseur.js';
+import { askApproval, rememberFor, tallyBaarasseurUsage, updateFor } from './repo.js';
+import { baarasseurTools } from '../runtime/tools/domains/baarasseurs.js';
+import { addUsage, approvalAnswer, duplicateOf, nextRunAt, parseApprovals, parseUsage, personaInstructions, scheduleCron, parseBaarasseurs, withApproval, type Baarasseur, type BaarasseurApproval } from '@x/shared/dist/baarasseur.js';
 
 const mariama: Baarasseur = {
     id: 'mariama', name: 'Mariama', role: 'Commerciale', mission: 'Relance mes prospects.', color: 'clay',
@@ -35,7 +36,7 @@ describe('the baarasseurs (06/10/2026)', () => {
         expect(agent.instructions.startsWith('COPILOT\n\n# You are Mariama, Commerciale')).toBe(true);
         expect(agent.instructions).toContain('<mission>\nRelance mes prospects.\n</mission>');
         expect(agent.instructions).toContain('every Monday at 8:00');
-        expect(Object.keys(agent.tools ?? {})).toEqual(['web-search', 'baarasseur-remember', 'baarasseur-update']);
+        expect(Object.keys(agent.tools ?? {})).toEqual(['web-search', 'baarasseur-remember', 'baarasseur-update', 'baarasseur-ask-approval']);
         expect(agent).toMatchObject({ name: 'baarasseur-mariama', model: 'deepseek/deepseek-v4', provider: 'rowboat' });
     });
 
@@ -107,5 +108,53 @@ describe('the baarasseurs (06/10/2026)', () => {
     it('drops a broken entry, not the whole team', () => {
         expect(parseBaarasseurs(JSON.stringify({ baarasseurs: [mariama, { id: 'BAD ID' }] })).map((b) => b.id)).toEqual(['mariama']);
         expect(parseBaarasseurs('not json')).toEqual([]);
+    });
+
+    // DJAZZI(26/11/2026): the Djazzi Bots page.
+    it('puts what waits for the user on the « À valider » list, from the conversation it asked in', async () => {
+        await fs.rm(path.join(workDir, 'config', 'baarasseurs-approvals.json'), { force: true });
+        expect(personaInstructions(mariama)).toContain('baarasseur-ask-approval');
+        const tool = baarasseurTools['baarasseur-ask-approval'];
+        const res = await tool.execute({ id: 'mariama', summary: '  Envoyer une relance\n à 3 prospects ', detail: 'Bonjour…' }, { sessionId: 's1', runId: 'r1' });
+        expect(res.success).toBe(true);
+        const list = parseApprovals(await fs.readFile(path.join(workDir, 'config', 'baarasseurs-approvals.json'), 'utf8'));
+        expect(list).toHaveLength(1);
+        expect(list[0]).toMatchObject({ bot: 'mariama', sessionId: 's1', runId: 'r1', summary: 'Envoyer une relance à 3 prospects', detail: 'Bonjour…', status: 'pending' });
+        expect(await askApproval({ bot: 'nobody', summary: 'x' })).toBeNull();
+        expect(await askApproval({ bot: 'mariama', summary: '   ' })).toBeNull();
+    });
+
+    it('keeps the list bounded, dropping decided ones before pending ones', () => {
+        const one = (id: string, status: BaarasseurApproval['status']): BaarasseurApproval => ({ id, bot: 'm', sessionId: null, runId: '', summary: id, detail: '', createdAt: '2026-11-26T00:00:00Z', status });
+        const full = Array.from({ length: 200 }, (_, i) => one(`p${i}`, i === 5 ? 'approved' : 'pending'));
+        const next = withApproval(full, one('new', 'pending'));
+        expect(next).toHaveLength(200);
+        expect(next.some((a) => a.id === 'p5')).toBe(false);
+        expect(next.at(-1)?.id).toBe('new');
+        expect(approvalAnswer({ summary: 'Envoyer' }, true, 'fr')).toContain('Oui');
+        expect(approvalAnswer({ summary: 'Envoyer' }, false, 'en')).toContain('No');
+    });
+
+    it('counts each bot\'s tokens by month, and nothing for the assistant', async () => {
+        await fs.rm(path.join(workDir, 'config', 'baarasseurs-usage.json'), { force: true });
+        tallyBaarasseurUsage('baarasseur-mariama', 100, 20);
+        tallyBaarasseurUsage('baarasseur-mariama', 50, 5);
+        tallyBaarasseurUsage('copilot', 999, 999);
+        await vi.waitFor(async () => {
+            const months = parseUsage(await fs.readFile(path.join(workDir, 'config', 'baarasseurs-usage.json'), 'utf8'));
+            expect(Object.values(months)[0]).toEqual({ mariama: { inputTokens: 150, outputTokens: 25 } });
+        });
+        let months = {};
+        for (let m = 0; m < 14; m++) months = addUsage(months, 'x', new Date(2026, m, 3), 1, 1);
+        expect(Object.keys(months)).toHaveLength(12);
+    });
+
+    it('duplicates one under a free name, without what it learnt of the user', () => {
+        const copy = duplicateOf({ ...mariama, memory: ['Tutoie-moi'], paused: true }, ['mariama'], 'fr');
+        expect(copy.name).toBe('Mariama (copie)');
+        expect(copy.id).not.toBe('mariama');
+        expect(copy.memory).toEqual([]);
+        expect(copy.paused).toBe(false);
+        expect(parseBaarasseurs(JSON.stringify({ baarasseurs: [{ ...mariama, paused: true }] }))[0].paused).toBe(true);
     });
 });
