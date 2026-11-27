@@ -161,12 +161,23 @@ function skip(el: Element | null): boolean {
   return !!el?.closest(CONTENT);
 }
 
+/**
+ * The French this layer wrote in each attribute (27/11/2026): a value seen
+ * again is not translated a second time. « Search for a bot » became
+ * « Chercher un bot », then « Bot Chercher un » through the template `$1 bot`.
+ */
+const writtenAttrs = new WeakMap<Element, Map<string, string>>();
+
 function translateAttrs(dict: Dictionary, el: Element): void {
   for (const name of ATTRS) {
     const v = el.getAttribute(name);
-    if (v) {
-      const fr = translate(dict, v, 'attr');
-      if (fr !== null && fr !== v) el.setAttribute(name, fr);
+    if (!v || writtenAttrs.get(el)?.get(name) === v) continue;
+    const fr = translate(dict, v, 'attr');
+    if (fr !== null && fr !== v) {
+      el.setAttribute(name, fr);
+      const written = writtenAttrs.get(el) ?? new Map<string, string>();
+      written.set(name, fr);
+      writtenAttrs.set(el, written);
     }
   }
 }
