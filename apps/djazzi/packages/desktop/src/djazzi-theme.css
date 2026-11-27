@@ -44,6 +44,111 @@ html.dark {
   --rowboat-link: #6f9fff;
 }
 
+/* 27/11/2026, « Your Djazzi, your colour » (the founder's mockup
+ * « Couleurs Djazzi »): the colour of the person's Djazzi becomes the
+ * accent (lib/djazzi-color.ts sets html[data-djazzi-color]). Each one has a
+ * deeper shade than the shape for text and buttons (4.5:1 at least on
+ * white), and a lighter one by night. White keeps the brand's blue above. */
+
+html:root[data-djazzi-color="orange"] {
+  --primary: #C2410C; --primary-foreground: #ffffff;
+  --sidebar-primary: #C2410C; --sidebar-primary-foreground: #ffffff;
+  --rowboat-bubble: #C2410C; --rowboat-bubble-foreground: #ffffff;
+  --ring: #C2410C; --sidebar-ring: #C2410C;
+  --sidebar-accent: #fff1e8; --sidebar-accent-foreground: #C2410C;
+  --rowboat-link: #C2410C;
+}
+html.dark[data-djazzi-color="orange"] {
+  --primary: #FF8A4C; --primary-foreground: #1a0b04;
+  --sidebar-primary: #FF8A4C; --sidebar-primary-foreground: #1a0b04;
+  --rowboat-bubble: #FF8A4C; --rowboat-bubble-foreground: #1a0b04;
+  --ring: #FF8A4C; --sidebar-ring: #FF8A4C;
+  --sidebar-accent: rgba(255,138,76,0.16); --sidebar-accent-foreground: #FF8A4C;
+  --rowboat-link: #FF8A4C;
+}
+
+html:root[data-djazzi-color="green"] {
+  --primary: #0F7A44; --primary-foreground: #ffffff;
+  --sidebar-primary: #0F7A44; --sidebar-primary-foreground: #ffffff;
+  --rowboat-bubble: #0F7A44; --rowboat-bubble-foreground: #ffffff;
+  --ring: #0F7A44; --sidebar-ring: #0F7A44;
+  --sidebar-accent: #e7f6ee; --sidebar-accent-foreground: #0F7A44;
+  --rowboat-link: #0F7A44;
+}
+html.dark[data-djazzi-color="green"] {
+  --primary: #3DD68C; --primary-foreground: #04190e;
+  --sidebar-primary: #3DD68C; --sidebar-primary-foreground: #04190e;
+  --rowboat-bubble: #3DD68C; --rowboat-bubble-foreground: #04190e;
+  --ring: #3DD68C; --sidebar-ring: #3DD68C;
+  --sidebar-accent: rgba(61,214,140,0.16); --sidebar-accent-foreground: #3DD68C;
+  --rowboat-link: #3DD68C;
+}
+
+html:root[data-djazzi-color="violet"] {
+  --primary: #6D28D9; --primary-foreground: #ffffff;
+  --sidebar-primary: #6D28D9; --sidebar-primary-foreground: #ffffff;
+  --rowboat-bubble: #6D28D9; --rowboat-bubble-foreground: #ffffff;
+  --ring: #6D28D9; --sidebar-ring: #6D28D9;
+  --sidebar-accent: #f1ecfe; --sidebar-accent-foreground: #6D28D9;
+  --rowboat-link: #6D28D9;
+}
+html.dark[data-djazzi-color="violet"] {
+  --primary: #A78BFA; --primary-foreground: #150a2e;
+  --sidebar-primary: #A78BFA; --sidebar-primary-foreground: #150a2e;
+  --rowboat-bubble: #A78BFA; --rowboat-bubble-foreground: #150a2e;
+  --ring: #A78BFA; --sidebar-ring: #A78BFA;
+  --sidebar-accent: rgba(167,139,250,0.18); --sidebar-accent-foreground: #A78BFA;
+  --rowboat-link: #A78BFA;
+}
+
+html:root[data-djazzi-color="rose"] {
+  --primary: #BE185D; --primary-foreground: #ffffff;
+  --sidebar-primary: #BE185D; --sidebar-primary-foreground: #ffffff;
+  --rowboat-bubble: #BE185D; --rowboat-bubble-foreground: #ffffff;
+  --ring: #BE185D; --sidebar-ring: #BE185D;
+  --sidebar-accent: #fdebf3; --sidebar-accent-foreground: #BE185D;
+  --rowboat-link: #BE185D;
+}
+html.dark[data-djazzi-color="rose"] {
+  --primary: #F472B6; --primary-foreground: #2b0716;
+  --sidebar-primary: #F472B6; --sidebar-primary-foreground: #2b0716;
+  --rowboat-bubble: #F472B6; --rowboat-bubble-foreground: #2b0716;
+  --ring: #F472B6; --sidebar-ring: #F472B6;
+  --sidebar-accent: rgba(244,114,182,0.16); --sidebar-accent-foreground: #F472B6;
+  --rowboat-link: #F472B6;
+}
+
+html:root[data-djazzi-color="blue"] {
+  --primary: #1D5FD6; --primary-foreground: #ffffff;
+  --sidebar-primary: #1D5FD6; --sidebar-primary-foreground: #ffffff;
+  --rowboat-bubble: #1D5FD6; --rowboat-bubble-foreground: #ffffff;
+  --ring: #1D5FD6; --sidebar-ring: #1D5FD6;
+  --sidebar-accent: #eaf1ff; --sidebar-accent-foreground: #1D5FD6;
+  --rowboat-link: #1D5FD6;
+}
+html.dark[data-djazzi-color="blue"] {
+  --primary: #6AA8FF; --primary-foreground: #06142e;
+  --sidebar-primary: #6AA8FF; --sidebar-primary-foreground: #06142e;
+  --rowboat-bubble: #6AA8FF; --rowboat-bubble-foreground: #06142e;
+  --ring: #6AA8FF; --sidebar-ring: #6AA8FF;
+  --sidebar-accent: rgba(106,168,255,0.16); --sidebar-accent-foreground: #6AA8FF;
+  --rowboat-link: #6AA8FF;
+}
+
+/* Each page keeps a quiet tint of its own on its icon, at rest; the page
+ * you are on takes your colour (below, from the rule further down). */
+html:root [data-sidebar="menu-button"][data-djazzi-page="coworkers"] > svg:not([class*="text-"]) { color: #B45309; }
+html:root [data-sidebar="menu-button"][data-djazzi-page="routines"] > svg:not([class*="text-"]) { color: #6D28D9; }
+html:root [data-sidebar="menu-button"][data-djazzi-page="code"] > svg:not([class*="text-"]) { color: #047857; }
+html:root [data-sidebar="menu-button"][data-djazzi-page="todo"] > svg:not([class*="text-"]) { color: #1D4ED8; }
+html:root [data-sidebar="menu-button"][data-djazzi-page="library"] > svg:not([class*="text-"]) { color: #0F766E; }
+html.dark [data-sidebar="menu-button"][data-djazzi-page="coworkers"] > svg:not([class*="text-"]) { color: #FBBF24; }
+html.dark [data-sidebar="menu-button"][data-djazzi-page="routines"] > svg:not([class*="text-"]) { color: #A78BFA; }
+html.dark [data-sidebar="menu-button"][data-djazzi-page="code"] > svg:not([class*="text-"]) { color: #34D399; }
+html.dark [data-sidebar="menu-button"][data-djazzi-page="todo"] > svg:not([class*="text-"]) { color: #60A5FA; }
+html.dark [data-sidebar="menu-button"][data-djazzi-page="library"] > svg:not([class*="text-"]) { color: #2DD4BF; }
+html [data-sidebar="menu-button"][data-djazzi-page][data-active="true"] > svg:not([class*="text-"]) { color: var(--primary); }
+
 /* The sidebar's icons, as the first Djazzi drew them (02/10/2026): bare,
  * soft grey at rest, blue only on the row you are on, and lifted a pixel
  * under the pointer. The label stays at full ink, which keeps the list

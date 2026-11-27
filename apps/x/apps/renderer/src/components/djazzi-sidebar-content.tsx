@@ -870,7 +870,7 @@ export function SidebarContentPanel({
       case 'coworkers':
         return (
 <SidebarMenuItem key={row.id}>
-      <SidebarMenuButton isActive={activeNav === 'baarasseurs'} onClick={() => onOpenBaarasseurs?.()}>
+      <SidebarMenuButton data-djazzi-page="coworkers" isActive={activeNav === 'baarasseurs'} onClick={() => onOpenBaarasseurs?.()}>
         <DjazziBotsIcon className="size-4 shrink-0" />
         <span className="flex-1 truncate font-medium">{pageLabel(row, 'Djazzi Bots')}</span>
         {baarasseursUnread > 0 && (
@@ -884,7 +884,7 @@ export function SidebarContentPanel({
       case 'code':
         return (
 <SidebarMenuItem key={row.id}>
-      <SidebarMenuButton
+      <SidebarMenuButton data-djazzi-page="code"
         data-tour-id="nav-workspaces"
         isActive={activeNav === 'workspaces' || activeNav === 'code'}
         onClick={() => knowledgeActions.openWorkspaceAt()}
@@ -1009,7 +1009,7 @@ export function SidebarContentPanel({
       case 'todo':
         return (
 <SidebarMenuItem key={row.id}>
-      <SidebarMenuButton data-tour-id="nav-home" isActive={activeNav === 'home'} onClick={onOpenHome}>
+      <SidebarMenuButton data-djazzi-page="todo" data-tour-id="nav-home" isActive={activeNav === 'home'} onClick={onOpenHome}>
         <SquareCheckBig className="size-4 shrink-0" />
         <span className="flex-1 truncate">{pageLabel(row, 'Todo')}</span>
       </SidebarMenuButton>
@@ -1019,7 +1019,7 @@ export function SidebarContentPanel({
         return (
           <React.Fragment key={row.id}>
 <SidebarMenuItem>
-      <SidebarMenuButton
+      <SidebarMenuButton data-djazzi-page="routines"
         data-tour-id="nav-agents"
         isActive={activeNav === 'agents'}
         onClick={onOpenBgTasks}
@@ -1098,7 +1098,7 @@ export function SidebarContentPanel({
       case 'library':
         return (
 <SidebarMenuItem key={row.id}>
-      <SidebarMenuButton
+      <SidebarMenuButton data-djazzi-page="library"
         data-tour-id="nav-knowledge"
         isActive={activeNav === 'knowledge'}
         onClick={() => knowledgeActions.openKnowledgeView()}

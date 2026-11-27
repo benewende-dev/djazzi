@@ -4,6 +4,7 @@ import { cn } from '@/lib/utils'
 import { MobileChannelsSettings } from '@/components/settings/mobile-channels-settings'
 import { GmailIcon, OutlookIcon } from '@/components/onboarding/provider-icons'
 import { fillOf, Shape } from './shape'
+import { applyColor } from '@/lib/djazzi-color'
 import {
   clearSaved, COLOR_CHOICES, ideasFor, loadLook, loadSaved, mergeProfile, profileBlock, PROFILE_FILE, SECTORS,
   SHAPE_CHOICES, SLOW_SPACE_MS, storeLook, storeSaved, type Look, type Profile, type Saved, type Step,
@@ -534,6 +535,8 @@ export function DjazziOnboarding({ open, onComplete }: DjazziOnboardingProps) {
   const changeLook = (next: Look) => {
     setLook(next)
     storeLook(next)
+    // The app behind takes the colour at once (lib/djazzi-color.ts).
+    applyColor(next.color)
   }
 
   const step = saved.step
