@@ -13,6 +13,11 @@ try {
   // No Intl: English.
 }
 
+/** The phone's language, as the app speaks it. */
+export function currentLanguage(): 'fr' | 'en' {
+  return lang;
+}
+
 /** Overrides the phone's language (tests, a future setting). */
 export function setLanguage(next: 'fr' | 'en'): void {
   lang = next;

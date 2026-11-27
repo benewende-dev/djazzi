@@ -67,6 +67,8 @@ describe('the baarasseurs (06/10/2026)', () => {
     // DJAZZI(07/11/2026): the first meeting, then a new name from the conversation.
     it('gets to know the user until it remembers something, and renames itself on request', async () => {
         expect(personaInstructions({ ...mariama, memory: [] })).toContain('## First meeting');
+        // DJAZZI(27/11/2026): it never asks again what the person already told Djazzi.
+        expect(personaInstructions({ ...mariama, memory: [] })).toContain('never ask what it already says');
         expect(personaInstructions({ ...mariama, memory: ['Appeler l’utilisateur Yann'] })).not.toContain('## First meeting');
         expect(personaInstructions(mariama)).toContain('baarasseur-update');
         expect(personaInstructions({ ...mariama, role: '' })).toContain('## Your title');

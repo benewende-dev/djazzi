@@ -5525,6 +5525,8 @@ export const FR: Dictionary = {
   },
   templates: {
     "Hello, I'm $1. Before we start, what should I call you?": "Bonjour, je suis $1. Avant de commencer, comment souhaitez-vous que je vous appelle ?",
+    "Hello $1, I'm $2. Tell me what you would like me to take care of first.": "Bonjour $1, je suis $2. Dites-moi par quoi vous voulez que je commence.",
+    "Hello $1, I'm $2. To start, tell me a little about your activity.": "Bonjour $1, je suis $2. Pour commencer, parlez-moi un peu de votre activité.",
     "Ask $1": "Demander à $1",
     "Disconnect $1?": "Déconnecter $1 ?",
     "$1 connected": "$1 connecté(s)",

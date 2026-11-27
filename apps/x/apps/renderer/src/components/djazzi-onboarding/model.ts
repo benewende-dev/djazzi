@@ -1,4 +1,5 @@
 import type { ShapeId } from '@/lib/djazzi-d-mark'
+import type { Profile } from '@x/shared/dist/djazzi-profile.js'
 
 // DJAZZI(04/10/2026): Djazzi's onboarding. Its logic lives here, without
 // React. 26/11/2026 (founder's mockup): one flow of five screens in place
@@ -12,10 +13,7 @@ import type { ShapeId } from '@/lib/djazzi-d-mark'
 /** Welcome, account, you, tools, ready. */
 export type Step = 0 | 1 | 2 | 3 | 4
 
-export interface Profile {
-  name: string
-  sector: string | null
-}
+export type { Profile }
 
 export interface Saved {
   step: Step
@@ -187,33 +185,9 @@ export function ideasFor(sector: string | null): Idea[] {
   return (sector && IDEAS_BY_SECTOR[sector]) || ANYONE
 }
 
-/** The agent's notes on the person (core: knowledge/Agent Notes/user.md, in every chat). */
-export const PROFILE_FILE = 'knowledge/Agent Notes/user.md'
-const HEADING = '## Told at sign-up'
-const LANGUAGE_NAMES: Record<string, string> = { fr: 'French', en: 'English' }
-const START = '<!-- djazzi:profile -->'
-const END = '<!-- /djazzi:profile -->'
-
-/** The profile as the agent reads it; empty when nothing was told. */
-export function profileBlock(profile: Profile, lang: string): string {
-  const lines = [
-    profile.name && `- First name: ${profile.name}`,
-    profile.sector && `- Activity: ${profile.sector}`,
-  ].filter(Boolean)
-  if (!lines.length) return ''
-  lines.push(`- Language of the app: ${LANGUAGE_NAMES[lang] ?? LANGUAGE_NAMES.en}`)
-  // For the agent, not shown: in English whatever the app's language.
-  return [START, HEADING, ...lines, END].join('\n')
-}
-
-/** The notes with the profile in them: replaced if there, else first; the rest kept. */
-export function mergeProfile(existing: string, block: string): string {
-  const at = existing.indexOf(START)
-  const end = at >= 0 ? existing.indexOf(END, at) : -1
-  const rest = at >= 0 && end >= 0 ? (existing.slice(0, at) + existing.slice(end + END.length)).trim() : existing.trim()
-  if (!block) return rest ? `${rest}\n` : ''
-  return rest ? `${block}\n\n${rest}\n` : `${block}\n`
-}
+// DJAZZI(27/11/2026): the block on the person is shared with the phone
+// (@x/shared djazzi-profile), so both write it the same way.
+export { mergeProfile, PROFILE_FILE, profileBlock } from '@x/shared/dist/djazzi-profile.js'
 
 /** The space takes about a minute; past this, the onboarding says it is slow. */
 export const SLOW_SPACE_MS = 150_000
