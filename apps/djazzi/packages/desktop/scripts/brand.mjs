@@ -573,6 +573,14 @@ export function desktopPlan() {
       // The recorder's notes land in Meetings/djazzi (corePlan adds the source).
       edit(`${renderer}/hooks/useMeetingTranscription.ts`, 'let notePath = `knowledge/Meetings/rowboat/${dateFolder}/${filename}.md`;', 'let notePath = `knowledge/Meetings/djazzi/${dateFolder}/${filename}.md`;'),
       edit(`${renderer}/hooks/useMeetingTranscription.ts`, 'if (exists) notePath = `knowledge/Meetings/rowboat/${dateFolder}/${filename}-${timestamp}.md`;', 'if (exists) notePath = `knowledge/Meetings/djazzi/${dateFolder}/${filename}-${timestamp}.md`;'),
+      // DJAZZI(27/11/2026): two tabs read « Mobile » and « App mobile »; the first is the messaging apps.
+      edit(`${renderer}/components/settings-dialog.tsx`, '    label: "Mobile",\n', '    label: "WhatsApp and Telegram",\n'),
+      // DJAZZI(27/11/2026): a list kept from the Baarali days still says
+      // `@baarali`; it delegates and shows as the assistant, like `@djazzi`.
+      edit(`${renderer}/components/todo-view.tsx`, 'const ROWBOAT_MENTION_RE = /(^|\\s)@rowboat\\b/i\n', 'const ROWBOAT_MENTION_RE = /(^|\\s)@(?:djazzi|baarali)\\b/i\n'),
+      edit(`${renderer}/components/todo-view.tsx`, 'text.split(/(@(?:rowboat|djazzi)\\b|', 'text.split(/(@(?:rowboat|djazzi|baarali)\\b|'),
+      edit(`${renderer}/components/todo-view.tsx`, 'if (/^@(?:rowboat|djazzi)$/i.test(part)) {', 'if (/^@(?:rowboat|djazzi|baarali)$/i.test(part)) {'),
+      edit('apps/x/packages/core/src/todo/fileops.ts', 'const ROWBOAT_MENTION_RE = /(^|\\s)@rowboat\\b/i;', 'const ROWBOAT_MENTION_RE = /(^|\\s)@(?:djazzi|baarali)\\b/i;'),
       edit(`${renderer}/components/todo-view.tsx`, '<Bot className="size-3" />\n              rowboat\n', '<Bot className="size-3" />\n              djazzi\n'),
       edit(`${renderer}/components/spaces/composer-editor.ts`, "getAttrs: () => ({ kind: 'rowboat', id: null, label: 'rowboat' })", "getAttrs: () => ({ kind: 'rowboat', id: null, label: 'djazzi' })"),
       // DJAZZI(11/10/2026): Chargement keeps the B compact and readable

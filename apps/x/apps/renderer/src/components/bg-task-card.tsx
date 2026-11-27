@@ -3,6 +3,7 @@ import { AlertCircle, CalendarClock, Loader2, Play, Square, Sunrise, Zap } from 
 import type { BackgroundTaskSummary } from '@x/shared/dist/background-task.js'
 import { Switch } from '@/components/ui/switch'
 import { isPlanner, scheduleWords } from '@/lib/schedule-words'
+import { runFailure } from '@/lib/run-failure'
 
 // One scheduled task, as a card (Djazzi, 02/10/2026): what it does in one
 // sentence, when it runs in plain words, how its last run went, and the two
@@ -57,8 +58,9 @@ export function BgTaskCard({ task, lastRun, running, stopping, busy, updating, o
             <span className="rounded-full bg-muted px-2 py-0.5 text-[11.5px] font-medium">Paused</span>
           ) : null}
         </div>
+        {/* DJAZZI(27/11/2026): the reason in plain words (lib/run-failure.ts), the provider's whole error on hover. */}
         {failed && task.lastRunError && (
-          <p className="mt-1 truncate text-xs text-amber-700 dark:text-amber-400" title={task.lastRunError}>{task.lastRunError}</p>
+          <p className="mt-1 truncate text-xs text-amber-700 dark:text-amber-400" title={task.lastRunError}>{runFailure(task.lastRunError)}</p>
         )}
       </div>
       <div className="flex items-center gap-2">

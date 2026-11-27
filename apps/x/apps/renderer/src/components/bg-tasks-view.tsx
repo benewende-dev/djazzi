@@ -50,6 +50,7 @@ import { TurnConversation } from '@/components/turn-conversation'
 import { ModelSelector, modelOverrideToRef, refToModelOverride } from '@/components/model-selector'
 import { RichMarkdownViewer } from '@/components/rich-markdown-viewer'
 import { HtmlFileViewer } from '@/components/html-file-viewer'
+import { runFailure } from '@/lib/run-failure'
 
 // ---------------------------------------------------------------------------
 // Trigger helpers (inlined; extract to shared <TriggersEditor> as a follow-up)
@@ -1711,7 +1712,7 @@ function TaskDetailsDialog({ summary, onClose }: { summary: BackgroundTaskSummar
                             <div className="space-y-1">
                                 <div>{formatRunAt(summary.lastRunAt)}{relativeLabel(summary.lastRunAt) && ` (${relativeLabel(summary.lastRunAt)})`}</div>
                                 {summary.lastRunError ? (
-                                    <div className="line-clamp-3 text-destructive">{summary.lastRunError}</div>
+                                    <div className="line-clamp-3 text-destructive" title={summary.lastRunError}>{runFailure(summary.lastRunError)}</div>
                                 ) : summary.lastRunSummary ? (
                                     <div className="line-clamp-3 text-muted-foreground">{summary.lastRunSummary}</div>
                                 ) : null}

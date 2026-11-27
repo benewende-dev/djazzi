@@ -155,7 +155,8 @@ export const FR: Dictionary = {
     "Please research reliable sources on the following subject: ": "Veuillez rechercher des sources fiables sur le sujet suivant : ",
     "Describe a task or ask a question about your project.": "Décrivez une tâche ou posez une question sur votre projet.",
     "New work": "Nouveau travail",
-    "Team spaces": "Espaces d’équipe",
+    // 27/11/2026: the sidebar calls them groups (23/11/2026); search and pages say the same.
+    "Team spaces": "Groupes",
     "Your workspace": "Votre espace de travail",
     "Build, review and move your projects forward.": "Créez, vérifiez et faites avancer vos projets.",
     "Resume a session": "Reprendre une session",
@@ -569,7 +570,7 @@ export const FR: Dictionary = {
     "region": "region",
     "Projects": "Projets",
     "Activity": "Activité",
-    "Spaces": "Espaces d’équipe",
+    "Spaces": "Groupes",
     "Connect Accounts": "Connecter des comptes",
     "Add a server to see its spaces here.": "Ajoutez un serveur pour voir ses espaces ici.",
     "Add server": "Ajouter un serveur",
@@ -4098,6 +4099,8 @@ export const FR: Dictionary = {
     "It is ready!": "C’est prêt !",
     "Language of the app and of Djazzi": "Langue de l’app et de Djazzi",
     "Let’s get to know each other": "Faisons connaissance",
+    "WhatsApp and Telegram": "WhatsApp et Telegram",
+    "Unknown error": "Erreur inconnue",
     // Djazzi's onboarding, one flow (26/11/2026).
     "Open Djazzi now": "Ouvrir Djazzi maintenant",
     "Your space is taking longer than usual to open. Try again, or open Djazzi now: it connects as soon as your space answers.": "Votre espace met plus de temps que d’habitude à s’ouvrir. Réessayez, ou ouvrez Djazzi maintenant : il se connecte dès que votre espace répond.",
