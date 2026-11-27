@@ -581,6 +581,9 @@ export function desktopPlan() {
       edit(`${renderer}/components/todo-view.tsx`, 'text.split(/(@(?:rowboat|djazzi)\\b|', 'text.split(/(@(?:rowboat|djazzi|baarali)\\b|'),
       edit(`${renderer}/components/todo-view.tsx`, 'if (/^@(?:rowboat|djazzi)$/i.test(part)) {', 'if (/^@(?:rowboat|djazzi|baarali)$/i.test(part)) {'),
       edit('apps/x/packages/core/src/todo/fileops.ts', 'const ROWBOAT_MENTION_RE = /(^|\\s)@rowboat\\b/i;', 'const ROWBOAT_MENTION_RE = /(^|\\s)@(?:djazzi|baarali)\\b/i;'),
+      // DJAZZI(27/11/2026): the colour of your Djazzi, in Appearance (components/djazzi-color-setting.tsx).
+      edit(`${renderer}/components/settings-dialog.tsx`, '      <div>\n        <h4 className="text-sm font-medium mb-3">Workspace chat placement</h4>', '      <DjazziColorSetting />\n      <div>\n        <h4 className="text-sm font-medium mb-3">Workspace chat placement</h4>'),
+      edit(`${renderer}/components/settings-dialog.tsx`, 'function AppearanceSettings() {', "import { DjazziColorSetting } from '@/components/djazzi-color-setting'\n\nfunction AppearanceSettings() {"),
       edit(`${renderer}/components/todo-view.tsx`, '<Bot className="size-3" />\n              rowboat\n', '<Bot className="size-3" />\n              djazzi\n'),
       edit(`${renderer}/components/spaces/composer-editor.ts`, "getAttrs: () => ({ kind: 'rowboat', id: null, label: 'rowboat' })", "getAttrs: () => ({ kind: 'rowboat', id: null, label: 'djazzi' })"),
       // DJAZZI(11/10/2026): Chargement keeps the B compact and readable

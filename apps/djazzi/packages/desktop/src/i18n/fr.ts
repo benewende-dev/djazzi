@@ -4102,6 +4102,8 @@ export const FR: Dictionary = {
     "WhatsApp and Telegram": "WhatsApp et Telegram",
     "Unknown error": "Erreur inconnue",
     // Djazzi's onboarding, one flow (26/11/2026).
+    "The app takes it on: buttons, the page you are on, your messages. White keeps Djazzi blue.": "L’app la reprend : boutons, page ouverte, vos messages. Le blanc garde le bleu de Djazzi.",
+    "Colour of your Djazzi": "Couleur de votre Djazzi",
     "Open Djazzi now": "Ouvrir Djazzi maintenant",
     "Your space is taking longer than usual to open. Try again, or open Djazzi now: it connects as soon as your space answers.": "Votre espace met plus de temps que d’habitude à s’ouvrir. Réessayez, ou ouvrez Djazzi maintenant : il se connecte dès que votre espace répond.",
     "Other": "Autre",
