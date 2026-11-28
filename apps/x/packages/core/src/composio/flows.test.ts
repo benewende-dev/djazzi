@@ -62,6 +62,19 @@ describe("Composio OAuth flow", () => {
         expect(mocks.saveAccount).not.toHaveBeenCalled();
         expect(mocks.openExternalUrl).not.toHaveBeenCalled();
     });
+    it("ends the flow by asking Composio when the browser never comes back to this machine (28/11/2026)", async () => {
+        mocks.getConnectedAccount.mockResolvedValueOnce({ status: "INITIATED" }).mockResolvedValue({ status: "ACTIVE" });
+        await initiateConnection("gmail");
+        await vi.advanceTimersByTimeAsync(3000);
+        expect(mocks.publish).not.toHaveBeenCalled();
+        await vi.advanceTimersByTimeAsync(3000);
+        await vi.advanceTimersByTimeAsync(0);
+        expect(mocks.publish).toHaveBeenCalledWith({ toolkitSlug: "gmail", success: true });
+        expect(mocks.publish).toHaveBeenCalledTimes(1);
+        expect(mocks.close).toHaveBeenCalled();
+        await vi.advanceTimersByTimeAsync(9000);
+        expect(mocks.publish).toHaveBeenCalledTimes(1);
+    });
     it("reports a revoked account after callback", async () => {
         mocks.getConnectedAccount.mockResolvedValueOnce({ status: "REVOKED" });
         await initiateConnection("gmail");

@@ -174,6 +174,8 @@ if (process.env.DJAZZI_GATEWAY_SECRET) {
 const gateway = instances ? createGateway({ store, instances, now: Date.now, fetch: globalThis.fetch }) : undefined;
 
 const deepgramKey = process.env.DEEPGRAM_API_KEY || undefined;
+const composioKey = process.env.COMPOSIO_API_KEY || undefined;
+console.log(`[control] composio: ${composioKey ? 'on' : 'off'}`);
 console.log(`[control] voice: ${deepgramKey ? 'deepgram' : 'off'}${process.env.ELEVENLABS_API_KEY ? ', elevenlabs for pro' : ''}`);
 
 // The console's notifications by email: Resend, from the sign-in codes'
@@ -207,6 +209,7 @@ const app = createApp({
   motionReviewModel: process.env.MOTION_REVIEW_MODEL || undefined,
   // Optional: without it, reading aloud answers 503 and listening is refused.
   deepgramKey,
+  composioKey,
   elevenLabs: process.env.ELEVENLABS_API_KEY
     ? {
         key: process.env.ELEVENLABS_API_KEY,

@@ -17,8 +17,12 @@ describe('GET /v1/config body', () => {
     expect(JSON.stringify(body)).not.toContain('rowboatlabs.com');
   });
 
-  it('says Composio is not served, so the apps never call /v1/composio', () => {
+  it('says Composio is not served without our key, so the apps never call /v1/composio', () => {
     expect(buildApiConfig({ publicUrl: 'https://control.example.test' }).composio).toBe(false);
+  });
+
+  it('says Composio is served once our key is set (28/11/2026)', () => {
+    expect(buildApiConfig({ publicUrl: 'https://control.example.test', composio: true }).composio).toBe(true);
   });
 
   it('names our own Spaces server once there is one, and none before', () => {
