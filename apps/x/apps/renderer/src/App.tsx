@@ -2609,6 +2609,8 @@ function App() {
   useEffect(() => {
     if (localStorage.getItem('quick-ask-tip-shown')) return
     const timer = setTimeout(async () => {
+      // DJAZZI(28/11/2026): not over the onboarding; the tip waits for the next launch.
+      if (document.querySelector('.dj-root')) return
       localStorage.setItem('quick-ask-tip-shown', '1')
       const accelerator = await window.ipc
         .invoke('quickAsk:getShortcut', null)
