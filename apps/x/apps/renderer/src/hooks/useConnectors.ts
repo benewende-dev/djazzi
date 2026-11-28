@@ -114,12 +114,22 @@ export function useConnectors(active: boolean) {
   // condition `useComposioForGoogle` stays false).
   // TODO follow-up: drop these flags entirely and prune the dead UI branches
   // in connectors-popover and connected-accounts-settings.
-  const [useComposioForGoogle] = useState(false)
+  // DJAZZI(28/11/2026): while Djazzi has no Google or Microsoft app of its
+  // own, Gmail, Google Calendar and Outlook connect through Composio (the
+  // founder's call); the flags follow whether Composio is served. Native
+  // connections come back once our own apps exist.
+  const [composioServed, setComposioServed] = useState(false)
+  useEffect(() => {
+    void window.ipc.invoke('composio:is-configured', null)
+      .then((r) => setComposioServed(!!r.configured))
+      .catch(() => setComposioServed(false))
+  }, [])
+  const useComposioForGoogle = composioServed
   const [gmailConnected, setGmailConnected] = useState(false)
   const [gmailLoading, setGmailLoading] = useState(false)
   const [gmailConnecting, setGmailConnecting] = useState(false)
 
-  const [useComposioForGoogleCalendar] = useState(false)
+  const useComposioForGoogleCalendar = composioServed
   const [googleCalendarConnected, setGoogleCalendarConnected] = useState(false)
   const [googleCalendarLoading, setGoogleCalendarLoading] = useState(false)
   const [googleCalendarConnecting, setGoogleCalendarConnecting] = useState(false)
@@ -772,8 +782,9 @@ export function useConnectors(active: boolean) {
         setGmailConnecting(false)
 
         if (success) {
+          // DJAZZI(28/11/2026): through Composio nothing syncs; Djazzi reads and writes when asked.
           toast.success('Connected to Gmail', {
-            description: 'Syncing your emails in the background. This may take a few minutes before changes appear.',
+            description: 'Djazzi can now read and send your emails when you ask.',
             duration: 8000,
           })
         } else {
@@ -787,7 +798,7 @@ export function useConnectors(active: boolean) {
 
         if (success) {
           toast.success('Connected to Google Calendar', {
-            description: 'Syncing your calendar in the background. This may take a few minutes before changes appear.',
+            description: 'Djazzi can now read and plan your events when you ask.',
             duration: 8000,
           })
         } else {

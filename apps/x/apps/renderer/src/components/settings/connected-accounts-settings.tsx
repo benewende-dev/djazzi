@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { GoogleClientIdModal } from "@/components/google-client-id-modal"
 import { ComposioApiKeyModal } from "@/components/composio-api-key-modal"
 import { useConnectors, actionableSlackError } from "@/hooks/useConnectors"
+import { ComposioAccountRow } from "@/components/settings/composio-account-row"
 
 interface ConnectedAccountsSettingsProps {
   dialogOpen: boolean
@@ -199,7 +200,16 @@ export function ConnectedAccountsSettings({ dialogOpen }: ConnectedAccountsSetti
                 c.providerStates.microsoft?.isConnected ? 'Disconnect Microsoft Outlook first' : undefined,
               )
             )}
-            {c.providers.includes('microsoft') && renderOAuthProvider(
+            {/* DJAZZI(28/11/2026): Outlook through Composio too, while Djazzi has no Microsoft app of its own. */}
+            {c.useComposioForGoogle ? (
+              <ComposioAccountRow
+                toolkitSlug="outlook"
+                name="Microsoft Outlook"
+                icon={<OutlookIcon className="size-5" />}
+                description="Email and calendar"
+                connectedMessage="Djazzi can now read and send your emails when you ask."
+              />
+            ) : c.providers.includes('microsoft') && renderOAuthProvider(
               'microsoft',
               'Microsoft Outlook',
               <OutlookIcon className="size-5" />,
