@@ -4,7 +4,8 @@ import { DjazziOnboarding } from './index'
 import { LOOK_KEY, STORAGE_KEY } from './model'
 
 // DJAZZI(04/10/2026): the onboarding validated by the founder. 26/11/2026:
-// one flow of five screens: welcome, account, you, tools, ready.
+// one flow of five screens: welcome, account, you, tools, ready. 28/11/2026:
+// two panes, the buttons at the same place on every step.
 
 vi.mock('@/components/settings/mobile-channels-settings', () => ({ MobileChannelsSettings: () => <div>Phone pairing</div> }))
 
@@ -55,12 +56,19 @@ const saved = (value: object) => store.set(STORAGE_KEY, JSON.stringify(value))
 describe('DjazziOnboarding', () => {
   it('welcomes once, then opens the sign-in, for a new account or an existing one', async () => {
     render(<DjazziOnboarding open onComplete={() => {}} />)
-    expect(screen.getAllByText('Welcome to Djazzi')).toHaveLength(1)
+    expect(screen.getAllByText('Colleagues who work for you')).toHaveLength(1)
     fireEvent.click(screen.getByRole('button', { name: 'Get started' }))
     fireEvent.click(screen.getByRole('button', { name: 'I already have an account' }))
     await waitFor(() => expect(calls.some(([c, a]) => c === 'oauth:connect' && (a as { provider: string }).provider === 'rowboat')).toBe(true))
     expect(JSON.parse(store.get(STORAGE_KEY)!).returning).toBe(true)
     expect(screen.getByText('Enter your email in the window that opened, then the code you receive. Closed it? Click again.')).toBeTruthy()
+  })
+
+  it('takes someone with an account straight to the sign-in from the welcome (28/11/2026)', async () => {
+    render(<DjazziOnboarding open onComplete={() => {}} />)
+    fireEvent.click(screen.getByRole('button', { name: 'I already have an account' }))
+    await waitFor(() => expect(calls.some(([c, a]) => c === 'oauth:connect' && (a as { provider: string }).provider === 'rowboat')).toBe(true))
+    expect(JSON.parse(store.get(STORAGE_KEY)!)).toMatchObject({ step: 1, returning: true })
   })
 
   it('carries a new account on to the person once signed in, the space preparing meanwhile', async () => {
@@ -88,7 +96,7 @@ describe('DjazziOnboarding', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Get started' }))
     expect(screen.getByText('Let’s get to know each other')).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: 'Back' }))
-    expect(screen.getByText('Welcome to Djazzi')).toBeTruthy()
+    expect(screen.getByText('Colleagues who work for you')).toBeTruthy()
   })
 
   it('keeps the person, their Djazzi and their activity, and hands the task they picked to the composer', async () => {
@@ -142,6 +150,47 @@ describe('DjazziOnboarding', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Open Djazzi now' }))
     expect(onComplete).toHaveBeenCalledWith()
     expect(store.has(STORAGE_KEY)).toBe(false)
+  })
+
+  it('says where the person is in one line, which lists the steps already reached (28/11/2026)', async () => {
+    saved({ step: 2, profile: {}, spaceSince: 1 })
+    state = { ...state, signedIn: true }
+    render(<DjazziOnboarding open onComplete={() => {}} />)
+    await waitFor(() => expect(calls.some(([c]) => c === 'oauth:getState')).toBe(true))
+    await new Promise((r) => setTimeout(r, 0))
+    fireEvent.click(screen.getByRole('button', { name: 'Step 3 of 5' }))
+    // Signed in: the account screen is stepped over, and the steps ahead are not reached yet.
+    expect((screen.getByRole('button', { name: /Your account/ }) as HTMLButtonElement).disabled).toBe(true)
+    expect((screen.getByRole('button', { name: /Your tools/ }) as HTMLButtonElement).disabled).toBe(true)
+    fireEvent.click(screen.getByRole('button', { name: /Welcome/ }))
+    expect(screen.getByText('Colleagues who work for you')).toBeTruthy()
+    expect(document.activeElement?.textContent).toBe('Colleagues who work for you')
+  })
+
+  it('keeps the focus in the onboarding, not in the app behind it (28/11/2026)', () => {
+    const behind = document.createElement('textarea')
+    document.body.appendChild(behind)
+    behind.focus()
+    render(<DjazziOnboarding open onComplete={() => {}} />)
+    expect(screen.getByRole('dialog').contains(document.activeElement)).toBe(true)
+    behind.focus()
+    expect(document.activeElement?.textContent).toBe('Colleagues who work for you')
+    behind.remove()
+  })
+
+  it('says Saving… while it saves, then opens the app', async () => {
+    saved({ step: 4, profile: { name: 'Léa' }, spaceSince: 1 })
+    let release: (v: unknown) => void = () => {}
+    const write = new Promise((r) => { release = r })
+    const ipc = (window as unknown as { ipc: { invoke: (c: string, a: unknown) => Promise<unknown> } }).ipc
+    const invoke = ipc.invoke
+    ipc.invoke = (c: string, a: unknown) => (c === 'workspace:writeFile' ? write : invoke(c, a))
+    const onComplete = vi.fn()
+    render(<DjazziOnboarding open onComplete={onComplete} />)
+    fireEvent.click(screen.getByRole('button', { name: 'Open Djazzi' }))
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Saving…' })).toBeTruthy())
+    release({})
+    await waitFor(() => expect(onComplete).toHaveBeenCalledWith(undefined))
   })
 
   it('shows nothing when closed', () => {

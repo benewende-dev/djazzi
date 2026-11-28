@@ -22,11 +22,11 @@ import { lockedNote, planAccessCopy } from './plan-access-copy.js';
 
 type Lang = 'fr' | 'en';
 
-/** Each example agent's face, of the B's family (d-mark.ts SHAPES), as in the app. */
+/** Each example agent's face, of the B's family (d-mark.ts SHAPES), as in the app; by job, the user names them (28/11/2026). */
 const AGENT_LOOK: Record<string, { shape: ShapeId; color: string }> = {
-  mariama: { shape: 'pebble', color: 'orange' }, ibrahim: { shape: 'square', color: 'teal' }, adjoua: { shape: 'cloud', color: 'rose' },
-  aminata: { shape: 'dome', color: 'violet' }, fatou: { shape: 'bean', color: 'amber' }, moussa: { shape: 'kite', color: 'green' },
-  zara: { shape: 'drop', color: 'blue' }, kofi: { shape: 'pill', color: 'red' }, kouadio: { shape: 'arch', color: 'brown' }, youssoupha: { shape: 'leaf', color: 'gray' },
+  sales: { shape: 'pebble', color: 'orange' }, accountant: { shape: 'square', color: 'teal' }, assistant: { shape: 'cloud', color: 'rose' },
+  shop: { shape: 'dome', color: 'violet' }, hr: { shape: 'bean', color: 'amber' }, logistics: { shape: 'kite', color: 'green' },
+  designer: { shape: 'drop', color: 'blue' }, analyst: { shape: 'pill', color: 'red' }, tutor: { shape: 'arch', color: 'brown' }, music: { shape: 'leaf', color: 'gray' },
 };
 const lookOf = (id: string) => AGENT_LOOK[id.toLowerCase()] ?? { shape: 'b' as ShapeId, color: 'white' };
 
@@ -111,24 +111,24 @@ const STRINGS = {
     makersTitle: 'Les modèles de ces entreprises, dans Djazzi',
     agentsKicker: 'Vos agents',
     agentsTitle: ['Créez vos agents, ', 'à votre nom', '.'],
-    agentsLead: 'Des agents qui travaillent pour vous : un nom, une forme, une mission, ses outils et son modèle. Au premier échange, il vous salue, vous demande comment vous appeler et ce que vous attendez de lui. Chacun a sa conversation : vous le retrouvez comme un contact, sur l’ordinateur comme sur le téléphone.',
+    agentsLead: 'Des agents qui travaillent pour vous : un métier, une forme, une mission, ses outils et son modèle. Le nom, c’est vous qui le donnez : au premier échange, il vous salue, vous demande comment l’appeler, comment vous appeler et ce que vous attendez de lui. Chacun a sa conversation : vous le retrouvez comme un contact, sur l’ordinateur comme sur le téléphone.',
     agentsSoon: 'Dans l’app',
     agentsPrev: 'Agents précédents',
     agentsNext: 'Agents suivants',
     agents: [
-      { id: 'mariama', name: 'Mariama', role: 'Commerciale', mission: 'Relance vos prospects chaque lundi et prépare vos devis.', tools: ['Gmail', 'WhatsApp', 'HubSpot'], model: 'Claude' },
-      { id: 'ibrahim', name: 'Ibrahim', role: 'Comptable SYSCOHADA', mission: 'Tient vos comptes et prépare la TVA du mois.', tools: ['Google Sheets', 'Gmail'], model: 'OpenAI' },
-      { id: 'adjoua', name: 'Adjoua', role: 'Assistante personnelle', mission: 'Gère votre agenda, trie vos emails, vous rappelle l’essentiel.', tools: ['Google Agenda', 'Gmail'], model: 'Gemini' },
-      { id: 'aminata', name: 'Aminata', role: 'Gestion de boutique', mission: 'Suit les stocks et répond aux commandes WhatsApp.', tools: ['WhatsApp', 'Google Sheets'], model: 'DeepSeek' },
-      { id: 'fatou', name: 'Fatou', role: 'RH et paie', mission: 'Prépare les bulletins, suit les congés et les contrats.', tools: ['Google Drive', 'Gmail'], model: 'Mistral' },
-      { id: 'moussa', name: 'Moussa', role: 'Logistique', mission: 'Planifie les livraisons et prévient vos clients.', tools: ['WhatsApp', 'Google Agenda'], model: 'Qwen' },
-      { id: 'zara', name: 'Zara', role: 'Designer', mission: 'Crée vos visuels et vos publications de la semaine.', tools: ['Google Drive', 'Notion'], model: 'Gemini' },
-      { id: 'kofi', name: 'Kofi', role: 'Analyste data', mission: 'Lit vos ventes et vous dit quoi changer.', tools: ['Google Sheets', 'Notion'], model: 'OpenAI' },
-      { id: 'kouadio', name: 'Kouadio', role: 'Tuteur scolaire', mission: 'Aide vos enfants à réviser, matière par matière.', tools: ['Google Docs'], model: 'Claude' },
-      { id: 'youssoupha', name: 'Youssoupha', role: 'Producteur musical', mission: 'Compose des maquettes et écrit vos textes.', tools: ['Google Drive'], model: 'Gemini' },
+      { id: 'sales', role: 'Commerciale', mission: 'Relance vos prospects chaque lundi et prépare vos devis.', tools: ['Gmail', 'WhatsApp', 'HubSpot'], model: 'Claude' },
+      { id: 'accountant', role: 'Comptable SYSCOHADA', mission: 'Tient vos comptes et prépare la TVA du mois.', tools: ['Google Sheets', 'Gmail'], model: 'OpenAI' },
+      { id: 'assistant', role: 'Assistante personnelle', mission: 'Gère votre agenda, trie vos emails, vous rappelle l’essentiel.', tools: ['Google Agenda', 'Gmail'], model: 'Gemini' },
+      { id: 'shop', role: 'Gestion de boutique', mission: 'Suit les stocks et répond aux commandes WhatsApp.', tools: ['WhatsApp', 'Google Sheets'], model: 'DeepSeek' },
+      { id: 'hr', role: 'RH et paie', mission: 'Prépare les bulletins, suit les congés et les contrats.', tools: ['Google Drive', 'Gmail'], model: 'Mistral' },
+      { id: 'logistics', role: 'Logistique', mission: 'Planifie les livraisons et prévient vos clients.', tools: ['WhatsApp', 'Google Agenda'], model: 'Qwen' },
+      { id: 'designer', role: 'Designer', mission: 'Crée vos visuels et vos publications de la semaine.', tools: ['Google Drive', 'Notion'], model: 'Gemini' },
+      { id: 'analyst', role: 'Analyste data', mission: 'Lit vos ventes et vous dit quoi changer.', tools: ['Google Sheets', 'Notion'], model: 'OpenAI' },
+      { id: 'tutor', role: 'Tuteur scolaire', mission: 'Aide vos enfants à réviser, matière par matière.', tools: ['Google Docs'], model: 'Claude' },
+      { id: 'music', role: 'Producteur musical', mission: 'Compose des maquettes et écrit vos textes.', tools: ['Google Drive'], model: 'Gemini' },
     ],
-    builder: { title: 'Créer un agent', name: 'Nom', mission: 'Mission', tools: 'Outils', model: 'Modèle', create: 'Créer', nameValue: 'Mariama', missionValue: 'Relancer mes clients chaque lundi', modelValue: 'Claude · rédaction' },
-    chats: { title: 'Discussions', items: [['Mariama', '3 relances prêtes, je les envoie ?', '09:12', '2'], ['Ibrahim', 'La TVA de septembre est prête.', '08:40', ''], ['Adjoua', 'Rendez-vous déplacé à 15 h.', 'Hier', ''], ['Aminata', '12 commandes reçues ce matin.', 'Hier', '5']] as Array<[string, string, string, string]> },
+    builder: { title: 'Créer un agent', name: 'Nom', mission: 'Mission', tools: 'Outils', model: 'Modèle', create: 'Créer', nameValue: 'Ma commerciale', missionValue: 'Relancer mes clients chaque lundi', modelValue: 'Claude · rédaction' },
+    chats: { title: 'Discussions', items: [['sales', 'Commerciale', '3 relances prêtes, je les envoie ?', '09:12', '2'], ['accountant', 'Comptable', 'La TVA de septembre est prête.', '08:40', ''], ['assistant', 'Assistante', 'Rendez-vous déplacé à 15 h.', 'Hier', ''], ['shop', 'Boutique', '12 commandes reçues ce matin.', 'Hier', '5']] as Array<[string, string, string, string, string]> },
     toolsTitle: 'Il travaille avec vos outils',
     toolsNote: 'Gmail et Google Agenda directement ; les autres par des connecteurs à brancher depuis l’app.',
     modelsNote: 'Choisissez le modèle à chaque conversation, ou gardez celui par défaut. Tous les modèles dès le forfait Semaine ; Découverte donne les rapides.',
@@ -302,24 +302,24 @@ const STRINGS = {
     makersTitle: 'Models from these companies, in Djazzi',
     agentsKicker: 'Your agents',
     agentsTitle: ['Make your agents, ', 'in your name', '.'],
-    agentsLead: 'Agents who work for you: a name, a shape, a mission, its tools and its model. At the first exchange it greets you, asks how to address you and what you expect from it. Each one has its conversation: you find it like a contact, on your computer and your phone.',
+    agentsLead: 'Agents who work for you: a job, a shape, a mission, its tools and its model. You give it its name: at the first exchange it greets you, asks what to call it, how to address you and what you expect from it. Each one has its conversation: you find it like a contact, on your computer and your phone.',
     agentsSoon: 'In the app',
     agentsPrev: 'Previous agents',
     agentsNext: 'Next agents',
     agents: [
-      { id: 'mariama', name: 'Mariama', role: 'Sales', mission: 'Follows up your leads every Monday and drafts your quotes.', tools: ['Gmail', 'WhatsApp', 'HubSpot'], model: 'Claude' },
-      { id: 'ibrahim', name: 'Ibrahim', role: 'SYSCOHADA accountant', mission: 'Keeps your books and prepares the month’s VAT.', tools: ['Google Sheets', 'Gmail'], model: 'OpenAI' },
-      { id: 'adjoua', name: 'Adjoua', role: 'Personal assistant', mission: 'Runs your calendar, sorts your emails, reminds you of what matters.', tools: ['Google Agenda', 'Gmail'], model: 'Gemini' },
-      { id: 'aminata', name: 'Aminata', role: 'Shop manager', mission: 'Tracks stock and answers WhatsApp orders.', tools: ['WhatsApp', 'Google Sheets'], model: 'DeepSeek' },
-      { id: 'fatou', name: 'Fatou', role: 'HR and payroll', mission: 'Prepares payslips, tracks leave and contracts.', tools: ['Google Drive', 'Gmail'], model: 'Mistral' },
-      { id: 'moussa', name: 'Moussa', role: 'Logistics', mission: 'Plans deliveries and keeps your customers posted.', tools: ['WhatsApp', 'Google Agenda'], model: 'Qwen' },
-      { id: 'zara', name: 'Zara', role: 'Designer', mission: 'Creates your visuals and the week’s posts.', tools: ['Google Drive', 'Notion'], model: 'Gemini' },
-      { id: 'kofi', name: 'Kofi', role: 'Data analyst', mission: 'Reads your sales and tells you what to change.', tools: ['Google Sheets', 'Notion'], model: 'OpenAI' },
-      { id: 'kouadio', name: 'Kouadio', role: 'School tutor', mission: 'Helps your children revise, subject by subject.', tools: ['Google Docs'], model: 'Claude' },
-      { id: 'youssoupha', name: 'Youssoupha', role: 'Music producer', mission: 'Composes demos and writes your lyrics.', tools: ['Google Drive'], model: 'Gemini' },
+      { id: 'sales', role: 'Sales', mission: 'Follows up your leads every Monday and drafts your quotes.', tools: ['Gmail', 'WhatsApp', 'HubSpot'], model: 'Claude' },
+      { id: 'accountant', role: 'SYSCOHADA accountant', mission: 'Keeps your books and prepares the month’s VAT.', tools: ['Google Sheets', 'Gmail'], model: 'OpenAI' },
+      { id: 'assistant', role: 'Personal assistant', mission: 'Runs your calendar, sorts your emails, reminds you of what matters.', tools: ['Google Agenda', 'Gmail'], model: 'Gemini' },
+      { id: 'shop', role: 'Shop manager', mission: 'Tracks stock and answers WhatsApp orders.', tools: ['WhatsApp', 'Google Sheets'], model: 'DeepSeek' },
+      { id: 'hr', role: 'HR and payroll', mission: 'Prepares payslips, tracks leave and contracts.', tools: ['Google Drive', 'Gmail'], model: 'Mistral' },
+      { id: 'logistics', role: 'Logistics', mission: 'Plans deliveries and keeps your customers posted.', tools: ['WhatsApp', 'Google Agenda'], model: 'Qwen' },
+      { id: 'designer', role: 'Designer', mission: 'Creates your visuals and the week’s posts.', tools: ['Google Drive', 'Notion'], model: 'Gemini' },
+      { id: 'analyst', role: 'Data analyst', mission: 'Reads your sales and tells you what to change.', tools: ['Google Sheets', 'Notion'], model: 'OpenAI' },
+      { id: 'tutor', role: 'School tutor', mission: 'Helps your children revise, subject by subject.', tools: ['Google Docs'], model: 'Claude' },
+      { id: 'music', role: 'Music producer', mission: 'Composes demos and writes your lyrics.', tools: ['Google Drive'], model: 'Gemini' },
     ],
-    builder: { title: 'Make an agent', name: 'Name', mission: 'Mission', tools: 'Tools', model: 'Model', create: 'Create', nameValue: 'Mariama', missionValue: 'Follow up my customers every Monday', modelValue: 'Claude · writing' },
-    chats: { title: 'Chats', items: [['Mariama', '3 follow-ups ready, shall I send them?', '09:12', '2'], ['Ibrahim', 'September’s VAT is ready.', '08:40', ''], ['Adjoua', 'Meeting moved to 3 pm.', 'Yesterday', ''], ['Aminata', '12 orders came in this morning.', 'Yesterday', '5']] as Array<[string, string, string, string]> },
+    builder: { title: 'Make an agent', name: 'Name', mission: 'Mission', tools: 'Tools', model: 'Model', create: 'Create', nameValue: 'My sales rep', missionValue: 'Follow up my customers every Monday', modelValue: 'Claude · writing' },
+    chats: { title: 'Chats', items: [['sales', 'Sales', '3 follow-ups ready, shall I send them?', '09:12', '2'], ['accountant', 'Accountant', 'September’s VAT is ready.', '08:40', ''], ['assistant', 'Assistant', 'Meeting moved to 3 pm.', 'Yesterday', ''], ['shop', 'Shop', '12 orders came in this morning.', 'Yesterday', '5']] as Array<[string, string, string, string, string]> },
     toolsTitle: 'It works with your tools',
     toolsNote: 'Gmail and Google Calendar directly; the others through connectors you plug in from the app.',
     modelsNote: 'Pick the model for each conversation, or keep the default. Every model from the Semaine plan; Découverte gives the fast ones.',
@@ -850,7 +850,6 @@ h1 em, h2 em { font-family:inherit; font-style:normal; font-weight:inherit; lett
 .agent:hover { transform:translateY(-4px); border-color:var(--blue-line); box-shadow:0 24px 40px -28px rgb(255 255 255 / .45); }
 .face { width:88px; height:88px; }
 .agent h3 { margin-top:16px; font-size:24px; }
-.role { margin:2px 0 0; font-size:13.5px; font-weight:650; color:var(--blue-deep); }
 .mission { margin:10px 0 0; font-size:14.5px; color:var(--muted); line-height:1.5; flex:1; }
 .agent-foot { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-top:18px; padding-top:14px; border-top:1px solid var(--line); }
 .tools { display:flex; gap:6px; }
@@ -1237,8 +1236,7 @@ ${opts.referral ? referralBar(opts.referral, lang) : ''}
       .map(
         (a) => `<li class="agent">
         ${living(lookOf(a.id).shape, lookOf(a.id).color, 88, ' face')}
-        <h3>${escape(a.name)}</h3>
-        <p class="role">${escape(a.role)}</p>
+        <h3>${escape(a.role)}</h3>
         <p class="mission">${escape(a.mission)}</p>
         <div class="agent-foot"><span class="tools">${a.tools.map((x) => brandImg(TOOL_BRANDS, x, 18)).join('')}</span><span class="model">${brandImg(MODEL_BRANDS, a.model, 14)}${escape(a.model)}</span></div>
       </li>`,
@@ -1249,7 +1247,7 @@ ${opts.referral ? referralBar(opts.referral, lang) : ''}
     <div class="agent-demo">
       <div class="builder" aria-hidden="true">
         <p class="b-title">${icon('plus')}${escape(t.builder.title)}</p>
-        <div class="b-row">${living(lookOf('mariama').shape, lookOf('mariama').color, 56, ' b-face')}<div class="b-field"><small>${escape(t.builder.name)}</small><span class="typed" data-text="${escape(t.builder.nameValue)}">${escape(t.builder.nameValue)}</span></div></div>
+        <div class="b-row">${living(lookOf('sales').shape, lookOf('sales').color, 56, ' b-face')}<div class="b-field"><small>${escape(t.builder.name)}</small><span class="typed" data-text="${escape(t.builder.nameValue)}">${escape(t.builder.nameValue)}</span></div></div>
         <div class="b-field"><small>${escape(t.builder.mission)}</small><span class="typed" data-text="${escape(t.builder.missionValue)}">${escape(t.builder.missionValue)}</span></div>
         <div class="b-field"><small>${escape(t.builder.tools)}</small><span class="b-tools">${['Gmail', 'WhatsApp', 'HubSpot'].map((x) => `<span class="b-tool">${brandImg(TOOL_BRANDS, x, 16)}${escape(x)}</span>`).join('')}</span></div>
         <div class="b-field"><small>${escape(t.builder.model)}</small><span class="b-model">${brandImg(MODEL_BRANDS, 'Claude', 16)}${escape(t.builder.modelValue)}</span></div>
@@ -1258,7 +1256,7 @@ ${opts.referral ? referralBar(opts.referral, lang) : ''}
       <div class="chats" aria-hidden="true">
         <p class="b-title">${escape(t.chats.title)}</p>
         <ul>${t.chats.items
-          .map(([n, m, h, u], i) => `<li${i === 0 ? ' class="on"' : ''}>${living(lookOf(n).shape, lookOf(n).color, 44)}<div><b>${escape(n)}</b><span>${escape(m)}</span></div><div class="meta"><small>${escape(h)}</small>${u ? `<i>${u}</i>` : ''}</div></li>`)
+          .map(([id, n, m, h, u], i) => `<li${i === 0 ? ' class="on"' : ''}>${living(lookOf(id).shape, lookOf(id).color, 44)}<div><b>${escape(n)}</b><span>${escape(m)}</span></div><div class="meta"><small>${escape(h)}</small>${u ? `<i>${u}</i>` : ''}</div></li>`)
           .join('')}</ul>
       </div>
     </div>
