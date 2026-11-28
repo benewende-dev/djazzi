@@ -12,6 +12,8 @@ export interface ControlSettings {
   spacesUrl?: string;
   /** Deepgram is configured: the apps listen through `/deepgram/v1/listen` here (voice.ts). */
   voice?: boolean;
+  /** Our Composio key is set: the apps reach Composio through `/v1/composio` (composio.ts). */
+  composio?: boolean;
 }
 
 /**
@@ -27,9 +29,9 @@ export interface ControlSettings {
  * - `spacesApexUrl` is our own Harbor (apps/harbor) once it is deployed,
  *   null before: the apps never reach the Rowboat Labs fleet (decided
  *   02/10/2026: we host Spaces ourselves).
- * - `composio: false`: `/v1/composio` is off in V1 (TARGET_AGENTIC_ARCHITECTURE
- *   « Désactivé en V1 »), so the apps never call a route that answers 404;
- *   a user's own Composio key still works.
+ * - `composio`: true once our Composio key is set (28/11/2026, composio.ts):
+ *   the apps then reach it through `/v1/composio`; without it, false, so the
+ *   apps never call a route that answers 404 and a user's own key still works.
  * - `billing.plans` keeps the upstream shape: `monthlyCredits` carries the
  *   week budget and `dailyCredits` the session budget (architecture §3.5,
  *   quota decided 30/09/2026). The upstream field holds one price, in
@@ -42,7 +44,7 @@ export function buildApiConfig(settings: ControlSettings, plans: Plan[] = []): A
     websocketApiUrl: settings.voice ? base.replace(/^http/, 'ws') : '',
     supabaseUrl: base,
     spacesApexUrl: settings.spacesUrl ? settings.spacesUrl.replace(/\/+$/, '') : null,
-    composio: false,
+    composio: Boolean(settings.composio),
     billing: {
       plans: plans.map((plan) => ({
         id: plan.id,

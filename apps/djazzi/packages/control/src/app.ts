@@ -28,6 +28,7 @@ import { createGeneration, getGeneration, listMediaModels, mediaBalance, mediaHi
 import { advance, budgetsForWeek, gauges, initialState } from './quota.js';
 import { hashToken, type Account, type ControlStore } from './store.js';
 import { speak, transcribe, type VoiceDeps } from './voice.js';
+import { CONNECTED_PATH, connectedPage, proxyComposio } from './composio.js';
 
 export type ControlDeps = ProxyDeps & {
   /** Unset: media generation is off (503). */
@@ -36,6 +37,8 @@ export type ControlDeps = ProxyDeps & {
   /** Unset: voice answers 503 (voice.ts). */
   deepgramKey?: string;
   deepgramBase?: string;
+  /** Unset: Composio is off, `/v1/config` says so (composio.ts). */
+  composioKey?: string;
   /** Unset: the Pro plans read with Aura-2 too (voice.ts). */
   elevenLabs?: VoiceDeps['elevenLabs'];
   /** The media credit packs on sale (pricing.ts, packCredits). */
@@ -216,7 +219,7 @@ export function createApp(deps: ControlDeps) {
 
   // Unauthenticated, like the Rowboat Labs route: core reads it before login.
   app.get('/v1/config', async (c) =>
-    c.json(buildApiConfig({ publicUrl: deps.publicUrl, spacesUrl: deps.auth ? deps.spacesUrl : undefined, voice: Boolean(deps.deepgramKey) }, await deps.store.plans())),
+    c.json(buildApiConfig({ publicUrl: deps.publicUrl, spacesUrl: deps.auth ? deps.spacesUrl : undefined, voice: Boolean(deps.deepgramKey), composio: Boolean(deps.composioKey) }, await deps.store.plans())),
   );
 
   // Where core looks for its OAuth server (`${supabaseUrl}/auth/v1`).
@@ -253,6 +256,7 @@ export function createApp(deps: ControlDeps) {
   });
   app.use('/v1/spaces/*', authed);
   app.use('/v1/voice/*', authed);
+  app.use('/v1/composio/*', authed);
   app.use('/v1/announcement', authed);
   app.use('/v1/sidebar', authed);
   // The agent at work: what it spends counts as use of the instance, so an
@@ -329,6 +333,14 @@ export function createApp(deps: ControlDeps) {
   });
 
   app.all('/v1/llm/*', (c) => proxyLlm({ ...deps, models, upstreamModels, auto }, c.get('account'), c.req.raw));
+
+  // The apps' Composio, with our key and one Composio user per account (composio.ts).
+  app.get(CONNECTED_PATH, (c) => html((nonce) => connectedPage({ lang: c.req.header('accept-language') ?? null, nonce })));
+  app.all('/v1/composio/*', (c) =>
+    deps.composioKey
+      ? proxyComposio({ composioKey: deps.composioKey, fetch: deps.fetch, publicUrl: deps.publicUrl }, c.get('account'), c.req.raw)
+      : c.json({ error: { code: 'not_found', message: 'Composio is not configured' } }, 404),
+  );
 
   // A whole recording to text (voice.ts): the phone's push-to-talk, the apps' file transcription.
   app.post('/v1/voice/transcribe', (c) =>

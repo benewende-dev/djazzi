@@ -129,10 +129,12 @@ export async function initiateConnection(toolkitSlug: string): Promise<{
         // Set up callback server
         const timeoutRef: { current: NodeJS.Timeout | null } = { current: null };
         let callbackHandled = false;
-        const server = await openLoopback(8081, async () => {
+        const pollRef: { current: NodeJS.Timeout | null } = { current: null };
+        const settle = async () => {
             // Guard against duplicate callbacks (browser may send multiple requests)
             if (callbackHandled) return;
             callbackHandled = true;
+            if (pollRef.current) clearInterval(pollRef.current);
             // OAuth callback received - sync the account status
             try {
                 const accountStatus = await composioClient.getConnectedAccount(connectedAccountId);
@@ -167,12 +169,28 @@ export async function initiateConnection(toolkitSlug: string): Promise<{
                 server.close();
                 if (timeoutRef.current) clearTimeout(timeoutRef.current);
             }
-        });
+        };
+        const server = await openLoopback(8081, settle);
+
+        // DJAZZI(28/11/2026): the browser may not come back to this machine's
+        // loopback (the app runs on the account's online instance, the person
+        // signs in on their phone or computer). Composio is asked meanwhile:
+        // the flow ends as soon as the connection is no longer pending.
+        pollRef.current = setInterval(() => {
+            if (callbackHandled || activeFlows.get(toolkitSlug)?.connectedAccountId !== connectedAccountId) {
+                if (pollRef.current) clearInterval(pollRef.current);
+                return;
+            }
+            void composioClient.getConnectedAccount(connectedAccountId).then((current) => {
+                if (current.status !== 'INITIATED' && current.status !== 'INITIALIZING') void settle();
+            }).catch(() => { /* asked again at the next tick */ });
+        }, 3000);
 
         // Timeout for abandoned flows (5 minutes)
         const cleanupTimeout = setTimeout(() => {
             if (activeFlows.has(toolkitSlug)) {
                 console.log(`[Composio] Cleaning up abandoned flow for ${toolkitSlug}`);
+                if (pollRef.current) clearInterval(pollRef.current);
                 activeFlows.delete(toolkitSlug);
                 server.close();
                 emitComposioEvent({

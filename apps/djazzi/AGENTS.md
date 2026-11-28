@@ -37,6 +37,7 @@ OPENROUTER_API_KEY=<clé> DJAZZI_PLAN_ID=essentiel PORT=8787 pnpm start
 | `DJAZZI_PLAN_ID` | Forfait du propriétaire, pris dans `src/catalog.ts` (budgets calculés depuis les prix, archi §3.5). Défaut : `essentiel`. Avec Postgres, il ne sert qu'à la création du compte : ensuite, le forfait se change dans la console d'admin, et un redémarrage ne le défait pas |
 | `DJAZZI_ACCOUNT_ID`, `DJAZZI_ACCOUNT_EMAIL`, `DJAZZI_ACCOUNT_CREATED_AT` | Le compte du propriétaire ; la semaine est ancrée à sa date de création |
 | `PIXAZO_API_KEY` | Facultative : sans elle, `/v1/media` répond 503 et le texte marche quand même |
+| `COMPOSIO_API_KEY` | Facultative : les connexions des utilisateurs (Gmail, Outlook, Slack, Notion…) par Composio, avec notre clé et un utilisateur Composio par compte (`src/composio.ts`, 28/11/2026). Absente : `/v1/config` dit `composio: false` et `/v1/composio` répond 404 |
 | `DJAZZI_ADMIN_TOKEN` | Facultatif : le jeton de l'opérateur pour `/v1/admin/*` (recharges de crédits médias à la main). Absent : ces routes répondent 404 |
 | `DJAZZI_ADMIN_EMAILS` | Facultatif : les adresses, séparées par des virgules, qui ouvrent la console d'admin (`/admin`, archi §3.5 « La console d'admin »), une fois vérifiées et seulement avec `DJAZZI_AUTH_SECRET`. Absent : la console répond 404 |
 | `DJAZZI_OWNER_MEDIA_CREDITS` | Crédits médias offerts au propriétaire, une seule fois en Postgres (référence `owner-grant`) ; en mémoire, à chaque démarrage |
