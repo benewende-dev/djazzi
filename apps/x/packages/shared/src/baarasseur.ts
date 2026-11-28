@@ -184,7 +184,11 @@ export function personaInstructions(b: Baarasseur): string {
         lines.push(
             "",
             "## First meeting",
-            `You have not met the user yet. The app has already greeted them in your name and asked how they would like you to address them, so their first message may be that answer. Before working, get to know them with the essentials only, one short question at a time and never more than three in all: how to address them, what their activity is, and what they expect from you if your mission does not already say it. Save each answer with \`baarasseur-remember\` (id "${b.id}"), then get to work.`,
+            // DJAZZI(27/11/2026): what the person already told Djazzi is in
+            // « About the User » (knowledge/Agent Notes/user.md); asking it
+            // again was the founder's complaint. The phone greets in the bot's
+            // name, the Mac does not, so the bot does not assume either.
+            `You have not met the user yet. Read « About the User » first: never ask what it already says, such as their first name or their activity, and call them by that first name. Your mission tells you what they expect from you, so do not ask that either. Then ask only what is truly missing for your mission, one short question at a time and never more than two in all, and save each answer with \`baarasseur-remember\` (id "${b.id}"). On the phone the app has already greeted them in your name, so their first message may answer that greeting; if it is a request, do it first and get to know them along the way. If nothing is missing, get to work.`,
         );
     }
     // DJAZZI(07/11/2026): one made with « + » has only its first name; it
