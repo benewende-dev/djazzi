@@ -17,5 +17,6 @@ Documents de fonctionnement :
 - [`UPSTREAM.md`](./UPSTREAM.md) : comment rester à jour avec `rowboatlabs/rowboat` ;
 - [`DIVERGENCES.md`](./DIVERGENCES.md) : chaque fichier upstream modifié, et pourquoi.
 - [`REA.md`](./REA.md) : analyse et rétro-ingénierie dans Work, fournisseurs et mises à jour isolées.
+- [`DESIGN.md`](./DESIGN.md) : les règles visuelles (polices, tailles, couleurs, espacements, arrondis, icônes, mouvement, signes animés) et les écarts à corriger.
 
 La série est complète au 30/09/2026.

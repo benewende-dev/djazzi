@@ -14,34 +14,48 @@
  * black bubble: the app read black and white. The primary is the brand
  * blue in both themes, and one's own messages sit in it, like the send
  * button (02/10/2026, the founder's call over a lighter wash).
+ *
+ * 24/11/2026: no blue any more. Black and white, and the phone's warm night
+ * (the founder's call; docs/djazzi/DESIGN.md). The tokens below say so.
  */
 
+/* 24/11/2026 (the founder's call): black and white, as the phone since
+ * 07/11/2026 and OpenBaara (docs/djazzi/DESIGN.md, section 4). The accent is
+ * the ink itself: black by day, warm off-white by night; no brand blue. */
 html:root {
-  --primary: #1a6dff;
+  --primary: #000000;
   --primary-foreground: #ffffff;
-  --sidebar-primary: #1a6dff;
+  --sidebar-primary: #000000;
   --sidebar-primary-foreground: #ffffff;
-  --rowboat-bubble: #1a6dff;
+  --rowboat-bubble: #000000;
   --rowboat-bubble-foreground: #ffffff;
-  --ring: #1a6dff;
-  --sidebar-ring: #1a6dff;
-  --sidebar-accent: rgba(26, 109, 255, 0.1);
-  --sidebar-accent-foreground: #155eef;
-  --rowboat-link: #155eef;
+  --ring: #1c1b19;
+  --sidebar-ring: #1c1b19;
+  --sidebar-accent: rgba(0, 0, 0, 0.06);
+  --sidebar-accent-foreground: #1c1b19;
+  --rowboat-link: #1c1b19;
 }
 
 html.dark {
-  --primary: #1a6dff;
-  --primary-foreground: #ffffff;
-  --sidebar-primary: #1a6dff;
-  --sidebar-primary-foreground: #ffffff;
-  --rowboat-bubble: #1a6dff;
-  --rowboat-bubble-foreground: #ffffff;
-  --ring: #4d8dff;
-  --sidebar-ring: #4d8dff;
-  --sidebar-accent: rgba(77, 141, 255, 0.16);
-  --sidebar-accent-foreground: #8fb4ff;
-  --rowboat-link: #6f9fff;
+  --primary: #f2efe9;
+  --primary-foreground: #171614;
+  --sidebar-primary: #f2efe9;
+  --sidebar-primary-foreground: #171614;
+  --rowboat-bubble: #f2efe9;
+  --rowboat-bubble-foreground: #171614;
+  --ring: #f2efe9;
+  --sidebar-ring: #f2efe9;
+  --sidebar-accent: rgba(255, 244, 225, 0.09);
+  --sidebar-accent-foreground: #f2efe9;
+  --rowboat-link: #f2efe9;
+}
+
+/* Links in the ink read as links by their underline. */
+html .prose a,
+html [data-streamdown] a,
+html [data-slot="message-content"] a {
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }
 
 /* 27/11/2026, « Your Djazzi, your colour » (the founder's mockup
@@ -230,17 +244,35 @@ div:has(> svg.lucide-sparkles:only-child) {
  * black, so the app reads as one surface. The composer stays apart: a
  * raised grey with a visible edge, brighter when one types. A hairline
  * keeps the sidebar's edge. */
+/* 24/11/2026: the night is the phone's warm charcoal (DESIGN.md, section 4):
+ * surfaces get lighter as they come forward, ground, then cards, then fills. */
 html.dark {
-  --background: #171717;
-  --rowboat-raised: #262626;
-  --rowboat-wash: #2c2c2c;
+  --background: #171614;
+  --foreground: #f2efe9;
+  --sidebar: #171614;
+  --sidebar-foreground: #f2efe9;
+  --card: #1b1a18;
+  --card-foreground: #f2efe9;
+  --card-surface: #1b1a18;
+  --popover: #24221f;
+  --popover-foreground: #f2efe9;
+  --secondary: #24221f;
+  --secondary-foreground: #f2efe9;
+  --muted: #24221f;
+  --muted-foreground: #86827b;
+  --accent: rgba(255, 244, 225, 0.06);
+  --accent-foreground: #f2efe9;
+  --border: rgba(255, 244, 225, 0.10);
+  --input: rgba(255, 244, 225, 0.14);
+  --rowboat-raised: #24221f;
+  --rowboat-wash: #2c2a26;
 }
 html.dark .rowboat-chat-input {
-  border-color: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 244, 225, 0.12);
   box-shadow: 0 10px 30px rgb(0 0 0 / 0.45);
 }
 html.dark .rowboat-chat-input:focus-within {
-  border-color: rgba(77, 141, 255, 0.45);
+  border-color: rgba(242, 239, 233, 0.35);
 }
 
 /* DJAZZI(15/10/2026): approved compact Chat/Work navigation. The account,
@@ -300,7 +332,7 @@ button.djazzi-add-project { display:flex; flex-direction:column; justify-content
 @media(max-width:800px) { .djazzi-mode-tabs { left:65%; } .djazzi-session-state { display:none; } .djazzi-chat-starters { flex-direction:column; } }
 @media(prefers-reduced-motion:reduce) { .djazzi-work-gate button, .djazzi-studio-library button, .djazzi-code-home button { transition:none; } }
 html.dark [data-sidebar="sidebar"] {
-  border-right: 1px solid rgba(255, 255, 255, 0.06);
+  border-right: 1px solid rgba(255, 244, 225, 0.06);
 }
 
 /* The Spaces heading is a title, not a menu row: its icon moves like the
