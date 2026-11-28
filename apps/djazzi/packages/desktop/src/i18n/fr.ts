@@ -2813,6 +2813,8 @@ export const FR: Dictionary = {
     "Failed to sign out of ChatGPT": "Échec de la déconnexion de ChatGPT",
     "Signed out of ChatGPT": "Déconnecté de ChatGPT",
     "Connected to Gmail": "Connecté à Gmail",
+    "Djazzi can now read and send your emails when you ask.": "Djazzi peut maintenant lire et envoyer vos e-mails quand vous le demandez.",
+    "Djazzi can now read and plan your events when you ask.": "Djazzi peut maintenant lire et planifier vos événements quand vous le demandez.",
     "Connected to Google Calendar": "Connecté à Google Agenda",
     "Disconnected from Gmail": "Déconnecté de Gmail",
     "Disconnected from Google Calendar": "Déconnecté de Google Agenda",
