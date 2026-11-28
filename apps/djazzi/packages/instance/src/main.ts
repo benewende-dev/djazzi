@@ -7,6 +7,7 @@ import { fileURLToPath } from 'node:url';
 import { createGate } from './gate.js';
 import { seedWorkdir } from './seed.js';
 import { reaServer } from './rea.js';
+import { LIBRARY_SOURCE } from './library.js';
 import { startSchedulePublisher } from './schedule-publisher.js';
 
 // Instance entry point on Fly (roadmap phase 0, 30/09/2026): prepare the
@@ -28,6 +29,7 @@ await seedWorkdir({
   instanceToken: required('DJAZZI_INSTANCE_TOKEN'),
   serverKey: process.env.DJAZZI_SERVER_KEY || undefined,
   assistantModel: process.env.DJAZZI_ASSISTANT_MODEL ?? 'deepseek/deepseek-v4.1-flash',
+  librarySource: LIBRARY_SOURCE,
   reaServer: reaServer(process.env, workDir, fileURLToPath(new URL('./rea-main.js', import.meta.url))),
   mediaServer: {
     command: process.execPath,

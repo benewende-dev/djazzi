@@ -13,7 +13,7 @@ import { useModels } from '@/hooks/use-models'
 import { appLang } from '@/lib/prompt-library'
 import { cn } from '@/lib/utils'
 import {
-  BOT_CATEGORIES, BOT_IDEAS, DECIDED_WORDS, FEATURED_TEMPLATES, HOURS, TEMPLATES, TOOLS, WEEKDAYS, describeSystem, duplicateOf, tryoutRequest, idFor, parseDescribed, templateCategory, templateToBaarasseur, tint,
+  BOT_CATEGORIES, BOT_IDEAS, DECIDED_WORDS, FEATURED_TEMPLATES, HOURS, TEMPLATES, TOOLS, WEEKDAYS, describeSystem, duplicateOf, templateOf, tryoutRequest, idFor, parseDescribed, templateCategory, templateToBaarasseur, tint,
   markBaarasseurSeen, runBotNow, scheduleLabel, tokensWords, useApprovals, useBaarasseurs, useBaarasseurUnread, useBotUsage,
   type Baarasseur, type BaarasseurApproval, type BaarasseurSchedule, type BotCategory,
 } from '@/lib/baarasseurs'
@@ -420,11 +420,11 @@ function Overview({ team, runs, latest, unread, workingAgents, taken, approvals,
   const byId = useMemo(() => new Map(team.map((b) => [b.id, b])), [team])
   const mine = team.filter((b) => !q || `${b.name} ${b.role} ${b.mission}`.toLowerCase().includes(q))
   const pending = approvals.filter((a) => a.status === 'pending' && byId.has(a.bot))
-  const available = TEMPLATES.filter((t) => !team.some((b) => b.name === t.name))
+  const available = TEMPLATES.filter((t) => !team.some((b) => templateOf(b)?.id === t.id))
   const featured = available.filter((t) => (FEATURED_TEMPLATES as readonly string[]).includes(t.id))
   const catalogue = available
     .filter((t) => category === 'all' || templateCategory(t) === category)
-    .filter((t) => !q || `${t.name} ${t.role[lang]} ${t.summary[lang]} ${t.tools.join(' ')}`.toLowerCase().includes(q))
+    .filter((t) => !q || `${t.role[lang]} ${t.summary[lang]} ${t.tools.join(' ')}`.toLowerCase().includes(q))
   // What they did: their latest conversations, and your latest answers.
   const activity = useMemo(() => {
     const items: Array<{ key: string; at: string; b: Baarasseur; text: string; agentId: string; runId: string | null }> = []
@@ -659,7 +659,7 @@ function Overview({ team, runs, latest, unread, workingAgents, taken, approvals,
                         <Avatar b={draft} />
                         <div className="min-w-0 flex-1">
                           <p className="truncate text-[15px] font-semibold" data-no-translate>{t.role[lang]}</p>
-                          <p className="truncate text-xs text-muted-foreground" data-no-translate>{`${BOT_CATEGORIES.find((c) => c.id === templateCategory(t))?.label[lang]} · ${t.name}`}</p>
+                          <p className="truncate text-xs text-muted-foreground" data-no-translate>{`${BOT_CATEGORIES.find((c) => c.id === templateCategory(t))?.label[lang]} · ${t.summary[lang]}`}</p>
                         </div>
                       </div>
                       <p className="line-clamp-3 text-sm leading-relaxed" data-no-translate>{t.mission[lang]}</p>

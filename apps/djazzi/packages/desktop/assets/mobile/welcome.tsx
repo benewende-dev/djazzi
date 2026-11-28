@@ -160,7 +160,7 @@ function PromiseScene({ wide }: { wide: boolean }) {
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
         <LivingShape shape="pebble" color="orange" size={36} bob />
         <View style={{ flex: 1 }}>
-          <Text style={{ fontSize: 15, fontWeight: '600', color: '#FFFFFF' }}>Mariama</Text>
+          <Text style={{ fontSize: 15, fontWeight: '600', color: '#FFFFFF' }}>{translate('Sales')}</Text>
           <Text style={{ fontSize: 13, color: MUTED }}>{translate("Preparing this week's quotes")}</Text>
         </View>
         <Text style={{ fontSize: 12, color: MUTED }}>{translate('At work')}</Text>

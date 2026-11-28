@@ -4,6 +4,7 @@ import { KIT_DOC } from './motion-kit.js';
 import { CAD_SKILL_SECTION } from './cad-skill.js';
 import { REA_SERVER_NAME, type ReaServer } from './rea.js';
 import { REA_SKILL, REA_SKILL_DIR } from './rea-skill.js';
+import { seedLibrary } from './library.js';
 
 // Prepares an instance workdir before rowboat-server boots (roadmap phase 0,
 // 30/09/2026). Only files the upstream already reads are written, in their
@@ -29,6 +30,8 @@ export interface SeedOptions {
   motionServer?: { command: string; args: string[]; env: Record<string, string> };
   /** Managed REA runtime; null explicitly disables it on the next boot. */
   reaServer?: ReaServer | null;
+  /** The generated skill library to copy into the workdir (library.ts LIBRARY_SOURCE); unset: left as it is. */
+  librarySource?: string;
 }
 
 /** Our entries in the person's MCP config and skills; rewritten on every boot, the rest is theirs. */
@@ -236,6 +239,9 @@ export async function seedWorkdir(opts: SeedOptions): Promise<void> {
   const imagesDir = path.join(opts.workDir, 'skills', IMAGES_SKILL_DIR);
   await fs.mkdir(imagesDir, { recursive: true });
   await fs.writeFile(path.join(imagesDir, 'SKILL.md'), IMAGES_SKILL);
+
+  // The skill library (28/11/2026), and the one skill that points to it.
+  if (opts.librarySource) await seedLibrary(opts.workDir, opts.librarySource);
 
   // Initial model choices only; a choice already made is never overwritten.
   // The image model too (05/10/2026): core seeds it when someone signs in
