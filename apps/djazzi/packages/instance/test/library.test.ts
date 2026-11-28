@@ -79,3 +79,14 @@ describe('skill library', () => {
     }
   });
 });
+
+// Every bot template's playbooks (shared baarasseur.ts TEMPLATE_PLAYBOOKS) are in the library.
+describe.skipIf(!existsSync(path.join(LIBRARY_SOURCE, 'INDEX.md')))('the bots\' playbooks', () => {
+  it('all exist in the library', async () => {
+    const source = await fs.readFile(new URL('../../../../x/packages/shared/src/baarasseur.ts', import.meta.url), 'utf8');
+    const block = source.slice(source.indexOf('export const TEMPLATE_PLAYBOOKS'), source.indexOf('export const FORMER_TEMPLATE_IDS'));
+    const playbooks = [...block.matchAll(/"([a-z]+\/[a-z0-9-]+)"/g)].map((m) => m[1]);
+    expect(playbooks.length).toBeGreaterThan(40);
+    for (const p of playbooks) expect(existsSync(path.join(LIBRARY_SOURCE, p, 'SKILL.md')), p).toBe(true);
+  });
+});

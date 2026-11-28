@@ -59,7 +59,7 @@ export default function BaarasseursScreen() {
       .map((b) => ({ b, last: latest.get(shared.baarasseurAgentId(b.id)) ?? null }))
       .sort((x, y) => (y.last?.updatedAt ?? y.b.createdAt).localeCompare(x.last?.updatedAt ?? x.b.createdAt));
   }, [team, entries]);
-  const templates = shared.TEMPLATES.filter((t) => !(team ?? []).some((b) => b.name === t.name));
+  const templates = shared.TEMPLATES.filter((t) => !(team ?? []).some((b) => shared.templateOf(b)?.id === t.id));
   const lang = phoneLang();
 
   if (pairing === null) return <Redirect href="/pairing" />;
@@ -120,9 +120,9 @@ export default function BaarasseursScreen() {
                   onPress={() => router.push({ pathname: '/baarasseurs/recruit', params: { template: t.id } })}
                   style={{ width: 140, borderRadius: 16, borderCurve: 'continuous', borderWidth: 1, borderStyle: 'dashed', borderColor: colors.separator, padding: 12, gap: 6 }}
                 >
-                  <BaarasseurAvatar b={{ name: t.name, color: t.color }} size={36} />
-                  <Text style={{ fontSize: 15, fontWeight: '600', color: colors.label }}>{t.name}</Text>
-                  <Text numberOfLines={2} style={{ fontSize: 13, color: colors.secondaryLabel }}>{t.role[lang]}</Text>
+                  <BaarasseurAvatar b={{ name: t.role[lang], color: t.color }} size={36} />
+                  <Text style={{ fontSize: 15, fontWeight: '600', color: colors.label }}>{t.role[lang]}</Text>
+                  <Text numberOfLines={2} style={{ fontSize: 13, color: colors.secondaryLabel }}>{t.summary[lang]}</Text>
                 </Pressable>
               ))}
             </ScrollView>

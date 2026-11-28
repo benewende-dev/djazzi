@@ -444,7 +444,7 @@ export function WebAgents() {
     }
     return out;
   }, [entries]);
-  const templates = shared.TEMPLATES.filter((t) => !(team ?? []).some((b) => b.name === t.name));
+  const templates = shared.TEMPLATES.filter((t) => !(team ?? []).some((b) => shared.templateOf(b)?.id === t.id));
 
   const open = (b: Baarasseur) => {
     const agent = shared.baarasseurAgentId(b.id);
@@ -479,7 +479,7 @@ export function WebAgents() {
             {templates.map((t) => (
               <Card key={t.id} onPress={() => void hire(t)} style={{ padding: 14, gap: 4 }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-                  <BaarasseurAvatar b={{ name: t.name, color: t.color }} size={28} />
+                  <BaarasseurAvatar b={{ name: t.role[lang], color: t.color }} size={28} />
                   <View style={{ flex: 1, minWidth: 0 }}>
                     <Text numberOfLines={1} style={{ fontSize: 14, fontWeight: '600', color: colors.label }}>{t.role[lang]}</Text>
                     <Text numberOfLines={1} style={{ fontSize: 12.5, color: colors.secondaryLabel }}>{t.summary[lang]}</Text>

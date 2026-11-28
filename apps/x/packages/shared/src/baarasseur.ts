@@ -196,11 +196,29 @@ export function personaInstructions(b: Baarasseur): string {
             `You have no title yet. Once you know what the user expects from you, propose a short professional title (1 to 4 words, e.g. « Assistante commerciale »), and when they agree, set it with \`baarasseur-update\` (id "${b.id}", role).`,
         );
     }
-    lines.push(
-        "",
-        "## Your name",
-        `If the user wants to call you differently or change your role, call \`baarasseur-update\` with id "${b.id}", then answer under your new name.`,
-    );
+    // DJAZZI(28/11/2026): a template has no first name; the user gives it one.
+    if (isUnnamed(b) && b.role.trim()) {
+        lines.push(
+            "",
+            "## Your name",
+            `You have no name yet: the user knows you by your title. Early in your first exchange, ask them what they would like to call you — any name they like — and suggest nothing unless they ask. When they answer, set it with \`baarasseur-update\` (id "${b.id}", name), then use it. If they prefer your title, keep it.`,
+        );
+    } else {
+        lines.push(
+            "",
+            "## Your name",
+            `If the user wants to call you differently or change your role, call \`baarasseur-update\` with id "${b.id}", then answer under your new name.`,
+        );
+    }
+    const playbooks = TEMPLATE_PLAYBOOKS[templateOf(b)?.id ?? ""] ?? [];
+    if (playbooks.length > 0) {
+        lines.push(
+            "",
+            "## Your playbooks",
+            "Expert playbooks for your job are in Djazzi's skill library. Before a task one of them covers, read that one with `file-readText` (`library/<playbook>/SKILL.md`) and follow it, under its « In Djazzi » note; read only the one the task needs. If the file is missing, do the task with your own judgment. For other know-how, load the Skill library skill.",
+            ...playbooks.map((p) => `- ${p}`),
+        );
+    }
     if (b.tools.length > 0) {
         lines.push(
             "",
@@ -254,7 +272,7 @@ export type Lang = "fr" | "en";
 export const TOOLS = [
     "Gmail", "Google Calendar", "WhatsApp", "Telegram", "Google Sheets", "Google Docs", "Google Drive",
     "Outlook", "Web search", "Browser", "Images and videos",
-    // DJAZZI(12/11/2026): the social networks, for the community manager (Awa).
+    // DJAZZI(12/11/2026): the social networks, for the community manager.
     "Instagram", "Facebook", "LinkedIn", "X",
 ] as const;
 
@@ -267,8 +285,8 @@ export const SHAPE_COLORS = ["white", "brown", "red", "orange", "amber", "green"
 
 type Words = { fr: string; en: string };
 export interface Template {
+    /** Its job, never a first name (28/11/2026): the user names the bot themself. */
     id: string;
-    name: string;
     color: string;
     role: Words;
     /** A few words on what it handles, under the role on the template's card. */
@@ -281,8 +299,7 @@ export interface Template {
 // The site's carousel (control home-page.ts), as ready-to-recruit baarasseurs.
 export const TEMPLATES: Template[] = [
     {
-        "id": "mariama",
-        "name": "Mariama",
+        "id": "sales",
         "color": "clay",
         "tools": [
             "Gmail",
@@ -308,8 +325,7 @@ export const TEMPLATES: Template[] = [
         }
     },
     {
-        "id": "ibrahim",
-        "name": "Ibrahim",
+        "id": "accountant",
         "color": "blue",
         "tools": [
             "Google Sheets",
@@ -334,8 +350,7 @@ export const TEMPLATES: Template[] = [
         }
     },
     {
-        "id": "adjoua",
-        "name": "Adjoua",
+        "id": "assistant",
         "color": "violet",
         "tools": [
             "Google Calendar",
@@ -359,8 +374,7 @@ export const TEMPLATES: Template[] = [
         }
     },
     {
-        "id": "aminata",
-        "name": "Aminata",
+        "id": "shop",
         "color": "green",
         "tools": [
             "WhatsApp",
@@ -381,8 +395,7 @@ export const TEMPLATES: Template[] = [
         }
     },
     {
-        "id": "fatou",
-        "name": "Fatou",
+        "id": "hr",
         "color": "rose",
         "tools": [
             "Google Drive",
@@ -403,8 +416,7 @@ export const TEMPLATES: Template[] = [
         }
     },
     {
-        "id": "moussa",
-        "name": "Moussa",
+        "id": "logistics",
         "color": "amber",
         "tools": [
             "WhatsApp",
@@ -428,8 +440,7 @@ export const TEMPLATES: Template[] = [
         }
     },
     {
-        "id": "zara",
-        "name": "Zara",
+        "id": "designer",
         "color": "teal",
         "tools": [
             "Images and videos",
@@ -454,8 +465,7 @@ export const TEMPLATES: Template[] = [
         }
     },
     {
-        "id": "kofi",
-        "name": "Kofi",
+        "id": "analyst",
         "color": "blue",
         "tools": [
             "Google Sheets",
@@ -475,10 +485,9 @@ export const TEMPLATES: Template[] = [
             "en": "Read my sales and tell me, in 5 points at most, what works, what is dropping and what to change."
         }
     },
-    // DJAZZI(12/11/2026): the social networks, run with the person's approval (the founder's call): she prepares, the person says yes, then it goes out.
+    // DJAZZI(12/11/2026): the social networks, run with the person's approval (the founder's call): the bot prepares, the person says yes, then it goes out.
     {
-        "id": "awa",
-        "name": "Awa",
+        "id": "community-manager",
         "color": "rose",
         "tools": [
             "Instagram",
@@ -503,8 +512,120 @@ export const TEMPLATES: Template[] = [
             "fr": "Gère mes réseaux sociaux. Chaque matin de semaine, prépare les publications du jour pour chaque réseau : le texte adapté, le visuel proposé et la meilleure heure. Lis les nouveaux commentaires et messages, et prépare une réponse courte et polie, dans mon ton. Chaque vendredi, fais-moi un point en 5 lignes : ce qui a le mieux marché, ce qui a moins marché, et quoi publier la semaine suivante. Ne publie, ne réponds et n’envoie jamais rien sans mon accord : tout reste en brouillon jusqu’à ce que je dise oui.",
             "en": "Run my social media. Every weekday morning, prepare the day’s posts for each network: the text fitted to it, the suggested visual and the best time. Read the new comments and messages, and prepare a short, polite reply in my tone. Every Friday, give me a 5-line review: what worked best, what worked less, and what to post next week. Never post, reply or send anything without my approval: everything stays a draft until I say yes."
         }
+    },
+    // DJAZZI(28/11/2026): bots for precise jobs, each with its playbooks (TEMPLATE_PLAYBOOKS).
+    {
+        "id": "founder",
+        "color": "amber",
+        "tools": [
+            "Web search",
+            "Google Docs",
+            "Google Sheets"
+        ],
+        "schedule": null,
+        "role": {
+            "fr": "Création d’entreprise",
+            "en": "Business starter"
+        },
+        "summary": {
+            "fr": "Projet, offre, prix, lancement",
+            "en": "Plan, offer, pricing, launch"
+        },
+        "mission": {
+            "fr": "Aide-moi à créer et lancer mon entreprise. À partir de mon idée, construis avec moi le projet étape par étape : le client visé, l’offre, les prix, la concurrence, le nom et l’image, le plan de lancement et les premiers chiffres à suivre. Pose-moi une question à la fois, garde ce que nous décidons, et dis-moi franchement ce qui te paraît fragile. N’invente aucun chiffre : ce que tu ne sais pas, demande-le-moi ou dis-moi comment le trouver.",
+            "en": "Help me start and launch my business. From my idea, build the project with me step by step: the target customer, the offer, the prices, the competition, the name and image, the launch plan and the first figures to track. Ask me one question at a time, keep what we decide, and tell me frankly what looks fragile. Never invent a figure: what you do not know, ask me or tell me how to find it."
+        }
+    },
+    {
+        "id": "seo",
+        "color": "teal",
+        "tools": [
+            "Web search",
+            "Browser",
+            "Google Docs"
+        ],
+        "schedule": {
+            "every": "month",
+            "day": 1,
+            "hour": 9
+        },
+        "role": {
+            "fr": "Référencement web",
+            "en": "SEO and website"
+        },
+        "summary": {
+            "fr": "Google, site, pages qui vendent",
+            "en": "Search, website, pages that sell"
+        },
+        "mission": {
+            "fr": "Fais que mes clients me trouvent sur internet. Vérifie comment mon site et ma fiche Google apparaissent, propose les corrections une par une en commençant par les plus utiles, et rédige les pages, les textes et les articles qui répondent à ce que mes clients cherchent. Chaque mois, fais-moi un point court : ce qui a progressé et quoi faire ensuite. Ne modifie et ne publie rien sur mon site sans mon accord.",
+            "en": "Make my customers find me online. Check how my website and my Google listing show up, suggest fixes one at a time, the most useful first, and write the pages, texts and articles that answer what my customers search for. Every month, give me a short review: what improved and what to do next. Never change or publish anything on my website without my approval."
+        }
+    },
+    {
+        "id": "customer-service",
+        "color": "violet",
+        "tools": [
+            "WhatsApp",
+            "Gmail",
+            "Google Calendar"
+        ],
+        "schedule": {
+            "every": "weekday",
+            "hour": 9
+        },
+        "role": {
+            "fr": "Service client",
+            "en": "Customer service"
+        },
+        "summary": {
+            "fr": "Réponses, avis, rendez-vous",
+            "en": "Replies, reviews, appointments"
+        },
+        "mission": {
+            "fr": "Occupe-toi de mes clients. Chaque matin de semaine, prépare des réponses courtes, polies et dans leur langue à leurs nouveaux messages, propose des rendez-vous selon mon agenda, et après une vente réussie, prépare une demande d’avis. Note les questions qui reviennent souvent pour qu’on y réponde une fois pour toutes. N’envoie rien et ne promets ni remboursement ni geste commercial sans mon accord.",
+            "en": "Take care of my customers. Every weekday morning, prepare short, polite replies in their language to their new messages, suggest appointments from my calendar, and after a successful sale, prepare a review request. Note the questions that keep coming back so we answer them once and for all. Never send anything, and never promise a refund or a discount without my approval."
+        }
     }
 ];
+
+/**
+ * DJAZZI(28/11/2026): each template's playbooks in the skill library
+ * (instance library.ts, `library/<category>/<id>/SKILL.md`): the bot reads
+ * the one a task needs, so it works as an expert of its job would.
+ */
+export const TEMPLATE_PLAYBOOKS: Record<string, string[]> = {
+    "sales": ["marketing/prospecting", "marketing/cold-email", "marketing/email-sequence", "sales/contract-and-proposal-writer", "sales/pricing-strategist", "marketing/offers", "operations/chase-late-payments"],
+    "accountant": ["finance/month-end-close", "finance/financial-analyst", "operations/chase-late-payments", "business/founder-cfo"],
+    "assistant": ["operations/inbox-triage", "operations/meetings", "operations/book-appointments", "operations/weekly-review", "operations/short-reports", "operations/write-like-a-person"],
+    "shop": ["operations/procurement-optimizer", "operations/vendor-management", "operations/reply-in-their-language", "operations/ask-for-reviews", "marketing/offers"],
+    "hr": ["business/chro-advisor", "business/culture-architect", "operations/team-communications", "business/change-management"],
+    "logistics": ["operations/process-mapper", "operations/capacity-planner", "operations/vendor-management", "operations/reply-in-their-language"],
+    "designer": ["design/brand", "design/banner-design", "marketing/graphic-designer", "marketing/brand-guidelines", "design/impeccable", "marketing/youtube-thumbnail"],
+    "analyst": ["marketing/analytics", "marketing/campaign-analytics", "product/product-analytics", "research/market-research", "marketing/social-media-analyzer"],
+    "community-manager": ["marketing/social", "marketing/social-content", "marketing/content-strategy", "marketing/community-marketing", "marketing/hook-generator", "marketing/post-writer", "marketing/reels-scripting", "marketing/copywriting", "marketing/marketing-ideas"],
+    "founder": ["business/founder-plan", "business/founder-offer", "business/founder-pricing", "business/founder-competitors", "business/founder-brand", "business/founder-launch", "business/founder-cfo", "business/founder-marketing", "business/founder-ops", "marketing/business-name-fit", "research/market-research"],
+    "seo": ["marketing/seo-audit", "marketing/local-seo-manager", "marketing/ai-seo", "marketing/site-architecture", "marketing/page-cro", "marketing/schema-markup", "marketing/copywriting", "marketing/youtube-seo"],
+    "customer-service": ["operations/reply-in-their-language", "operations/ask-for-reviews", "operations/book-appointments", "sales/customer-success-manager", "sales/support-ops", "marketing/churn-prevention", "operations/write-like-a-person"],
+};
+
+/** The templates' first names until 28/11/2026: bots recruited then keep their template. */
+export const FORMER_TEMPLATE_IDS: Record<string, string> = {
+    mariama: "sales", ibrahim: "accountant", adjoua: "assistant", aminata: "shop", fatou: "hr",
+    moussa: "logistics", zara: "designer", kofi: "analyst", awa: "community-manager",
+};
+
+/** The template a bot was recruited from, by its id (« sales », « sales-2 », the former « mariama »). */
+export function templateOf(b: Pick<Baarasseur, "id">): Template | undefined {
+    const base = b.id.replace(/-\d+$/, "");
+    const id = FORMER_TEMPLATE_IDS[base] ?? base;
+    return TEMPLATES.find((t) => t.id === id);
+}
+
+/** Its name is still its title: the user has not named it yet. */
+export function isUnnamed(b: Pick<Baarasseur, "name" | "role">): boolean {
+    return b.name.trim().toLowerCase() === b.role.trim().toLowerCase();
+}
 
 /** A readable, unique id from the name: « Aminata » → aminata, then aminata-2. */
 export function idFor(name: string, taken: string[]): string {
@@ -517,7 +638,8 @@ export function idFor(name: string, taken: string[]): string {
 
 export function templateToBaarasseur(t: Template, taken: string[], lang: Lang): Baarasseur {
     return {
-        id: idFor(t.name, taken), name: t.name, role: t.role[lang], mission: t.mission[lang], color: t.color,
+        // DJAZZI(28/11/2026): no first name, the user gives one (personaInstructions).
+        id: idFor(t.id, taken), name: t.role[lang], role: t.role[lang], mission: t.mission[lang], color: t.color,
         avatar: "original", tools: t.tools, schedule: t.schedule, memory: [], createdAt: new Date().toISOString(),
     };
 }
@@ -527,9 +649,9 @@ export function blankBaarasseur(taken: string[]): Baarasseur {
 }
 
 const DESCRIBE = [
-    "You help a small business in West Africa recruit a « baarasseur »: a named AI colleague with one mission.",
+    "You help a business recruit a « baarasseur »: an AI colleague with one mission, whom the user names themself.",
     "From the user's sentence, answer ONLY with a JSON object, no prose, no code fence:",
-    "{\"name\": a first name common in West Africa that fits, \"role\": 1 to 4 words, \"mission\": 2 to 4 sentences in the second person saying what to do, how, and what never to do without approval,",
+    "{\"name\": the same words as role (the user gives the bot its name later), \"role\": 1 to 4 words, \"mission\": 2 to 4 sentences in the second person saying what to do, how, and what never to do without approval,",
     " \"tools\": a subset of $TOOLS, \"schedule\": null or {\"every\": \"day\"|\"weekday\"|\"week\"|\"month\", \"day\": 0-6 for week (0 = Sunday) or 1-28 for month, \"hour\": 0-23}}.",
     "Write name, role and mission in $LANG."
 ];
@@ -646,7 +768,7 @@ export function upsertChange(b: Baarasseur, forgotten: string[] = []) {
 // waits for the user's approval, and how much each bot works. Kept here so
 // the desktop and the phone read the same files the same way.
 
-export type BotCategory = "sales" | "finance" | "assistant" | "shop" | "hr" | "content" | "data";
+export type BotCategory = "sales" | "finance" | "assistant" | "shop" | "hr" | "content" | "data" | "business";
 export const BOT_CATEGORIES: ReadonlyArray<{ id: BotCategory; label: Words }> = [
     { id: "sales", label: { fr: "Ventes", en: "Sales" } },
     { id: "finance", label: { fr: "Comptabilité", en: "Finance" } },
@@ -655,11 +777,13 @@ export const BOT_CATEGORIES: ReadonlyArray<{ id: BotCategory; label: Words }> = 
     { id: "hr", label: { fr: "RH", en: "HR" } },
     { id: "content", label: { fr: "Contenu", en: "Content" } },
     { id: "data", label: { fr: "Données", en: "Data" } },
+    { id: "business", label: { fr: "Entreprise", en: "Business" } },
 ];
 /** Each template's category; one not listed falls under the assistant. */
 export const TEMPLATE_CATEGORY: Record<string, BotCategory> = {
-    mariama: "sales", ibrahim: "finance", adjoua: "assistant", aminata: "shop", fatou: "hr",
-    moussa: "shop", zara: "content", kofi: "data", awa: "content",
+    sales: "sales", accountant: "finance", assistant: "assistant", shop: "shop", hr: "hr",
+    logistics: "shop", designer: "content", analyst: "data", "community-manager": "content",
+    founder: "business", seo: "content", "customer-service": "sales",
 };
 export const templateCategory = (t: Pick<Template, "id">): BotCategory => TEMPLATE_CATEGORY[t.id] ?? "assistant";
 /** The page's ideas to start from: the one picked is also the sentence Djazzi prepares the bot from. */
@@ -675,7 +799,7 @@ export const DECIDED_WORDS: Record<"approved" | "refused", Words> = {
     refused: { fr: "Refusé", en: "Refused" },
 };
 /** The two the page puts forward, « Choisis par Djazzi ». */
-export const FEATURED_TEMPLATES = ["ibrahim", "aminata"] as const;
+export const FEATURED_TEMPLATES = ["accountant", "shop"] as const;
 
 /** What a bot asked the user to approve (written by the core, decided in the app). */
 export const APPROVALS_PATH = "config/baarasseurs-approvals.json";

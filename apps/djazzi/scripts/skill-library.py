@@ -46,7 +46,7 @@ MAX_SUMMARY = 220
 
 DJAZZI = """> **In Djazzi (read first).** This skill comes from the Djazzi skill library: {repo} ({license}), credited in `library/SOURCES.md`.
 > - **Context before questions.** Start from what Djazzi already knows: « About the User », your mission and what you remember, and the user's files in `knowledge/` (search them with `file-grep`). Where the text asks for a context file Djazzi does not have (a product-marketing context, a brand file…), use that instead. Ask only what is still missing.
-> - **Their language, their market.** Answer in the user's language, with their own city, customers, products and prices. Many users run small businesses in French-speaking West Africa: ask which channels and tools they actually use instead of assuming.
+> - **Their language, their market.** Answer in the user's language, with their own country, city, customers, products and prices. Djazzi's users run all kinds of businesses in many countries: ask which channels and tools they actually use instead of assuming.
 > - **Never invent figures.** No statistic, price, result, rate or testimonial the user did not give. A typical number quoted below is a habit to test, not a fact about them.
 > - **Nothing goes out without a yes.** Draft, then ask before publishing, sending, scheduling, paying, deleting or changing anything outside the chat: a bot asks with `baarasseur-ask-approval`, the assistant asks in the chat.
 > - **Written for other tools.** When the text names a command, script, product, plugin or skill Djazzi does not have, do that step with your own tools or skip it and say so. Never install or run anything without the user's agreement. Files it mentions next to its SKILL.md are in this same folder.

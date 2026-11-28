@@ -12,7 +12,7 @@ import { appLang } from '@/lib/prompt-library'
 // step, the save) is shared with the phone: @x/shared/baarasseur.
 
 export type { Baarasseur, BaarasseurApproval, BaarasseurSchedule, BotUsage, Template }
-export { BOT_CATEGORIES, BOT_IDEAS, DECIDED_WORDS, FEATURED_TEMPLATES, TEMPLATES, TOOLS, WEEKDAYS, TRYOUT_NOTE, describeSystem, duplicateOf, idFor, parseDescribed, templateCategory, tryoutRequest, type BotCategory } from '@x/shared/dist/baarasseur.js'
+export { BOT_CATEGORIES, BOT_IDEAS, DECIDED_WORDS, FEATURED_TEMPLATES, TEMPLATES, TOOLS, WEEKDAYS, TRYOUT_NOTE, describeSystem, duplicateOf, idFor, parseDescribed, templateCategory, templateOf, tryoutRequest, type BotCategory } from '@x/shared/dist/baarasseur.js'
 
 let team: Baarasseur[] = []
 let loaded = false

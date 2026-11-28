@@ -23,7 +23,8 @@ describe('the baarasseurs, app side (06/10/2026)', () => {
   })
 
   it('offers the site carousel as templates, each with both languages and known tools', () => {
-    expect(TEMPLATES.map((t) => t.name)).toEqual(['Mariama', 'Ibrahim', 'Adjoua', 'Aminata', 'Fatou', 'Moussa', 'Zara', 'Kofi', 'Awa'])
+    // DJAZZI(28/11/2026): jobs, never first names: the user names the bot.
+    expect(TEMPLATES.map((t) => t.id)).toEqual(['sales', 'accountant', 'assistant', 'shop', 'hr', 'logistics', 'designer', 'analyst', 'community-manager', 'founder', 'seo', 'customer-service'])
     for (const t of TEMPLATES) {
       expect(t.role.fr && t.role.en && t.mission.fr && t.mission.en).toBeTruthy()
       expect(t.tools.every((x) => (TOOLS as readonly string[]).includes(x))).toBe(true)

@@ -16,7 +16,7 @@ import { __djazziT as translate } from '@/djazzi-i18n/mobile/runtime';
 // conversation opens; the mission is said to it there, in words. The full
 // form stays in Your agents (baarasseurs/recruit.tsx).
 // DJAZZI(09/11/2026): its job too, under its name (the founder's call: the
-// job stays, « Mariama · Accountant »), as the desktop's recruiting asks it.
+// job stays, « Léa · Accountant »), as the desktop's recruiting asks it.
 export default function NewAgentScreen() {
   const colors = useColors();
   const { team, upsert } = useBaarasseurs();

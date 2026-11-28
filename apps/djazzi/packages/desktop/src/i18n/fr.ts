@@ -2244,7 +2244,7 @@ export const FR: Dictionary = {
     "Key revoked": "Clé révoquée",
     "Loading agents…": "Chargement des agents…",
     "Managed by admins": "Géré par les administrateurs",
-    "Name, e.g. Hermes": "Nom, ex. Awa",
+    "Name, e.g. Hermes": "Nom, ex. Hermès",
     "New key": "Nouvelle clé",
     "No active keys.": "Aucune clé active.",
     "No agents in this server yet.": "Aucun agent sur ce serveur pour l’instant.",
@@ -3427,7 +3427,8 @@ export const FR: Dictionary = {
     // The animated onboarding (12/11/2026).
     "They work.": "Ils travaillent.",
     "You decide.": "Vous décidez.",
-    "Mariama": "Mariama",
+    // DJAZZI(28/11/2026): a bot is shown by its job; the user names it.
+    "Sales": "Commerciale",
     "They work. You decide.": "Ils travaillent. Vous décidez.",
     "Preparing this week's quotes": "Prépare les devis de la semaine",
     "At work": "Au travail",
