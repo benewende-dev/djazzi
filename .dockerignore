@@ -17,3 +17,5 @@ apps/x/apps/main/out
 # DJAZZI(17/10/2026): local checkouts and the private marketing kit are not build inputs.
 .worktrees
 marketing
+# DJAZZI(28/11/2026): the skill library is rebuilt in the image (skill-library.py).
+apps/djazzi/packages/instance/library

@@ -62,6 +62,11 @@ COPY apps/djazzi/packages/instance apps/djazzi/packages/instance
 COPY apps/djazzi/packages/control/package.json apps/djazzi/packages/control/
 RUN cd apps/djazzi && pnpm install --frozen-lockfile --filter @djazzi/instance \
  && pnpm --filter @djazzi/instance build
+# The skill library (library.ts): fetched at the pinned commits, only the
+# folders it borrows, then the clones are dropped.
+COPY apps/djazzi/scripts/skill-library.py apps/djazzi/scripts/library-sources.json apps/djazzi/scripts/
+RUN python3 -I apps/djazzi/scripts/skill-library.py /tmp/library-cache apps/djazzi/packages/instance/library \
+ && rm -rf /tmp/library-cache
 
 FROM node:22-bookworm-slim
 # The Chat builds projects here (03/10/2026): git and Python beside Node.
@@ -94,5 +99,7 @@ COPY --from=rea-providers /opt/djazzi-analysis /opt/djazzi-analysis
 COPY --from=build /src/apps/x/apps/server/dist-headless ./server
 COPY --from=build /src/apps/djazzi/packages/instance/package.json ./instance/package.json
 COPY --from=build /src/apps/djazzi/packages/instance/dist ./instance/dist
+# The skill library (library.ts): copied into the workdir on boot.
+COPY --from=build /src/apps/djazzi/packages/instance/library ./instance/library
 EXPOSE 8080
 CMD ["node", "/app/instance/dist/main.js"]
